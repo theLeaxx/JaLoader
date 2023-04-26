@@ -19,6 +19,9 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 * ! The wiki isn't made yet;
 * Check out the [wiki](https://github.com/theLeaxx/JaLoader/wiki), everything's there.
 
+## Trello board
+* [Link](https://trello.com/b/0tgj7ZGk/jalopy-mod-loader)
+
 ## Libraries used
 * [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)
 * [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop) (**LGPL 2.1**)
