@@ -20,7 +20,7 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 * Check out the [wiki](https://github.com/theLeaxx/JaLoader/wiki), everything's there.
 
 ## Trello board
-* [Link](https://trello.com/b/0tgj7ZGk/jalopy-mod-loader)
+* [Link](https://trello.com/b/0tgj7ZGk/jaloader)
 
 ## Libraries used
 * [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)
