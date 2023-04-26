@@ -17,6 +17,7 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 * Once done, you can now install mods into the selected mod folder path
 
 ## For modders
+* ! The wiki isn't made yet;
 * Check out the [wiki](https://github.com/theLeaxx/JaLoader/wiki), everything's there.
 
 ## Libraries used
