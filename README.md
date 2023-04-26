@@ -22,3 +22,6 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 ## Libraries used
 * [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)
 * [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop) (**LGPL 2.1**)
+
+## Contact
+You can contact me on Discord at `Leaxx#7814`. Feel free to suggest new features.
