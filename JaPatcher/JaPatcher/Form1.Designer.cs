@@ -28,164 +28,191 @@
         /// </summary>
         private void InitializeComponent()
         {
-            GroupBox groupBox1;
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             Label installedText;
             Label gameFolderText;
-            GroupBox ModsGroupBox;
+            groupBox1 = new GroupBox();
             installButton = new Button();
-            uninstallButton = new Button();
             locateFolderButton = new Button();
             installedTextValue = new Label();
             folderTextValue = new Label();
+            locateFolderDialog = new OpenFileDialog();
+            groupBox2 = new GroupBox();
             gameFolderModsText = new Label();
             documentsModsText = new Label();
             gameFolderModsButton = new RadioButton();
             documentsButton = new RadioButton();
-            tabControl1 = new TabControl();
-            modsTab = new TabPage();
-            locateFolderDialog = new OpenFileDialog();
-            groupBox1 = new GroupBox();
             installedText = new Label();
             gameFolderText = new Label();
-            ModsGroupBox = new GroupBox();
             groupBox1.SuspendLayout();
-            ModsGroupBox.SuspendLayout();
-            tabControl1.SuspendLayout();
-            modsTab.SuspendLayout();
+            groupBox2.SuspendLayout();
             SuspendLayout();
+            // 
+            // installedText
+            // 
+            installedText.AutoSize = true;
+            installedText.Location = new Point(6, 45);
+            installedText.Name = "installedText";
+            installedText.Size = new Size(54, 15);
+            installedText.TabIndex = 1;
+            installedText.Text = "Installed:";
+            // 
+            // gameFolderText
+            // 
+            gameFolderText.AutoSize = true;
+            gameFolderText.Location = new Point(6, 19);
+            gameFolderText.Name = "gameFolderText";
+            gameFolderText.Size = new Size(79, 15);
+            gameFolderText.TabIndex = 0;
+            gameFolderText.Text = "Jalopy Folder:";
             // 
             // groupBox1
             // 
+            groupBox1.BackColor = SystemColors.Control;
             groupBox1.Controls.Add(installButton);
-            groupBox1.Controls.Add(uninstallButton);
             groupBox1.Controls.Add(locateFolderButton);
             groupBox1.Controls.Add(installedTextValue);
             groupBox1.Controls.Add(folderTextValue);
             groupBox1.Controls.Add(installedText);
             groupBox1.Controls.Add(gameFolderText);
-            resources.ApplyResources(groupBox1, "groupBox1");
+            groupBox1.ForeColor = SystemColors.ControlText;
+            groupBox1.Location = new Point(12, 12);
             groupBox1.Name = "groupBox1";
+            groupBox1.Size = new Size(541, 96);
+            groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
+            groupBox1.Text = "Information";
             // 
             // installButton
             // 
-            resources.ApplyResources(installButton, "installButton");
+            installButton.ForeColor = SystemColors.ControlText;
+            installButton.ImeMode = ImeMode.NoControl;
+            installButton.Location = new Point(464, 67);
             installButton.Name = "installButton";
+            installButton.Size = new Size(71, 23);
+            installButton.TabIndex = 6;
+            installButton.Text = "Install";
             installButton.UseVisualStyleBackColor = true;
+            installButton.Visible = false;
             installButton.Click += installButton_Click;
-            // 
-            // uninstallButton
-            // 
-            resources.ApplyResources(uninstallButton, "uninstallButton");
-            uninstallButton.Name = "uninstallButton";
-            uninstallButton.UseVisualStyleBackColor = true;
-            uninstallButton.Click += uninstallButton_Click;
             // 
             // locateFolderButton
             // 
-            resources.ApplyResources(locateFolderButton, "locateFolderButton");
+            locateFolderButton.Location = new Point(4, 67);
             locateFolderButton.Name = "locateFolderButton";
+            locateFolderButton.Size = new Size(128, 23);
+            locateFolderButton.TabIndex = 4;
+            locateFolderButton.Text = "Locate Jalopy Folder";
             locateFolderButton.UseVisualStyleBackColor = true;
             locateFolderButton.Click += locateFolderButton_Click;
             // 
             // installedTextValue
             // 
-            resources.ApplyResources(installedTextValue, "installedTextValue");
+            installedTextValue.AutoSize = true;
+            installedTextValue.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            installedTextValue.ForeColor = SystemColors.ControlText;
+            installedTextValue.Location = new Point(57, 45);
             installedTextValue.Name = "installedTextValue";
-            installedTextValue.Click += label1_Click;
+            installedTextValue.Size = new Size(80, 15);
+            installedTextValue.TabIndex = 3;
+            installedTextValue.Text = "Not Selected";
             // 
             // folderTextValue
             // 
-            resources.ApplyResources(folderTextValue, "folderTextValue");
+            folderTextValue.AutoSize = true;
+            folderTextValue.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            folderTextValue.Location = new Point(81, 19);
             folderTextValue.Name = "folderTextValue";
-            folderTextValue.Click += folderTextValue_Click;
+            folderTextValue.Size = new Size(80, 15);
+            folderTextValue.TabIndex = 2;
+            folderTextValue.Text = "Not Selected";
             // 
-            // installedText
+            // locateFolderDialog
             // 
-            resources.ApplyResources(installedText, "installedText");
-            installedText.Name = "installedText";
-            installedText.Click += label1_Click;
+            locateFolderDialog.FileName = "Jalopy.exe";
+            locateFolderDialog.Filter = "Jalopy executable|*.exe|All files|*.*";
             // 
-            // gameFolderText
+            // groupBox2
             // 
-            resources.ApplyResources(gameFolderText, "gameFolderText");
-            gameFolderText.Name = "gameFolderText";
-            gameFolderText.Click += gameFolderText_Click;
-            // 
-            // ModsGroupBox
-            // 
-            ModsGroupBox.Controls.Add(gameFolderModsText);
-            ModsGroupBox.Controls.Add(documentsModsText);
-            ModsGroupBox.Controls.Add(gameFolderModsButton);
-            ModsGroupBox.Controls.Add(documentsButton);
-            resources.ApplyResources(ModsGroupBox, "ModsGroupBox");
-            ModsGroupBox.Name = "ModsGroupBox";
-            ModsGroupBox.TabStop = false;
+            groupBox2.Controls.Add(gameFolderModsText);
+            groupBox2.Controls.Add(documentsModsText);
+            groupBox2.Controls.Add(gameFolderModsButton);
+            groupBox2.Controls.Add(documentsButton);
+            groupBox2.Location = new Point(12, 130);
+            groupBox2.Name = "groupBox2";
+            groupBox2.Size = new Size(541, 115);
+            groupBox2.TabIndex = 2;
+            groupBox2.TabStop = false;
+            groupBox2.Text = "Select Mod Folder";
+            groupBox2.Visible = false;
             // 
             // gameFolderModsText
             // 
-            resources.ApplyResources(gameFolderModsText, "gameFolderModsText");
+            gameFolderModsText.AutoSize = true;
+            gameFolderModsText.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            gameFolderModsText.ImeMode = ImeMode.NoControl;
+            gameFolderModsText.Location = new Point(26, 90);
             gameFolderModsText.Name = "gameFolderModsText";
+            gameFolderModsText.Size = new Size(175, 15);
+            gameFolderModsText.TabIndex = 3;
+            gameFolderModsText.Text = "Locate the Jalopy folder first...";
             // 
             // documentsModsText
             // 
-            resources.ApplyResources(documentsModsText, "documentsModsText");
+            documentsModsText.AutoSize = true;
+            documentsModsText.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            documentsModsText.ImeMode = ImeMode.NoControl;
+            documentsModsText.Location = new Point(26, 44);
             documentsModsText.Name = "documentsModsText";
-            documentsModsText.Click += documentsModsText_Click;
+            documentsModsText.Size = new Size(175, 15);
+            documentsModsText.TabIndex = 2;
+            documentsModsText.Text = "Locate the Jalopy folder first...";
             // 
             // gameFolderModsButton
             // 
-            resources.ApplyResources(gameFolderModsButton, "gameFolderModsButton");
+            gameFolderModsButton.AutoSize = true;
+            gameFolderModsButton.Enabled = false;
+            gameFolderModsButton.ImeMode = ImeMode.NoControl;
+            gameFolderModsButton.Location = new Point(6, 68);
             gameFolderModsButton.Name = "gameFolderModsButton";
+            gameFolderModsButton.Size = new Size(128, 19);
+            gameFolderModsButton.TabIndex = 1;
+            gameFolderModsButton.Text = "Jalopy Game Folder";
             gameFolderModsButton.UseVisualStyleBackColor = true;
             gameFolderModsButton.CheckedChanged += gameFolderModsButton_CheckedChanged;
             // 
             // documentsButton
             // 
-            resources.ApplyResources(documentsButton, "documentsButton");
+            documentsButton.AutoSize = true;
             documentsButton.Checked = true;
+            documentsButton.Enabled = false;
+            documentsButton.ForeColor = SystemColors.ControlText;
+            documentsButton.ImeMode = ImeMode.NoControl;
+            documentsButton.Location = new Point(6, 22);
             documentsButton.Name = "documentsButton";
+            documentsButton.Size = new Size(86, 19);
+            documentsButton.TabIndex = 0;
             documentsButton.TabStop = true;
+            documentsButton.Text = "Documents";
             documentsButton.UseVisualStyleBackColor = true;
             documentsButton.CheckedChanged += documentsButton_CheckedChanged;
             // 
-            // tabControl1
-            // 
-            tabControl1.Controls.Add(modsTab);
-            resources.ApplyResources(tabControl1, "tabControl1");
-            tabControl1.Name = "tabControl1";
-            tabControl1.SelectedIndex = 0;
-            // 
-            // modsTab
-            // 
-            modsTab.Controls.Add(ModsGroupBox);
-            resources.ApplyResources(modsTab, "modsTab");
-            modsTab.Name = "modsTab";
-            modsTab.UseVisualStyleBackColor = true;
-            modsTab.Click += modsTab_Click;
-            // 
-            // locateFolderDialog
-            // 
-            locateFolderDialog.FileName = "Jalopy.exe";
-            resources.ApplyResources(locateFolderDialog, "locateFolderDialog");
-            locateFolderDialog.FileOk += locateFolderDialog_FileOk;
-            // 
             // Form1
             // 
-            resources.ApplyResources(this, "$this");
+            AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            Controls.Add(tabControl1);
+            BackColor = SystemColors.Control;
+            ClientSize = new Size(565, 260);
+            Controls.Add(groupBox2);
             Controls.Add(groupBox1);
+            ForeColor = SystemColors.ControlText;
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             Name = "Form1";
+            Text = "JaPatcher";
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
-            ModsGroupBox.ResumeLayout(false);
-            ModsGroupBox.PerformLayout();
-            tabControl1.ResumeLayout(false);
-            modsTab.ResumeLayout(false);
+            groupBox2.ResumeLayout(false);
+            groupBox2.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -194,14 +221,13 @@
         private Label installedTextValue;
         private Label folderTextValue;
         private Button locateFolderButton;
-        private Button uninstallButton;
         private Button installButton;
-        private TabControl tabControl1;
-        private TabPage modsTab;
         private OpenFileDialog locateFolderDialog;
+        private GroupBox groupBox1;
+        private GroupBox groupBox2;
+        private Label gameFolderModsText;
+        private Label documentsModsText;
         private RadioButton gameFolderModsButton;
         private RadioButton documentsButton;
-        private Label documentsModsText;
-        private Label gameFolderModsText;
     }
 }

@@ -88,7 +88,17 @@ namespace JaLoader
             }
             else
             {
+                ConsolePosition = _settings.ConsolePosition;
+                ConsoleMode = _settings.ConsoleMode;
+
                 SkipLanguage = _settings.SkipLanguageSelector;
+                DisableUncle = _settings.DisableUncle;
+                DebugMode = _settings.DebugMode;
+                HideModFolderLocation = _settings.HideModFolder;
+                DisableMenuMusic = _settings.DisableMenuMusic;
+                MenuMusicVolume = _settings.MenuMusicVolume;
+                UseExperimentalCharacterController = _settings.UseExperimentalCharacterController;
+                DisabledMods = _settings.DisabledMods;
 
                 File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JMLconfig.json"), JsonUtility.ToJson(_settings, true));
                 return;
@@ -130,7 +140,7 @@ namespace JaLoader
         [SerializeField] public List<string> DisabledMods = new List<string>();
 
         [SerializeField] public bool DisableMenuMusic = false;
-        [SerializeField] public int MenuMusicVolume = 100;
+        [SerializeField] public int MenuMusicVolume = 50;
         [SerializeField] public bool HideModFolder = false;
         [SerializeField] public bool DisableUncle = false;
         [SerializeField] public bool UseExperimentalCharacterController = false;

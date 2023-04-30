@@ -67,9 +67,9 @@ namespace JaLoader
             SetPosition(settingsManager.ConsolePosition);
 
             if(ModLoader.Instance.modsNumber == 1)
-                LogMessage("JModLoader", "1 mod found & loaded!");
+                LogMessage("JaLoader", "1 mod found & loaded!");
             else
-                LogMessage("JModLoader", $"{ModLoader.Instance.modsNumber} mods found & loaded!");
+                LogMessage("JaLoader", $"{ModLoader.Instance.modsNumber} mods found & loaded!");
         }
 
         public void SetPosition(ConsolePositions pos)

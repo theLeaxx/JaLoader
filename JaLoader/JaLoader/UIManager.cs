@@ -181,7 +181,17 @@ namespace JaLoader
         {
             yield return new WaitForSeconds(0.1f);
 
-            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(settingsManager.ModFolderLocation, @"Required\jmlui_version.unity3d"));
+            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(settingsManager.ModFolderLocation, @"Required\JaLoader_UI.unity3d"));
+
+            /*if (bundleLoadReq == null)
+            {
+                StopAllCoroutines();
+
+                GameObject notice = Instantiate(GameObject.Find("Notice"));
+                notice.SetActive(true);
+                yield break;
+            }*/
+
             yield return bundleLoadReq;
 
             AssetBundle ab = bundleLoadReq.assetBundle;
@@ -189,6 +199,31 @@ namespace JaLoader
             if (ab == null)
             {
                 StopAllCoroutines();
+
+                GameObject notice = Instantiate(GameObject.Find("UI Root").transform.Find("Notice").gameObject);
+                FindObjectOfType<MenuMouseInteractionsC>().restrictRay = true;
+                notice.name = "Error";
+                notice.transform.parent = GameObject.Find("UI Root").transform;
+                notice.transform.localPosition = Vector3.zero;
+                notice.transform.position = new Vector3(notice.transform.position.x, notice.transform.position.y - 0.15f, notice.transform.position.z);
+                notice.transform.localRotation = Quaternion.identity;
+                notice.transform.localScale = Vector3.one;
+                notice.SetActive(true);
+
+                notice.transform.GetChild(5).gameObject.SetActive(false);
+                notice.transform.GetChild(1).GetComponent<UITexture>().height = 600;
+                notice.transform.GetChild(1).position = new Vector3(notice.transform.GetChild(1).position.x, notice.transform.GetChild(1).position.y + 0.2f, notice.transform.GetChild(1).position.z);
+                notice.transform.GetChild(0).GetComponent<UILabel>().text = "JaLoader encountered an error!";
+                notice.transform.GetChild(0).GetComponent<UILabel>().ProcessText();
+                notice.transform.GetChild(2).GetComponent<UILabel>().text = "\n\nThe file 'JaLoader_UI.unity3d' was not found. You can try:";
+                notice.transform.GetChild(2).GetComponent<UILabel>().height = 550;
+                notice.transform.GetChild(2).GetComponent<UILabel>().ProcessText();
+                notice.transform.GetChild(3).GetComponent<UILabel>().text = "\nWHAT WENT WRONG";
+                notice.transform.GetChild(3).GetComponent<UILabel>().ProcessText();
+                notice.transform.GetChild(4).GetComponent<UILabel>().text = "Reinstalling JaLoader with JaPatcher\n\n\n Copying the file from JaPatcher's directory/Assets to Mods/Required";
+                notice.transform.GetChild(4).GetComponent<UILabel>().fontSize = 24;
+                notice.transform.GetChild(4).GetComponent<UILabel>().ProcessText();
+
                 yield break;
             }
 
@@ -263,7 +298,7 @@ namespace JaLoader
 
             SetOptionsValues();
 
-            Console.Instance.LogMessage("JModLoader", $"JML a_{settingsManager.Version} loaded successfully!");
+            Console.Instance.LogMessage("JaLoader", $"JaLoader a_{settingsManager.Version} loaded successfully!");
 
             StartCoroutine(modLoader.LoadMods());
 

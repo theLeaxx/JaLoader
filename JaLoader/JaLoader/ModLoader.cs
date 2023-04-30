@@ -10,7 +10,6 @@ using UnityEngine.EventSystems;
 using System.Reflection;    
 using System.IO;
 using System.Collections;
-using Newtonsoft.Json.Linq;
 
 namespace JaLoader
 {
@@ -192,10 +191,10 @@ namespace JaLoader
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, mod.ModVersion, mod.ModDescription); });
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"); });
 
-                    if (mod.WhenToInit == WhenToRun.InMenu)
+                    if (mod.WhenToInit == WhenToInit.InMenu)
                         modsInitInMenu.Add(mod);
 
-                    if (mod.WhenToInit == WhenToRun.InGame)
+                    if (mod.WhenToInit == WhenToInit.InGame)
                         modsInitInGame.Add(mod);
 
                     GameObject tempObj = uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").Find("Text").gameObject;
@@ -213,7 +212,7 @@ namespace JaLoader
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(modFile.Name, "Invalid mod", "", $"{modFile.Name} is not a valid mod, please remove it from the Mods folder!"); });
 
                     Console.Instance.LogError("/", ex);
-                    Console.Instance.LogError("JModLoader", $"\"{modFile.Name}\" is not a valid mod! Please remove it from the Mods folder.");
+                    Console.Instance.LogError("JaLoader", $"\"{modFile.Name}\" is not a valid mod! Please remove it from the Mods folder.");
 
                     validMods--;
                 }

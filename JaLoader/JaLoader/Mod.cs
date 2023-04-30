@@ -1,5 +1,4 @@
 ﻿using JetBrains.Annotations;
-using Newtonsoft.Json.Linq;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
@@ -21,7 +20,7 @@ namespace JaLoader
         public virtual string ModDescription { get; set; }
         public virtual string ModVersion { get; set; }
         public virtual bool UseAssets { get; set; }
-        public virtual WhenToRun WhenToInit { get; set; }
+        public virtual WhenToInit WhenToInit { get; set; }
 
 
         public string AssetsPath { get; set; }
@@ -301,7 +300,7 @@ namespace JaLoader
         }
     } 
 
-    public enum WhenToRun
+    public enum WhenToInit
     {
         InMenu,
         InGame
