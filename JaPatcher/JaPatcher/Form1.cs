@@ -149,7 +149,11 @@ namespace JalopyModLoader
             File.Copy(jaLoaderDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll"), true);
             File.Copy(jsonDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\Newtonsoft.Json.dll"), true);
 
-            Directory.CreateDirectory(Path.Combine(currentModPath, "Required"));
+            if (!Directory.Exists(Path.Combine(currentModPath, "Required")))
+            {
+                Directory.CreateDirectory(Path.Combine(currentModPath, "Required"));
+            }
+
             File.Copy(assetBundle, Path.Combine(currentModPath, @"Required\JaLoader_UI.unity3d"), true);
 
             _settings.ModFolderLocation = currentModPath;
@@ -209,11 +213,6 @@ namespace JalopyModLoader
                 installedTextValue.ForeColor = Color.Red;
             }
 
-            if (!Directory.Exists(gameFolderModsPath))
-            {
-                Directory.CreateDirectory(gameFolderModsPath);
-            }
-
             if (!Directory.Exists(documentsModsPath))
             {
                 Directory.CreateDirectory(documentsModsPath);
@@ -259,6 +258,12 @@ namespace JalopyModLoader
             if (!installed)
                 return;
 
+
+            if (!Directory.Exists(documentsModsPath))
+            {
+                Directory.CreateDirectory(documentsModsPath);
+            }
+
             File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
         }
 
@@ -270,6 +275,11 @@ namespace JalopyModLoader
 
             if (!installed)
                 return;
+
+            if (!Directory.Exists(gameFolderModsPath))
+            {
+                Directory.CreateDirectory(gameFolderModsPath);
+            }
 
             File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
         }
