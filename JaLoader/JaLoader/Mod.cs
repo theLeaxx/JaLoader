@@ -28,14 +28,21 @@ namespace JaLoader
         public List<string> settingsIDS = new List<string>();
         [Serializable] class SettingsValues : SerializableDictionary<string, float> { }
 
+        /// <summary>
+        /// Declare all of your settings here
+        /// </summary>
         public virtual void SettingsDeclaration() { }
 
+        /// <summary>
+        /// Declare all of your custom objects here
+        /// </summary>
         public virtual void CustomObjectsRegistration() { }
 
         public virtual void Update() { }
         public virtual void Start() { }
         public virtual void Awake() { }
         public virtual void OnEnable() { }
+        public virtual void OnDisable() { }
 
         public GameObject LoadAsset(string assetName, string prefabName)
         {

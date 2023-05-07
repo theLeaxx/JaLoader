@@ -47,8 +47,8 @@ namespace JaLoader
 
         public List<string> DisabledMods = new List<string>();
 
-        private ModLoader modLoaderReference = ModLoader.Instance;
-        private UIManager uiManager = UIManager.Instance;
+        private readonly ModLoader modLoaderReference = ModLoader.Instance;
+        private readonly UIManager uiManager = UIManager.Instance;
 
         private void ReadSettings()
         {
@@ -69,9 +69,9 @@ namespace JaLoader
                 ModFolderLocation = _location.ModFolderLocation = Path.GetFullPath(Path.Combine(Application.dataPath, @"..\Mods"));
             }
 
-            if (File.Exists(Path.Combine(Application.persistentDataPath, @"JMLconfig.json")))
+            if (File.Exists(Path.Combine(Application.persistentDataPath, @"JaConfig.json")))
             {
-                string json = File.ReadAllText(Path.Combine(Application.persistentDataPath, @"JMLconfig.json"));
+                string json = File.ReadAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"));
                 _settings = JsonUtility.FromJson<Settings>(json);
 
                 ConsolePosition = _settings.ConsolePosition;
@@ -100,7 +100,7 @@ namespace JaLoader
                 UseExperimentalCharacterController = _settings.UseExperimentalCharacterController;
                 DisabledMods = _settings.DisabledMods;
 
-                File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JMLconfig.json"), JsonUtility.ToJson(_settings, true));
+                File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
                 return;
             }
         }
@@ -126,7 +126,7 @@ namespace JaLoader
 
             _settings.DisabledMods = DisabledMods;
 
-            File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JMLconfig.json"), JsonUtility.ToJson(_settings, true));
+            File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
         }
     }
 

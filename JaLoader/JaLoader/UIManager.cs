@@ -18,6 +18,9 @@ namespace JaLoader
         #region Singleton & ToggleUI event on scene change
         public static UIManager Instance { get; private set; }
 
+        public int[] values;
+        public bool[] keys;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -28,7 +31,11 @@ namespace JaLoader
             {
                 Instance = this;
             }
+
             SceneManager.activeSceneChanged += ToggleUI;
+
+            values = (int[])Enum.GetValues(typeof(KeyCode));
+            keys = new bool[values.Length];
         }
 
         #endregion
@@ -154,21 +161,6 @@ namespace JaLoader
             }
             else
                 ToggleUIVisibility(true);
-
-            if (modLoader.InitializedInGameMods && SceneManager.GetActiveScene().buildIndex < 3)
-            {
-                foreach (Mod mod in modLoader.modsInitInGame)
-                {
-                    mod.gameObject.SetActive(false);
-                }
-
-                modLoader.InitializedInGameMods = false;
-            }
-
-            if (SceneManager.GetActiveScene().buildIndex == 3 && settingsManager.UseExperimentalCharacterController)
-            {
-                GameObject.Find("First Person Controller").AddComponent<ExperimentalCharacterController>();
-            }
         }
 
         public void ToggleUIVisibility(bool show)
@@ -182,15 +174,6 @@ namespace JaLoader
             yield return new WaitForSeconds(0.1f);
 
             var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(settingsManager.ModFolderLocation, @"Required\JaLoader_UI.unity3d"));
-
-            /*if (bundleLoadReq == null)
-            {
-                StopAllCoroutines();
-
-                GameObject notice = Instantiate(GameObject.Find("Notice"));
-                notice.SetActive(true);
-                yield break;
-            }*/
 
             yield return bundleLoadReq;
 
@@ -313,7 +296,7 @@ namespace JaLoader
                 string versionText = (string)component.GetType().GetProperty("text").GetValue(component, null);
                 versionText = System.Text.RegularExpressions.Regex.Replace(versionText, @"JALOPY", "");
                 versionText = System.Text.RegularExpressions.Regex.Replace(versionText, @"\s", "");
-                component.GetType().GetProperty("text").SetValue(component, $"JALOPY {versionText}|MODLOADER A_{settingsManager.Version}", null);
+                component.GetType().GetProperty("text").SetValue(component, $"JALOPY {versionText}|JALOADER A_{settingsManager.Version}", null);
             }
         }
 

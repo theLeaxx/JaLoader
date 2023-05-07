@@ -12,6 +12,7 @@ namespace JaLoader
     {
         public static ModReferences Instance { get; private set; }
 
+        #region Singleton & OnSceneChange
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -22,7 +23,9 @@ namespace JaLoader
             {
                 Instance = this;
             }
+            SceneManager.activeSceneChanged += OnSceneChange;
         }
+        #endregion
 
         public GameObject player;
         public GameObject laika;
@@ -30,20 +33,57 @@ namespace JaLoader
         public GameObject enginePartTemplate;
         public GameObject wheelTemplate;
 
+        public Material defaultEngineMaterial;
+
+        public Dictionary<PartTypes, Transform> partHolders = new Dictionary<PartTypes, Transform>();
+
         bool addedObjFix;
 
-        private void Update()
+        private void OnEnable()
         {
-            if (SceneManager.GetActiveScene().buildIndex > 2)
+            GameObject go = GameObject.Find("EngineBlock");
+
+            defaultEngineMaterial = go.GetComponent<MeshRenderer>().material;
+
+            RefreshPartHolders();
+        }
+        public void OnSceneChange(Scene current, Scene next)
+        {
+            if (SceneManager.GetActiveScene().buildIndex == 3)
             {
                 if (!addedObjFix)
                 {
                     Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
                     addedObjFix = true;
                 }
+
+                RefreshPartHolders();
             }
             else
                 addedObjFix = false;
+        }
+
+        private void RefreshPartHolders()
+        {
+            partHolders.Clear();
+
+            var holder = GameObject.Find("FrameHolder").transform.Find("TweenHolder").Find("Frame").Find("EngineHolders");
+
+            if (holder != null)
+            {
+                partHolders.Add(PartTypes.Engine, holder.Find("EngineHolder"));
+                partHolders.Add(PartTypes.FuelTank, holder.Find("TankHolder"));
+                partHolders.Add(PartTypes.Carburettor, holder.Find("Carburettor_Holder"));
+                partHolders.Add(PartTypes.AirFilter, holder.Find("airFilterHolder"));
+                partHolders.Add(PartTypes.IgnitionCoil, holder.Find("IgnitionHolder"));
+                partHolders.Add(PartTypes.Battery, holder.Find("BatteryHolder"));
+                partHolders.Add(PartTypes.WaterTank, holder.Find("waterHolding"));
+            }
+        }
+
+        private void Update()
+        {
+
         }
 
         /// <summary>
@@ -60,7 +100,7 @@ namespace JaLoader
         /// <param name="acceleration"></param>
         /// <param name="canBuyInDealership"></param>
         /// <param name="canFindInJunkCars"></param>
-        public void AddEnginePartLogic(GameObject obj, EnginePartTypes type, string objName, string objDescription, string companyName, int price, int weight, int durability, int condition, int topSpeed, int acceleration, bool canBuyInDealership, bool canFindInJunkCars)
+        public void AddEnginePartLogic(GameObject obj, PartTypes type, string objName, string objDescription, string companyName, int price, int weight, int durability, int condition, int topSpeed, int acceleration, bool canBuyInDealership, bool canFindInJunkCars)
         {
             if (!obj.GetComponent<Collider>())
             {
@@ -119,7 +159,7 @@ namespace JaLoader
             //ec.loadID = 1;
             ec.uncle = GameObject.Find("Uncle");
 
-            if (type == EnginePartTypes.Engine)
+            if (type == PartTypes.Engine)
             {
                 ob.engineString = "EngineBlock";
 
@@ -133,11 +173,11 @@ namespace JaLoader
                 audio.pitch = 9.5f;
             }
 
-            if (type == EnginePartTypes.Carburettor)
+            if (type == PartTypes.Carburettor)
             {
                 ob.engineString = "Carburettor";
                 obj.name = "Carburettor";
-                ec.fuelConsumptionRate = 5;
+                ec.fuelConsumptionRate = 1;
                 AudioSource audio = obj.AddComponent<AudioSource>();
                 audio.priority = 128;
                 audio.pitch = 1f;
@@ -249,7 +289,7 @@ namespace JaLoader
 
     #region Part Types
 
-    public enum EnginePartTypes
+    public enum PartTypes
     {
         Engine,
         FuelTank,
@@ -258,22 +298,16 @@ namespace JaLoader
         IgnitionCoil,
         Battery,
         WaterTank,
-        Extra
+        Extra,
+        Custom
     }
 
     public enum WheelTypes
     {
         Normal,
         Wet,
-        OffRoad
-    }
-
-    public enum EngineTypes
-    {
-        Stock,
-        Naked,
-        Ramshackle,
-        Squash
+        OffRoad,
+        Custom
     }
 
     #endregion

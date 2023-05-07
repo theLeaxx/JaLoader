@@ -15,7 +15,7 @@ namespace JaLoader
 {
     public class ModLoader : MonoBehaviour
     {
-        #region Singleton
+        #region Singleton & OnSceneChange
         public static ModLoader Instance { get; private set; }
 
         private void Awake()
@@ -28,6 +28,8 @@ namespace JaLoader
             {
                 Instance = this;
             }
+
+            SceneManager.activeSceneChanged += OnSceneChange;
         }
 
         #endregion
@@ -35,13 +37,14 @@ namespace JaLoader
         private SettingsManager settingsManager;
         private UIManager uiManager;
 
-        public List<Mod> modsInitInGame = new List<Mod>();
-        public List<Mod> modsInitInMenu = new List<Mod>();
-
         public int modsNumber;
 
+        public List<Mod> modsInitInGame = new List<Mod>();
+        private List<Mod> modsInitInMenu = new List<Mod>();
+
         public List<Mod> disabledMods = new List<Mod>();
-        Dictionary<Mod, Text> modStatusTextRef = new Dictionary<Mod, Text>();
+        private bool LoadedDisabledMods;
+        private Dictionary<Mod, Text> modStatusTextRef = new Dictionary<Mod, Text>();
    
         public bool InitializedInGameMods;
         private bool InitializedInMenuMods;
@@ -54,23 +57,42 @@ namespace JaLoader
             DontDestroyOnLoad(gameObject);
             settingsManager = gameObject.AddComponent<SettingsManager>();
             uiManager = gameObject.AddComponent<UIManager>();
-            gameObject.AddComponent<ObjectIDManager>();
-        }
+            gameObject.AddComponent<CustomObjectsManager>();
+            gameObject.AddComponent<CustomKeybind>();
 
-        private void Update()
-        {
             if (settingsManager.SkipLanguage && !skippedIntro)
             {
                 skippedIntro = true;
                 SceneManager.LoadScene("MainMenu");
-            }      
+            }
+        }
 
+        private void OnSceneChange(Scene current, Scene next)
+        {
+            if (InitializedInGameMods && SceneManager.GetActiveScene().buildIndex < 3)
+            {
+                foreach (Mod mod in modsInitInGame)
+                {
+                    mod.gameObject.SetActive(false);
+                }
+
+                InitializedInGameMods = false;
+            }
+
+            if (SceneManager.GetActiveScene().buildIndex == 3 && settingsManager.UseExperimentalCharacterController)
+            {
+                GameObject.Find("First Person Controller").AddComponent<ExperimentalCharacterController>();
+            }
+        }
+
+        private void Update()
+        {
             if (modsNumber == 0)
                 return;
 
             if (finishedLoadingMods)
             {
-                if (disabledMods.Count == 0 && settingsManager.DisabledMods.Count != 0)
+                if (!LoadedDisabledMods && settingsManager.DisabledMods.Count != 0)
                 {
                     for (int i = 0; i < modsInitInGame.Count; i++)
                     {
@@ -97,6 +119,8 @@ namespace JaLoader
                             modStatusTextRef[disabledMods.ToArray()[i]].text = "Enable";
                         }
                     }
+
+                    LoadedDisabledMods = true;
                 }
 
                 if (!InitializedInMenuMods)
@@ -126,7 +150,7 @@ namespace JaLoader
         public IEnumerator LoadMods()
         {
             GameObject modHelperObj = Instantiate(new GameObject());
-            modHelperObj.name = "ModHelper";
+            modHelperObj.name = "ModReferences";
             modHelperObj.AddComponent<ModReferences>();
             DontDestroyOnLoad(modHelperObj);
 
