@@ -1,6 +1,6 @@
 # JaLoader
 
-[![](https://img.shields.io/github/release/theLeaxx/JaLoader.svg?)](#) 
+[![](https://img.shields.io/github/v/release/theLeaxx/JaLoader)](#) 
 
 A mod loader for Jalopy.
 
