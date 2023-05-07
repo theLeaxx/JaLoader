@@ -1,17 +1,17 @@
 # JaLoader
 
-[![](https://img.shields.io/github/release/theLeaxx/JaLoader.svg?)](#) 
+[![](https://img.shields.io/github/v/release/theLeaxx/JaLoader)](#) 
 
 A mod loader for Jalopy.
 
 You can report any issues and/or ideas in the [issues](https://github.com/theLeaxx/JaLoader/issues) tab.
 
 ## Installation
-* Download the latest release from [here](https://github.com/theLeaxx/JaLoader/releases)
+* Download the latest release from [here](https://github.com/theLeaxx/JaLoader/releases/latest)
 * Extract the contents to anywhere you'd like
 * Run the patcher (`JaPatcher.exe`)
 * Locate the game's executable (usually at `C:\Program Files (x86)\Steam\steamapps\common\Jalopy`)
-* Select the mod folder location and check settings if desired
+* Select the mod folder location
 * Click "Install"
 * Once done, you can now install mods into the selected mod folder path
 
