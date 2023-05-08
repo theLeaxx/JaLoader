@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -161,8 +162,28 @@ namespace JaLoader
                             type = PartTypes.Engine;
                             break;
 
+                        case "FuelTank":
+                            type = PartTypes.FuelTank;
+                            break;
+
                         case "Carburettor":
                             type = PartTypes.Carburettor;
+                            break;
+
+                        case "AirFilter":
+                            type = PartTypes.AirFilter;
+                            break;
+
+                        case "IgnitionCoil":
+                            type = PartTypes.IgnitionCoil;
+                            break;
+
+                        case "Battery":
+                            type = PartTypes.Battery;
+                            break;
+
+                        case "WaterContainer":
+                            type = PartTypes.WaterTank;
                             break;
                     }
                 }
@@ -206,8 +227,38 @@ namespace JaLoader
                                 PlaceObjectInEngine(obj);
                                 break;
 
+                            case PartTypes.FuelTank:
+                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.FuelTank];
+                                obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
+                                PlaceObjectInEngine(obj);
+                                break;
+
                             case PartTypes.Carburettor:
                                 obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.Carburettor];
+                                obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
+                                PlaceObjectInEngine(obj);
+                                break;
+
+                            case PartTypes.AirFilter:
+                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.AirFilter];
+                                obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
+                                PlaceObjectInEngine(obj);
+                                break;
+
+                            case PartTypes.IgnitionCoil:
+                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.IgnitionCoil];
+                                obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
+                                PlaceObjectInEngine(obj);
+                                break;
+
+                            case PartTypes.Battery:
+                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.Battery];
+                                obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
+                                PlaceObjectInEngine(obj);
+                                break;
+
+                            case PartTypes.WaterTank:
+                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.WaterTank];
                                 obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
                                 PlaceObjectInEngine(obj);
                                 break;
