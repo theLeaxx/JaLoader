@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine.SceneManagement;
 using UnityEngine;
+using System.Diagnostics;
 
 namespace JaLoader
 {
@@ -23,7 +24,7 @@ namespace JaLoader
             {
                 Instance = this;
             }
-            SceneManager.activeSceneChanged += OnSceneChange;
+            SceneManager.sceneLoaded += OnSceneChange;
         }
         #endregion
 
@@ -34,38 +35,42 @@ namespace JaLoader
         public GameObject wheelTemplate;
 
         public Material defaultEngineMaterial;
+        private AudioClip[] defaultClips;
 
         public Dictionary<PartTypes, Transform> partHolders = new Dictionary<PartTypes, Transform>();
 
-        bool addedObjFix;
+        private bool addedDRCExtension;
 
         private void OnEnable()
         {
             GameObject go = GameObject.Find("EngineBlock");
 
             defaultEngineMaterial = go.GetComponent<MeshRenderer>().material;
+            defaultClips = go.GetComponent<ObjectPickupC>()._audio;
 
             RefreshPartHolders();
         }
-        public void OnSceneChange(Scene current, Scene next)
+
+        public void OnSceneChange(Scene current, LoadSceneMode mode)
         {
             if (SceneManager.GetActiveScene().buildIndex == 3)
             {
-                if (!addedObjFix)
+                if (!addedDRCExtension)
                 {
                     Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
-                    addedObjFix = true;
+                    addedDRCExtension = true;
                 }
-
-                RefreshPartHolders();
             }
             else
-                addedObjFix = false;
+                addedDRCExtension = false;
         }
 
-        private void RefreshPartHolders()
+        public void RefreshPartHolders()
         {
-            partHolders.Clear();
+            if(partHolders != null)
+                partHolders.Clear();
+            else
+                partHolders = new Dictionary<PartTypes, Transform>();
 
             var holder = GameObject.Find("FrameHolder").transform.Find("TweenHolder").Find("Frame").Find("EngineHolders");
 
@@ -79,11 +84,6 @@ namespace JaLoader
                 partHolders.Add(PartTypes.Battery, holder.Find("BatteryHolder"));
                 partHolders.Add(PartTypes.WaterTank, holder.Find("waterHolding"));
             }
-        }
-
-        private void Update()
-        {
-
         }
 
         /// <summary>
@@ -107,6 +107,7 @@ namespace JaLoader
                 obj.AddComponent<BoxCollider>();
             }
 
+            obj.AddComponent<AudioSource>();
             obj.transform.localScale = new Vector3(2.2f, 2.2f, 2.2f);
 
             Material mat = obj.GetComponent<MeshRenderer>().material;
@@ -123,11 +124,16 @@ namespace JaLoader
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             rb.mass = weight;
             ObjectPickupC ob = obj.AddComponent<ObjectPickupC>();
+            ob.objectID = 0;
             ob.glowMat = obj.GetComponent<MeshRenderer>().materials;
             ob.glowMaterial = glowMat;
-          
-            List<GameObject> objToRender = new List<GameObject>();
-            objToRender.Add(obj);
+            ob._audio = defaultClips;
+
+            List<GameObject> objToRender = new List<GameObject>
+            {
+                obj
+            };
+
             for (int i = 0; i < obj.GetComponentsInChildren<Transform>().Length; i++)
             {
                 objToRender.Add(obj.GetComponentsInChildren<Transform>()[i].gameObject);
@@ -152,43 +158,102 @@ namespace JaLoader
 
             ob.isEngineComponent = true;
             EngineComponentC ec = obj.AddComponent<EngineComponentC>();
+            ec.loadID = 0;
             ec._camera = Camera.main.gameObject;
             ec.weight = weight;
             ec.durability = durability;
-            ec.condition = condition;
-            //ec.loadID = 1;
+            ec.Condition = condition;
             ec.uncle = GameObject.Find("Uncle");
 
-            if (type == PartTypes.Engine)
+            switch (type)
             {
-                ob.engineString = "EngineBlock";
+                case PartTypes.Engine:
+                    ob.engineString = "EngineBlock";
+                    obj.name = "EngineBlock";
+                    break;
 
-                ec.acceleration = acceleration;
-                ec.topSpeed = topSpeed;
-                ec.engineAudio = GameObject.Find("EngineBlock").GetComponent<EngineComponentC>().engineAudio;
-                obj.name = "EngineBlock";
+                case PartTypes.FuelTank:
+                    ob.engineString = "FuelTank";
+                    obj.name = "FuelTank";
+                    break;
 
-                AudioSource audio = obj.AddComponent<AudioSource>();
-                audio.priority = 128;
-                audio.pitch = 9.5f;
-            }
+                case PartTypes.Carburettor:
+                    ob.engineString = "Carburettor";
+                    obj.name = "Carburettor";
+                    break;
 
-            if (type == PartTypes.Carburettor)
-            {
-                ob.engineString = "Carburettor";
-                obj.name = "Carburettor";
-                ec.fuelConsumptionRate = 1;
-                AudioSource audio = obj.AddComponent<AudioSource>();
-                audio.priority = 128;
-                audio.pitch = 1f;
+                case PartTypes.AirFilter:
+                    ob.engineString = "AirFilter";
+                    obj.name = "AirFilter";
+                    break;
+
+                case PartTypes.IgnitionCoil:
+                    ob.engineString = "IgnitionCoil";
+                    obj.name = "IgnitionCoil";
+                    break;
+
+                case PartTypes.Battery:
+                    ob.engineString = "Battery";
+                    obj.name = "Battery";
+                    break;
+
+                case PartTypes.WaterTank:
+                    ob.engineString = "WaterContainer";
+                    obj.name = "WaterContainer";
+                    break;
+
+                case PartTypes.Extra:
+                    ob.engineString = "Carburettor";
+                    obj.name = "Carburettor";
+                    break;
+
+                case PartTypes.Custom:
+                    break;
             }
 
             FixTextOnObjectPickup fix = obj.AddComponent<FixTextOnObjectPickup>();
             fix.objDescription = objDescription;
             fix.objName = objName;
             obj.SetActive(true);
+        }
 
-            //ObjectIDManager.Instance.RegisterEngineComponent(obj, type);
+        public void ConfigureCustomEngine(GameObject obj, int acceleration, int topSpeed, bool useDefaultAudio)
+        {
+            EngineComponentC ec = obj.GetComponent<EngineComponentC>();
+            AudioSource audio = obj.GetComponent<AudioSource>();
+
+            ec.acceleration = acceleration;
+            ec.topSpeed = topSpeed;
+
+            if (!useDefaultAudio)
+                return;
+
+            ec.engineAudio = GameObject.Find("EngineBlock").GetComponent<EngineComponentC>().engineAudio;
+            audio.priority = 128;
+            audio.pitch = 9.5f;
+        }
+
+        public void ConfigureCustomCarburettor(GameObject obj, int fuelConsumptionRate)
+        {
+            EngineComponentC ec = obj.GetComponent<EngineComponentC>();
+
+            ec.fuelConsumptionRate = fuelConsumptionRate;
+
+            AudioSource audio = obj.GetComponent<AudioSource>();
+            audio.priority = 128;
+        }
+
+        public void ConfigureCustomEngine(GameObject obj, int acceleration, int topSpeed, AudioClip customAudio)
+        {
+            EngineComponentC ec = obj.GetComponent<EngineComponentC>();
+            AudioSource audio = obj.GetComponent<AudioSource>();
+
+            ec.acceleration = acceleration;
+            ec.topSpeed = topSpeed;
+
+            ec.engineAudio = customAudio;
+            audio.priority = 128;
+            audio.pitch = 9.5f;
         }
 
         /// <summary>
@@ -210,10 +275,8 @@ namespace JaLoader
                 go.AddComponent<BoxCollider>();
             }
 
+            go.AddComponent<AudioSource>();
             go.transform.localScale = new Vector3(2.2f, 2.2f, 2.2f);
-
-            //Material mat = new Material(Shader.Find("Specular"));
-            //mat.color = new Color32(128, 128, 128, 255);
 
             Material glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"));
             glowMat.color = mat.color;
@@ -227,16 +290,18 @@ namespace JaLoader
             go.name = gameObjectName;
             go.tag = "Pickup";
             go.layer = 24;
-            //go.AddComponent<ObjectInteractionsC>();
             Rigidbody rb = go.AddComponent<Rigidbody>();
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             rb.mass = weight;
             ObjectPickupC ob = go.AddComponent<ObjectPickupC>();
             ob.glowMat = go.GetComponent<MeshRenderer>().materials;
             ob.glowMaterial = glowMat;
+            ob._audio = defaultClips;
 
-            List<GameObject> objToRender = new List<GameObject>();
-            objToRender.Add(go);
+            List<GameObject> objToRender = new List<GameObject>
+            {
+                go
+            };
             for (int i = 0; i < go.GetComponentsInChildren<Transform>().Length; i++)
             {
                 objToRender.Add(go.GetComponentsInChildren<Transform>()[i].gameObject);
@@ -261,24 +326,6 @@ namespace JaLoader
             ob.throwRotAdjustment = new Vector3(0, -180, 0);
             ob.positionAdjust = new Vector3(0, -0.3f, 0);
             ob.setRotation = new Vector3(0, -180, 0);
-
-            ob.engineString = "EngineBlock";
-            ob.isEngineComponent = true;
-
-            EngineComponentC ec = go.AddComponent<EngineComponentC>();
-            ec._camera = Camera.main.gameObject;
-            ec.weight = weight;
-            ec.durability = 4;
-            ec.condition = 4;
-            ec.acceleration = 4;
-            ec.topSpeed = 150;
-            ec.loadID = 1;
-            ec.uncle = GameObject.Find("Uncle");
-            ec.engineAudio = GameObject.Find("EngineBlock").GetComponent<EngineComponentC>().engineAudio;
-
-            AudioSource audio = go.AddComponent<AudioSource>();
-            audio.priority = 128;
-            audio.pitch = 9.5f;
 
             FixTextOnObjectPickup fix = go.AddComponent<FixTextOnObjectPickup>();
             fix.objDescription = objDescription;

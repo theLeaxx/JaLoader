@@ -70,6 +70,7 @@ namespace JaLoader
         private bool inOptions;
         private bool inModsOptions;
         private bool isObstructing;
+        private bool forceRestrictRay;
 
         #region Settings Dropdown
         private Dropdown consoleModeDropdown;
@@ -86,9 +87,15 @@ namespace JaLoader
 
         private void Update()
         {
+            if (forceRestrictRay)
+                FindObjectOfType<MenuMouseInteractionsC>().restrictRay = true;
+
+            if (UIVersionCanvas == null)
+                return;
+
             if (SceneManager.GetActiveScene().buildIndex == 1)
             {
-                if (!book.bookClosed && !isOnExitPage)
+                if (!book.BookClosed && !isOnExitPage)
                 {
                     UIVersionCanvas.transform.GetChild(0).Find("BookUI").gameObject.SetActive(true);
                 }
@@ -165,6 +172,9 @@ namespace JaLoader
 
         public void ToggleUIVisibility(bool show)
         {
+            if (UIVersionCanvas == null)
+                return;
+
             RefreshUI();
             UIVersionCanvas.transform.GetChild(0).gameObject.SetActive(show);
         }
@@ -184,7 +194,7 @@ namespace JaLoader
                 StopAllCoroutines();
 
                 GameObject notice = Instantiate(GameObject.Find("UI Root").transform.Find("Notice").gameObject);
-                FindObjectOfType<MenuMouseInteractionsC>().restrictRay = true;
+                forceRestrictRay = true;
                 notice.name = "Error";
                 notice.transform.parent = GameObject.Find("UI Root").transform;
                 notice.transform.localPosition = Vector3.zero;
@@ -234,7 +244,7 @@ namespace JaLoader
             if (settingsManager.HideModFolderLocation)
                 modFolderText.SetActive(false);
 
-            modLoaderText.GetComponent<Text>().text = $"JaLoader <color=yellow>a_{settingsManager.Version}</color> loaded!";
+            modLoaderText.GetComponent<Text>().text = $"JaLoader <color=yellow>{settingsManager.Version}</color> loaded!";
             modFolderText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{settingsManager.ModFolderLocation}</color>";
 
             UIVersionCanvas.transform.Find("JMLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
@@ -281,7 +291,7 @@ namespace JaLoader
 
             SetOptionsValues();
 
-            Console.Instance.LogMessage("JaLoader", $"JaLoader a_{settingsManager.Version} loaded successfully!");
+            Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.Version} loaded successfully!");
 
             StartCoroutine(modLoader.LoadMods());
 
@@ -296,7 +306,7 @@ namespace JaLoader
                 string versionText = (string)component.GetType().GetProperty("text").GetValue(component, null);
                 versionText = System.Text.RegularExpressions.Regex.Replace(versionText, @"JALOPY", "");
                 versionText = System.Text.RegularExpressions.Regex.Replace(versionText, @"\s", "");
-                component.GetType().GetProperty("text").SetValue(component, $"JALOPY {versionText}|JALOADER A_{settingsManager.Version}", null);
+                component.GetType().GetProperty("text").SetValue(component, $"JALOPY {versionText}|JALOADER {settingsManager.Version}", null);
             }
         }
 
@@ -351,6 +361,9 @@ namespace JaLoader
 
         private void RefreshUI()
         {
+            if (UIVersionCanvas == null)
+                return;
+
             UIVersionCanvas.SetActive(false);
             UIVersionCanvas.SetActive(true);
         }
@@ -415,7 +428,7 @@ namespace JaLoader
 
         public void ToggleModMenu()
         {
-            if (!book.bookClosed)
+            if (!book.BookClosed)
             {
                 book.CloseBook();
             }
@@ -426,13 +439,12 @@ namespace JaLoader
 
         public void ToggleModLoaderSettings_Main()
         {
-            if (!book.bookClosed)
+            if (!book.BookClosed)
             {
                 book.CloseBook();
             }
 
             inOptions = !inOptions;
-            //UIVersionCanvas.transform.Find("JMLSettingsPanel").gameObject.SetActive(!UIVersionCanvas.transform.Find("JMLSettingsPanel").gameObject.activeSelf);
             UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
             ToggleObstructRay();
         }
@@ -486,6 +498,8 @@ namespace JaLoader
             modFolderText.SetActive(!settingsManager.HideModFolderLocation);
 
             UpdateMenuMusic(!Convert.ToBoolean(menuMusicDropdown.value), (float)menuMusicSlider.value / 100);
+
+            UncleHelper.Instance.UncleEnabled = !settingsManager.DisableUncle;
         }
     }
 }

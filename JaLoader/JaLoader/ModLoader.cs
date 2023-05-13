@@ -49,7 +49,7 @@ namespace JaLoader
         public bool InitializedInGameMods;
         private bool InitializedInMenuMods;
         
-        private bool finishedLoadingMods;
+        public bool finishedLoadingMods;
         private bool skippedIntro;
 
         private void Start()
@@ -150,9 +150,14 @@ namespace JaLoader
         public IEnumerator LoadMods()
         {
             GameObject modHelperObj = Instantiate(new GameObject());
-            modHelperObj.name = "ModReferences";
+            GameObject uncleHelperObj = Instantiate(new GameObject());
+            modHelperObj.name = "ModHelper";
+            uncleHelperObj.name = "UncleHelper";
             modHelperObj.AddComponent<ModReferences>();
+            uncleHelperObj.AddComponent<UncleHelper>();
+
             DontDestroyOnLoad(modHelperObj);
+            DontDestroyOnLoad(uncleHelperObj);
 
             DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
@@ -171,8 +176,7 @@ namespace JaLoader
 
                     Type[] allModTypes = modAssembly.GetTypes();
 
-                    string modTypeName = $"{Path.GetFileNameWithoutExtension(modFile.Name)}.{allModTypes[0].Name}";
-                    Type modType = modAssembly.GetType(modTypeName);
+                    Type modType = allModTypes.First(t => t.BaseType.Name == "Mod");
 
                     GameObject ModObject = Instantiate(new GameObject());
                     ModObject.transform.parent = null;
@@ -186,8 +190,7 @@ namespace JaLoader
 
                     if (mod.ModName == null || mod.ModAuthor == null || mod.ModVersion == null)
                     {
-                        Console.Instance.LogError(modFile.Name, "Empty mod information.");
-                        throw new Exception($"Mod {modFile.Name} contains no information related to its name, author or version.");
+                        Console.Instance.LogError(modFile.Name, $"{modFile.Name} contains no information related to its name, author or version.");
                     }
 
                     if (mod.UseAssets)
@@ -195,15 +198,13 @@ namespace JaLoader
                         mod.AssetsPath = $@"{settingsManager.ModFolderLocation}\Assets\{mod.ModID}";
                         if (!Directory.Exists(mod.AssetsPath))
                         {
-                            Console.Instance.LogError(mod.ModID, "Assets folder does not exist!");
+                            Console.Instance.LogError(mod.ModID, $"Mod {mod.ModName} uses custom assets, but its assets folder does not exist.");
 
                             uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = mod.ModName;
                             uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
                             Destroy(ModObject);
 
                             uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, mod.ModVersion, $"{mod.ModName} encountered an error while loading! Check the console for more info."); });
-
-                            throw new Exception($"Mod {mod.ModName} uses custom assets, but its assets folder does not exist.");
                         }
                     }
 

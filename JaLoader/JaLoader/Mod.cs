@@ -200,6 +200,16 @@ namespace JaLoader
             settingsIDS.Add($"{ID}_Slider");
         }
 
+        public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey)
+        {
+
+        }
+
+        public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey, KeyCode defaultSecondaryKey)
+        {
+
+        }
+
         public Dropdown GetDropdown(string ID)
         {
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
