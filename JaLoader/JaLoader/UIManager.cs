@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics.PerformanceData;
 using System.IO;
 using System.Linq;
 using System.Net.Configuration;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -85,6 +88,27 @@ namespace JaLoader
 
         private GameObject menuMusicPlayer;
 
+        private bool isNewEnough;
+        private bool checkedVersion;
+
+        private bool IsBookClosed()
+        {
+            if (isNewEnough)
+            {
+                return (bool)book.GetType().GetField("BookClosed").GetValue(book);
+            }
+            else
+            {
+                return (bool)book.GetType().GetField("bookClosed").GetValue(book);
+            }
+        }
+
+        private void CheckIfNewEnough()
+        {
+            checkedVersion = true;
+            isNewEnough = book.GetType().GetField("BookClosed") != null;
+        }
+
         private void Update()
         {
             if (forceRestrictRay)
@@ -95,7 +119,7 @@ namespace JaLoader
 
             if (SceneManager.GetActiveScene().buildIndex == 1)
             {
-                if (!book.BookClosed && !isOnExitPage)
+                if (!isOnExitPage && !IsBookClosed())
                 {
                     UIVersionCanvas.transform.GetChild(0).Find("BookUI").gameObject.SetActive(true);
                 }
@@ -110,7 +134,7 @@ namespace JaLoader
                 if (UIVersionCanvas.transform.GetChild(1).gameObject.activeSelf)
                     ToggleModMenu();
 
-                if (UIVersionCanvas.transform.Find("JMLSettingsPanel").Find("Main").gameObject.activeSelf)
+                if (UIVersionCanvas.transform.Find("JLSettingsPanel").Find("Main").gameObject.activeSelf)
                     ToggleModLoaderSettings_Main();
 
                 RefreshUI();
@@ -147,6 +171,10 @@ namespace JaLoader
                 UpdateMenuMusic(!settingsManager.DisableMenuMusic, (float)settingsManager.MenuMusicVolume / 100);
 
                 book = FindObjectOfType<MainMenuBookC>();
+
+                if (!checkedVersion)
+                    CheckIfNewEnough();
+
                 exitConfirmButton = GameObject.Find("ExitPage").transform.GetChild(0).gameObject;
                 isOnExitPage = exitConfirmButton.activeSelf;
             }
@@ -220,7 +248,7 @@ namespace JaLoader
                 yield break;
             }
 
-            var assetLoadRequest = ab.LoadAssetAsync<GameObject>("JMLCanvas.prefab");
+            var assetLoadRequest = ab.LoadAssetAsync<GameObject>("JLCanvas.prefab");
             yield return assetLoadRequest;
 
             var UIPrefab = assetLoadRequest.asset as GameObject;
@@ -228,17 +256,17 @@ namespace JaLoader
             UIVersionCanvas = Instantiate(UIPrefab);
             DontDestroyOnLoad(UIVersionCanvas);
 
-            modTemplatePrefab = UIVersionCanvas.transform.Find("JMLModsPanel").Find("Scroll View").GetChild(0).GetChild(0).GetChild(0).gameObject;
-            modConsole = UIVersionCanvas.transform.Find("JMLConsole").Find("Console").gameObject;
-            messageTemplatePrefab = modConsole.transform.Find("Scroll View").Find("Viewport").Find("Content").GetChild(0).gameObject;
-            moreInfoPanelMods = UIVersionCanvas.transform.Find("JMLModsPanel").Find("MoreInfo").gameObject;
+            modTemplatePrefab = UIVersionCanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).GetChild(0).gameObject;
+            modConsole = UIVersionCanvas.transform.Find("JLConsole/Console").gameObject;
+            messageTemplatePrefab = modConsole.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
+            moreInfoPanelMods = UIVersionCanvas.transform.Find("JLModsPanel/MoreInfo").gameObject;
 
             GameObject consoleObj = Instantiate(new GameObject());
             consoleObj.AddComponent<Console>();
             consoleObj.name = "ModConsole";
             DontDestroyOnLoad(consoleObj);
 
-            modLoaderText = UIVersionCanvas.transform.GetChild(0).Find("JModLoader").gameObject;
+            modLoaderText = UIVersionCanvas.transform.GetChild(0).Find("JaLoader").gameObject;
             modFolderText = UIVersionCanvas.transform.GetChild(0).Find("ModsFolder").gameObject;
 
             if (settingsManager.HideModFolderLocation)
@@ -247,25 +275,25 @@ namespace JaLoader
             modLoaderText.GetComponent<Text>().text = $"JaLoader <color=yellow>{settingsManager.Version}</color> loaded!";
             modFolderText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{settingsManager.ModFolderLocation}</color>";
 
-            UIVersionCanvas.transform.Find("JMLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
-            UIVersionCanvas.transform.Find("JMLModsPanel/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
+            UIVersionCanvas.transform.Find("JLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
+            UIVersionCanvas.transform.Find("JLModsPanel/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
 
-            UIVersionCanvas.transform.Find("JMLPanel/BookUI/OptionsButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Main/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
+            UIVersionCanvas.transform.Find("JLPanel/BookUI/OptionsButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
 
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Main/VerticalButtonLayoutGroup/PreferencesButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Main/VerticalButtonLayoutGroup/TweaksButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Main/VerticalButtonLayoutGroup/AccessibilityButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/PreferencesButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/TweaksButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/AccessibilityButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
 
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Preferences/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Tweaks/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Accessibility/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Accessibility/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
 
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Preferences/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
-            UIVersionCanvas.transform.Find("JMLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
 
-            modSettingsScrollView = UIVersionCanvas.transform.Find("JMLModsPanel/SettingsScrollView").gameObject;
+            modSettingsScrollView = UIVersionCanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
             modSettingsScrollViewContent = modSettingsScrollView.transform.GetChild(0).GetChild(0).gameObject;
 
             modSettingsScrollView.transform.Find("SaveButton").GetComponent<Button>().onClick.AddListener(SaveModSettings);
@@ -277,17 +305,17 @@ namespace JaLoader
             modOptionsToggleTemplate = modSettingsScrollViewContent.transform.Find("ToggleTemplate").gameObject;
             modOptionsSliderTemplate = modSettingsScrollViewContent.transform.Find("SliderTemplate").gameObject;
 
-            consoleModeDropdown = UIVersionCanvas.transform.Find("JMLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ConsoleMode").gameObject.GetComponent<Dropdown>();
-            consolePositionDropdown = UIVersionCanvas.transform.Find("JMLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ConsolePosition").gameObject.GetComponent<Dropdown>();
-            showModsFolderDropdown = UIVersionCanvas.transform.Find("JMLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
-            debugModeDropdown = UIVersionCanvas.transform.Find("JMLSettingsPanel/Preferences/VerticalLayoutGroup/MiddleRow/DebugMode").gameObject.GetComponent<Dropdown>();
+            consoleModeDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ConsoleMode").gameObject.GetComponent<Dropdown>();
+            consolePositionDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ConsolePosition").gameObject.GetComponent<Dropdown>();
+            showModsFolderDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
+            debugModeDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/MiddleRow/DebugMode").gameObject.GetComponent<Dropdown>();
 
-            menuMusicDropdown = UIVersionCanvas.transform.Find("JMLSettingsPanel").Find("Tweaks").Find("VerticalLayoutGroup").Find("TopRow").Find("MenuMusic").gameObject.GetComponent<Dropdown>();
-            menuMusicSlider = UIVersionCanvas.transform.Find("JMLSettingsPanel").Find("Tweaks").Find("VerticalLayoutGroup").Find("TopRow").Find("MenuMusicVolume").gameObject.GetComponent<Slider>();
-            uncleDropdown = UIVersionCanvas.transform.Find("JMLSettingsPanel").Find("Tweaks").Find("VerticalLayoutGroup").Find("TopRow").Find("Uncle").gameObject.GetComponent<Dropdown>();
-            experimentalCCDropdown = UIVersionCanvas.transform.Find("JMLSettingsPanel").Find("Tweaks").Find("VerticalLayoutGroup").Find("BottomRow").Find("ExperimentalCC").gameObject.GetComponent<Dropdown>();
+            menuMusicDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/TopRow/MenuMusic").gameObject.GetComponent<Dropdown>();
+            menuMusicSlider = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/TopRow/MenuMusicVolume").gameObject.GetComponent<Slider>();
+            uncleDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/TopRow/Uncle").gameObject.GetComponent<Dropdown>();
+            experimentalCCDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/BottomRow/ExperimentalCC").gameObject.GetComponent<Dropdown>();
 
-            UIVersionCanvas.transform.Find("JMLSettingsPanel").Find("Accessibility").Find("VerticalLayoutGroup").Find("TopRow").Find("SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
+            UIVersionCanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
 
             SetOptionsValues();
 
@@ -302,11 +330,12 @@ namespace JaLoader
         {
             if (Language.CurrentLanguage().Equals(LanguageCode.EN))
             {
-                Component component = GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponents<Component>()[3];
-                string versionText = (string)component.GetType().GetProperty("text").GetValue(component, null);
-                versionText = System.Text.RegularExpressions.Regex.Replace(versionText, @"JALOPY", "");
-                versionText = System.Text.RegularExpressions.Regex.Replace(versionText, @"\s", "");
-                component.GetType().GetProperty("text").SetValue(component, $"JALOPY {versionText}|JALOADER {settingsManager.Version}", null);
+                //Component component = GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponents<Component>()[3];
+                string versionText = GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text;//(string)component.GetType().GetProperty("text").GetValue(component, null);
+                versionText = Regex.Replace(versionText, @"JALOPY", "");
+                versionText = Regex.Replace(versionText, @"\s", "");
+                GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {settingsManager.Version}";
+                //component.GetType().GetProperty("text").SetValue(component, $"JALOPY {versionText}|JALOADER {settingsManager.Version}", null);
             }
         }
 
@@ -428,7 +457,7 @@ namespace JaLoader
 
         public void ToggleModMenu()
         {
-            if (!book.BookClosed)
+            if (!IsBookClosed())
             {
                 book.CloseBook();
             }
@@ -439,7 +468,7 @@ namespace JaLoader
 
         public void ToggleModLoaderSettings_Main()
         {
-            if (!book.BookClosed)
+            if (!IsBookClosed())
             {
                 book.CloseBook();
             }

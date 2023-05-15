@@ -10,6 +10,7 @@ using UnityEngine.EventSystems;
 using System.Reflection;    
 using System.IO;
 using System.Collections;
+using Microsoft.Win32.SafeHandles;
 
 namespace JaLoader
 {
@@ -52,9 +53,14 @@ namespace JaLoader
         public bool finishedLoadingMods;
         private bool skippedIntro;
 
+        public bool IsCrackedVersion { get; private set; }
+
         private void Start()
         {
             DontDestroyOnLoad(gameObject);
+
+            CheckForCrack();
+
             settingsManager = gameObject.AddComponent<SettingsManager>();
             uiManager = gameObject.AddComponent<UIManager>();
             gameObject.AddComponent<CustomObjectsManager>();
@@ -153,7 +159,7 @@ namespace JaLoader
             GameObject uncleHelperObj = Instantiate(new GameObject());
             modHelperObj.name = "ModHelper";
             uncleHelperObj.name = "UncleHelper";
-            modHelperObj.AddComponent<ModReferences>();
+            modHelperObj.AddComponent<ModHelper>();
             uncleHelperObj.AddComponent<UncleHelper>();
 
             DontDestroyOnLoad(modHelperObj);
@@ -167,7 +173,7 @@ namespace JaLoader
             foreach (FileInfo modFile in mods)
             {
                 uiManager.modTemplateObject = Instantiate(uiManager.modTemplatePrefab);
-                uiManager.modTemplateObject.transform.parent = uiManager.UIVersionCanvas.transform.Find("JMLModsPanel").Find("Scroll View").GetChild(0).GetChild(0).transform;
+                uiManager.modTemplateObject.transform.parent = uiManager.UIVersionCanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform;
                 uiManager.modTemplateObject.SetActive(true);
 
                 try
@@ -266,6 +272,7 @@ namespace JaLoader
                 else
                 {
                     disabledMods.Remove(mod);
+                    disabledMods.Remove(mod); // bug "fix"
                     toggleBtn.text = "Disable";
                     mod.gameObject.SetActive(true);
                 }
@@ -300,6 +307,32 @@ namespace JaLoader
             }
 
             return null;
+        }
+
+        private void CheckForCrack()
+        {
+            var mainGameFolder = $@"{Application.dataPath}\..";
+
+            List<string> commonCrackFiles = new List<string>()
+            {
+                "codex64.dll",
+                "steam_api64.cdx",
+                "steamclient64.dll",
+                "steam_emu.ini",
+                "SmartSteamEmu.dll",
+                "SmartSteamEmu64.dll",
+                "Launcher.exe",
+                "Launcher_x64.exe",
+            };
+
+            foreach (var file in commonCrackFiles)
+            {
+                if (File.Exists($@"{mainGameFolder}\{file}") || Directory.Exists($@"{mainGameFolder}\SmartSteamEmu"))
+                {
+                    IsCrackedVersion = true;
+                    break;
+                }
+            }
         }
     } 
 }

@@ -38,29 +38,34 @@ namespace JaLoader
 
         [SerializeField] private CustomObjectSave data = new CustomObjectSave();
 
+        private Dictionary<string, GameObject> database = new Dictionary<string, GameObject>();
+        private Dictionary<(string, int), GameObject> spawnedDatabase = new Dictionary<(string, int), GameObject>();
+
         private List<GameObject> engineCatalogue = new List<GameObject>();
 
         private List<Transform> bootSlots = new List<Transform>();
         private GameObject boot;
+
+        public int currentFreeID = 0;
         private bool allObjectsRegistered;
-
-        private void Start()
-        {
-
-        }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Alpha5))
-            {
-                Console.Instance.Log("test");
-                SaveData();
-            }
+            if (!SettingsManager.Instance.DebugMode)
+                return;
 
-            if (Input.GetKeyDown(KeyCode.Alpha6))
+            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))
             {
-                Console.Instance.Log("test 2");
-                LoadData(true);
+                if (Input.GetKeyDown(KeyCode.S))
+                {
+                    Console.Instance.LogDebug("JaLoader", "Saved custom objects status!");
+                    SaveData();
+                }
+                else if (Input.GetKeyDown(KeyCode.L))
+                {
+                    Console.Instance.LogDebug("JaLoader", "Loaded custom objects status!");
+                    LoadData(true);
+                }
             }
         }
 
@@ -68,7 +73,6 @@ namespace JaLoader
         {
             if (message == "Saved" && type == LogType.Log)
             {
-                Console.Instance.Log(stack);
                 SaveData();
             }
         }
@@ -88,7 +92,7 @@ namespace JaLoader
 
             if (SceneManager.GetActiveScene().buildIndex == 3)
             {
-                ModReferences.Instance.RefreshPartHolders();
+                ModHelper.Instance.RefreshPartHolders();
 
                 var bootObjects = FindObjectsOfType<InventoryLogicC>();
 
@@ -109,10 +113,6 @@ namespace JaLoader
                 StartCoroutine(LoadDelay(1f, true));
             }
         }
-
-        public int currentFreeID = 0;
-        private Dictionary<string, GameObject> database = new Dictionary<string, GameObject>();
-        private Dictionary<(string, int), GameObject> spawnedDatabase = new Dictionary<(string, int), GameObject>();
 
         public void RegisterObject(GameObject obj, string registryName)
         {
@@ -186,31 +186,32 @@ namespace JaLoader
 
         public void SaveData()
         {
-            Console.Instance.Log("1");
-            Console.Instance.Log(spawnedDatabase.Keys.Count);
-            Console.Instance.Log(spawnedDatabase.Keys.ToArray()[0]);
-
             if (data != null)
                 data.Clear();
             else
                 data = new CustomObjectSave();
 
-            Console.Instance.Log("1.5");     
-
             foreach (var entry in spawnedDatabase.Keys)
             {
-                Console.Instance.Log("2");
+                if (!spawnedDatabase[entry].GetComponent<ObjectPickupC>())
+                    return;
+
                 List<float> parameters = new List<float>();
                 PartTypes type = PartTypes.Engine;
                 bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine;
-                Console.Instance.Log("3");
                 string json = "";
                 Vector3 trunkPos = Vector3.zero;
+                bool shouldSaveThisObject = true;
+
+                if (!inEngine && spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt == null)
+                    shouldSaveThisObject = false;
+
+                if (!shouldSaveThisObject)
+                    return;
 
                 if (spawnedDatabase[entry].GetComponent<EngineComponentC>())
                 {
                     parameters.Add(spawnedDatabase[entry].GetComponent<EngineComponentC>().condition);
-                    Console.Instance.Log("4");
 
                     switch (spawnedDatabase[entry].GetComponent<ObjectPickupC>().engineString)
                     {
@@ -243,18 +244,13 @@ namespace JaLoader
                             break;
                     }
                 }
-                Console.Instance.Log("5");
-                Console.Instance.Log(spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt);
 
                 if(!inEngine)
                     trunkPos = spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt.localPosition;
 
-                Console.Instance.Log("6");
-
                 json = TupleToString((inEngine, type, parameters.ToArray(), trunkPos));
                 StringToTuple(json);
 
-                Console.Instance.Log("7");
                 string name = $"{entry.Item1}_{entry.Item2}";
                 
                 data.Add(name, json);
@@ -265,11 +261,17 @@ namespace JaLoader
 
         public void LoadData(bool full)
         {
+            if (spawnedDatabase != null)
+                spawnedDatabase.Clear();
+            else
+                spawnedDatabase = new Dictionary<(string, int), GameObject>();
+
+            currentFreeID = 0;
+
             if (File.Exists(Path.Combine(Application.persistentDataPath, @"CustomObjectsData.json")))
             {
                 string json = File.ReadAllText(Path.Combine(Application.persistentDataPath, @"CustomObjectsData.json"));
                 data = JsonUtility.FromJson<CustomObjectSave>(json);
-                Console.Instance.Log("1");
 
                 foreach (string entry in data.Keys)
                 {
@@ -277,7 +279,6 @@ namespace JaLoader
                     string id = entry.Split('_')[1];
 
                     (bool, PartTypes, float[], Vector3) tuple = StringToTuple(data[entry]);
-                    Console.Instance.Log("2");
                     GameObject obj = SpawnObject(name, Vector3.zero, Quaternion.identity);
                     obj.GetComponent<Rigidbody>().isKinematic = true;
                     obj.GetComponent<Collider>().isTrigger = true;
@@ -285,50 +286,44 @@ namespace JaLoader
                     {
                         obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
                     }
-                    Console.Instance.Log("3");
                     
-                    Console.Instance.Log(tuple.Item1);
                     #region Load In Engine
                     if (tuple.Item1.Equals(true))
                     {
                         switch (tuple.Item2)
                         {
                             case PartTypes.Engine:
-                                Console.Instance.Log("3.5");
-                                //  Destroy(ModReferences.Instance.partHolders[PartTypes.Engine].Find("EngineBlock").gameObject);
-                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.Engine];
-                                Console.Instance.Log("3.75");
+                                obj.transform.parent = ModHelper.Instance.partHolders[PartTypes.Engine];
                                 PlaceObjectInEngine(obj);
-                                Console.Instance.Log("4");
                                 break;
 
                             case PartTypes.FuelTank:
-                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.FuelTank];
+                                obj.transform.parent = ModHelper.Instance.partHolders[PartTypes.FuelTank];
                                 PlaceObjectInEngine(obj);
                                 break;
 
                             case PartTypes.Carburettor:
-                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.Carburettor];
+                                obj.transform.parent = ModHelper.Instance.partHolders[PartTypes.Carburettor];
                                 PlaceObjectInEngine(obj);
                                 break;
 
                             case PartTypes.AirFilter:
-                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.AirFilter];
+                                obj.transform.parent = ModHelper.Instance.partHolders[PartTypes.AirFilter];
                                 PlaceObjectInEngine(obj);
                                 break;
 
                             case PartTypes.IgnitionCoil:
-                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.IgnitionCoil];
+                                obj.transform.parent = ModHelper.Instance.partHolders[PartTypes.IgnitionCoil];
                                 PlaceObjectInEngine(obj);
                                 break;
 
                             case PartTypes.Battery:
-                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.Battery];
+                                obj.transform.parent = ModHelper.Instance.partHolders[PartTypes.Battery];
                                 PlaceObjectInEngine(obj);
                                 break;
 
                             case PartTypes.WaterTank:
-                                obj.transform.parent = ModReferences.Instance.partHolders[PartTypes.WaterTank];
+                                obj.transform.parent = ModHelper.Instance.partHolders[PartTypes.WaterTank];
                                 PlaceObjectInEngine(obj);
                                 break;
                         }
@@ -343,7 +338,6 @@ namespace JaLoader
                         {
                             if (bootSlots[i].localPosition == tuple.Item4)
                             {
-                                Console.Instance.Log(bootSlots[i].name);
                                 bootSlots[i].GetComponent<InventoryRelayC>().Occupy();
                                 obj.transform.parent = bootSlots[i].transform;
                                 obj.GetComponent<ObjectPickupC>().inventoryPlacedAt = bootSlots[i].transform;
@@ -366,13 +360,10 @@ namespace JaLoader
                 Destroy(obj.transform.parent.GetChild(0).gameObject);
             }
 
-            Console.Instance.Log(obj.name);
             obj.transform.localPosition = Vector3.zero;
             obj.transform.localEulerAngles = Vector3.zero;
-            Console.Instance.Log(obj.GetComponent<ObjectPickupC>());
             obj.GetComponent<ObjectPickupC>().isInEngine = true;
             obj.GetComponent<ObjectPickupC>().placedAt = obj.transform.parent.gameObject;
-            Console.Instance.Log(obj.transform.parent);
             obj.transform.parent.GetComponent<HoldingLogicC>().isOccupied = true;
             obj.transform.parent.GetComponent<Collider>().enabled = false;
 
@@ -433,11 +424,12 @@ namespace JaLoader
 
         private IEnumerator LoadDelay(float seconds, bool fullLoad)
         {
-            ModReferences.Instance.RefreshPartHolders();
+            ModHelper.Instance.RefreshPartHolders();
             
             yield return new WaitForSeconds(seconds);
 
             LoadData(fullLoad);
+            LaikaCatalogueExtension.Instance.AddModsPage();
         }
     }
 

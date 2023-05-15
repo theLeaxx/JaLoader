@@ -107,6 +107,8 @@ namespace JaLoader
 
         public void SaveSettings()
         {
+            DisabledMods.Clear();
+
             _settings.SkipLanguageSelector = SkipLanguage;
             _settings.DisableUncle = DisableUncle;
             _settings.DebugMode = DebugMode;

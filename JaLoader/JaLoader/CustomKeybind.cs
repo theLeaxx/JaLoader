@@ -11,6 +11,7 @@ namespace JaLoader
     {
         public KeyCode SelectedKey;
         public KeyCode AltSelectedKey;
+        public bool EnableAltKey;
 
         bool waiting;
         WaitingFor waitingFor = WaitingFor.Nothing;
