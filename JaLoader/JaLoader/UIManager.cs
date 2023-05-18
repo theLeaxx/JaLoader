@@ -61,6 +61,7 @@ namespace JaLoader
         public GameObject modOptionsToggleTemplate;
         public GameObject modOptionsSliderTemplate;
 
+        private GameObject noticePanel;
         public GameObject modTemplateObject;
 
         public GameObject modLoaderText;
@@ -88,25 +89,12 @@ namespace JaLoader
 
         private GameObject menuMusicPlayer;
 
-        private bool isNewEnough;
-        private bool checkedVersion;
-
         private bool IsBookClosed()
         {
-            if (isNewEnough)
-            {
-                return (bool)book.GetType().GetField("BookClosed").GetValue(book);
-            }
-            else
-            {
-                return (bool)book.GetType().GetField("bookClosed").GetValue(book);
-            }
-        }
+            if (book == null)
+                return true;
 
-        private void CheckIfNewEnough()
-        {
-            checkedVersion = true;
-            isNewEnough = book.GetType().GetField("BookClosed") != null;
+            return (bool)book.GetType().GetField("bookClosed", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetValue(book);
         }
 
         private void Update()
@@ -171,9 +159,6 @@ namespace JaLoader
                 UpdateMenuMusic(!settingsManager.DisableMenuMusic, (float)settingsManager.MenuMusicVolume / 100);
 
                 book = FindObjectOfType<MainMenuBookC>();
-
-                if (!checkedVersion)
-                    CheckIfNewEnough();
 
                 exitConfirmButton = GameObject.Find("ExitPage").transform.GetChild(0).gameObject;
                 isOnExitPage = exitConfirmButton.activeSelf;
@@ -260,6 +245,7 @@ namespace JaLoader
             modConsole = UIVersionCanvas.transform.Find("JLConsole/Console").gameObject;
             messageTemplatePrefab = modConsole.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
             moreInfoPanelMods = UIVersionCanvas.transform.Find("JLModsPanel/MoreInfo").gameObject;
+            noticePanel = UIVersionCanvas.transform.Find("JLNotice").gameObject;
 
             GameObject consoleObj = Instantiate(new GameObject());
             consoleObj.AddComponent<Console>();
@@ -272,7 +258,7 @@ namespace JaLoader
             if (settingsManager.HideModFolderLocation)
                 modFolderText.SetActive(false);
 
-            modLoaderText.GetComponent<Text>().text = $"JaLoader <color=yellow>{settingsManager.Version}</color> loaded!";
+            modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(settingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
             modFolderText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{settingsManager.ModFolderLocation}</color>";
 
             UIVersionCanvas.transform.Find("JLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
@@ -292,6 +278,8 @@ namespace JaLoader
             UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
             UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
             UIVersionCanvas.transform.Find("JLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+
+            noticePanel.transform.Find("UnderstandButton").GetComponent<Button>().onClick.AddListener(CloseNotice);
 
             modSettingsScrollView = UIVersionCanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
             modSettingsScrollViewContent = modSettingsScrollView.transform.GetChild(0).GetChild(0).gameObject;
@@ -319,9 +307,19 @@ namespace JaLoader
 
             SetOptionsValues();
 
-            Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.Version} loaded successfully!");
+            Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
 
-            StartCoroutine(modLoader.LoadMods());
+            StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
+
+            if (modLoader.IsCrackedVersion)
+            {
+                ShowNotice("PIRATED GAME DETECTED", "You are using a pirated version of Jalopy.\r\n\r\nYou may encounter issues with certain mods, as well as more bugs in general.\r\n\r\nIf you encounter any game-breaking bugs, feel free to submit them to the official GitHub for JaLoader. Remember to mark them with the \"pirated\" tag!\r\n\r\nHave fun!");
+            }
+
+            if (settingsManager.IsPreReleaseVersion)
+            {
+                ShowNotice("USING A PRE-RELEASE VERSION OF JALOADER", "You are using a pre-release version of JaLoader.\r\n\r\nThese versions are prone to bugs and may cause issues with certain mods.\r\n\r\nPlease report any bugs you encounter to the JaLoader GitHub page, marking them with the \"pre-release\" tag.\r\n\r\nHave fun!");
+            }
 
             ab.Unload(false);
         }
@@ -334,8 +332,13 @@ namespace JaLoader
                 string versionText = GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text;//(string)component.GetType().GetProperty("text").GetValue(component, null);
                 versionText = Regex.Replace(versionText, @"JALOPY", "");
                 versionText = Regex.Replace(versionText, @"\s", "");
-                GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {settingsManager.Version}";
+                GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {(settingsManager.IsPreReleaseVersion ? "PR 0.1" : settingsManager.GetVersionString())}";
                 //component.GetType().GetProperty("text").SetValue(component, $"JALOPY {versionText}|JALOADER {settingsManager.Version}", null);
+
+                if (double.Parse(versionText) < 1.105)
+                {
+                    ShowNotice("OUTDATED GAME DETECTED", "You are using an outdated version of Jalopy.\r\n\r\nYou may encounter issues with certain mods, as well as more bugs in general.\r\n\r\nIf you encounter bugs, please make sure to ask or check if they exist in newer versions as well before reporting them.\r\n\r\nHave fun!");
+                }
             }
         }
 
@@ -502,6 +505,12 @@ namespace JaLoader
             FindObjectOfType<MenuMouseInteractionsC>().restrictRay = isObstructing;
         }
 
+        private void SetObstructRay(bool value)
+        {
+            isObstructing = value;
+            FindObjectOfType<MenuMouseInteractionsC>().restrictRay = value;
+        }
+
         private void SaveValues()
         {
             ConsoleModes consoleMode = (ConsoleModes)consoleModeDropdown.value;
@@ -529,6 +538,43 @@ namespace JaLoader
             UpdateMenuMusic(!Convert.ToBoolean(menuMusicDropdown.value), (float)menuMusicSlider.value / 100);
 
             UncleHelper.Instance.UncleEnabled = !settingsManager.DisableUncle;
+        }
+
+        private List<(string, string)> noticesToShow = new List<(string, string)>();
+        private bool showingNotice;
+
+        public void ShowNotice(string subtitle, string message)
+        {
+            noticesToShow.Add((subtitle, message));
+
+            noticePanel.SetActive(true);
+
+            SetObstructRay(true);
+
+            if (!showingNotice)
+            {
+                noticePanel.transform.Find("Subtitle").GetComponent<Text>().text = subtitle;
+                noticePanel.transform.Find("Message").GetComponent<Text>().text = message;
+            }
+
+            showingNotice = true;
+        }
+
+        private void CloseNotice()
+        {
+            noticesToShow.RemoveAt(0);
+
+            if(noticesToShow.Count == 0) 
+            {
+                SetObstructRay(false);
+                showingNotice = false;
+                noticePanel.SetActive(false);
+            }
+            else
+            {
+                noticePanel.transform.Find("Subtitle").GetComponent<Text>().text = noticesToShow[0].Item1;
+                noticePanel.transform.Find("Message").GetComponent<Text>().text = noticesToShow[0].Item2;
+            }
         }
     }
 }

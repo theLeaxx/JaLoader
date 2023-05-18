@@ -25,15 +25,15 @@ namespace JaLoader
         }
 
         public bool UncleEnabled = !SettingsManager.Instance.DisableUncle;
-        public GameObject Uncle;
+        public UncleLogicC Uncle;
 
         public void OnSceneChange(Scene current, Scene next)
         {
             if(SceneManager.GetActiveScene().buildIndex == 3) 
             {
-                Uncle = FindObjectOfType<UncleLogicC>().gameObject;
+                Uncle = FindObjectOfType<UncleLogicC>();
 
-                Uncle.SetActive(UncleEnabled);
+                Uncle.uncleGoneForever = !UncleEnabled;
             }
         }
 
@@ -42,7 +42,7 @@ namespace JaLoader
             UncleEnabled = false;
             SettingsManager.Instance.DisableUncle = true;
 
-            Uncle.SetActive(false);
+            Uncle.uncleGoneForever = true;
         }
 
         private void EnableUncle()
@@ -50,7 +50,7 @@ namespace JaLoader
             UncleEnabled = transform;
             SettingsManager.Instance.DisableUncle = false;
 
-            Uncle.SetActive(true);
+            Uncle.uncleGoneForever = false;
         }
 
         private void Talk(string message)

@@ -64,7 +64,8 @@ namespace JaLoader
             settingsManager = gameObject.AddComponent<SettingsManager>();
             uiManager = gameObject.AddComponent<UIManager>();
             gameObject.AddComponent<CustomObjectsManager>();
-            gameObject.AddComponent<CustomKeybind>();
+            gameObject.AddComponent<DebugObjectSpawner>();
+            gameObject.AddComponent<ReferencesLoader>();
 
             if (settingsManager.SkipLanguage && !skippedIntro)
             {
@@ -125,6 +126,12 @@ namespace JaLoader
                             modStatusTextRef[disabledMods.ToArray()[i]].text = "Enable";
                         }
                     }
+
+
+                    if (modsNumber == 1)
+                        Console.Instance.LogMessage("JaLoader", $"1 mod found ({disabledMods.Count} disabled)!");
+                    else
+                        Console.Instance.LogMessage("JaLoader", $"{modsNumber} mods found ({disabledMods.Count} disabled)!");
 
                     LoadedDisabledMods = true;
                 }
@@ -191,27 +198,21 @@ namespace JaLoader
 
                     Component ModComponent = ModObject.AddComponent(modType);
                     Mod mod = ModObject.GetComponent<Mod>();
+                    if (mod.ModID == null || mod.ModName == null || mod.ModAuthor == null || mod.ModVersion == null || mod.ModID == string.Empty || mod.ModName == string.Empty || mod.ModAuthor == string.Empty || mod.ModVersion == string.Empty)
+                    {
+                        Console.Instance.LogError(modFile.Name, $"{modFile.Name} contains no information related to its ID, name, author or version.");
+                        throw new Exception();
+                    }
+
                     ModObject.name = mod.ModID;
                     mod.SettingsDeclaration();
-
-                    if (mod.ModName == null || mod.ModAuthor == null || mod.ModVersion == null)
-                    {
-                        Console.Instance.LogError(modFile.Name, $"{modFile.Name} contains no information related to its name, author or version.");
-                    }
 
                     if (mod.UseAssets)
                     {
                         mod.AssetsPath = $@"{settingsManager.ModFolderLocation}\Assets\{mod.ModID}";
+
                         if (!Directory.Exists(mod.AssetsPath))
-                        {
-                            Console.Instance.LogError(mod.ModID, $"Mod {mod.ModName} uses custom assets, but its assets folder does not exist.");
-
-                            uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = mod.ModName;
-                            uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
-                            Destroy(ModObject);
-
-                            uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, mod.ModVersion, $"{mod.ModName} encountered an error while loading! Check the console for more info."); });
-                        }
+                            Directory.CreateDirectory(mod.AssetsPath);
                     }
 
                     mod.CustomObjectsRegistration();
@@ -222,11 +223,16 @@ namespace JaLoader
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, mod.ModVersion, mod.ModDescription); });
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"); });
 
-                    if (mod.WhenToInit == WhenToInit.InMenu)
-                        modsInitInMenu.Add(mod);
+                    switch (mod.WhenToInit)
+                    {
+                        case WhenToInit.InMenu:
+                            modsInitInMenu.Add(mod);
+                            break;
 
-                    if (mod.WhenToInit == WhenToInit.InGame)
-                        modsInitInGame.Add(mod);
+                        case WhenToInit.InGame:
+                            modsInitInGame.Add(mod);
+                            break;
+                    }
 
                     GameObject tempObj = uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").Find("Text").gameObject;
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleMod(mod, tempObj.GetComponent<Text>()); });

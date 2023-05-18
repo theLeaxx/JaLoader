@@ -20,6 +20,7 @@ namespace JaLoader
         public virtual string ModAuthor { get; set; }
         public virtual string ModDescription { get; set; }
         public virtual string ModVersion { get; set; }
+        public virtual string GitHubLink { get; set; }
         public virtual bool UseAssets { get; set; }
         public virtual WhenToInit WhenToInit { get; set; }
 
