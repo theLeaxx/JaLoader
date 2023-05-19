@@ -9,21 +9,12 @@ A mod loader for Jalopy.
 
 You can report any issues and/or ideas in the [issues](https://github.com/theLeaxx/JaLoader/issues) tab.
 
-## Installation
-* Download the latest release from [here](https://github.com/theLeaxx/JaLoader/releases/latest)
-* Extract the contents to anywhere you'd like
-* Run the patcher (`JaPatcher.exe`)
-* Locate the game's executable (usually at `C:\Program Files (x86)\Steam\steamapps\common\Jalopy`)
-* Select the mod folder location
-* Click "Install"
-* Once done, you can now install mods into the selected mod folder path
+## [How to install?](https://github.com/theLeaxx/JaLoader/wiki/Installing-JaLoader-via-JaPatcher)
 
-## For modders
-* ! The wiki isn't made yet;
-* Check out the [wiki](https://github.com/theLeaxx/JaLoader/wiki), everything's there.
+## [For modders](https://github.com/theLeaxx/JaLoader/wiki)
+* **The wiki isn't complete yet**
 
-## Trello board
-* [Link](https://trello.com/b/0tgj7ZGk/jaloader)
+## [Trello board](https://trello.com/b/0tgj7ZGk/jaloader)
 
 ## Libraries used
 * [Theraot.Core](https://github.com/theraot/Theraot/) (**MIT**)
