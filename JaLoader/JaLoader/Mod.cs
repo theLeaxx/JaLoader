@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace JaLoader
         public virtual string ModAuthor { get; set; }
         public virtual string ModDescription { get; set; }
         public virtual string ModVersion { get; set; }
+        public virtual string GitHubLink { get; set; }
         public virtual bool UseAssets { get; set; }
         public virtual WhenToInit WhenToInit { get; set; }
 
@@ -200,6 +202,17 @@ namespace JaLoader
             settingsIDS.Add($"{ID}_Slider");
         }
 
+        //TO DO: make a keybind template
+        public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey)
+        {
+            settingsIDS.Add($"{ID}_Keybind");
+        }
+
+        public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey, KeyCode defaultSecondaryKey)
+        {
+            settingsIDS.Add($"{ID}_Keybind");
+        }
+
         public Dropdown GetDropdown(string ID)
         {
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
@@ -224,6 +237,14 @@ namespace JaLoader
                 return null;
         }
 
+        public CustomKeybind GetKeybind(string ID)
+        {
+            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponentInChildren<CustomKeybind>();
+            else
+                return null;
+        }
+
         public void SaveModSettings()
         {
             SettingsValues values = new SettingsValues();
@@ -244,6 +265,14 @@ namespace JaLoader
 
                     case "Slider":
                         values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value);
+                        break;
+
+                    case "eybind":
+                        values.Add($"{ID}_primary", (int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().SelectedKey);
+                        if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().EnableAltKey)
+                        {
+                            values.Add($"{ID}_secondary", (int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().AltSelectedKey);
+                        }
                         break;
 
                     default:
@@ -291,6 +320,14 @@ namespace JaLoader
 
                             case "Slider":
                                 UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = values[ID];
+                                break;
+
+                            case "eybind":
+                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().SelectedKey = (KeyCode)values[$"{ID}_primary"];
+                                if (values.ContainsKey($"{ID}_secondary"))
+                                {
+                                    UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().AltSelectedKey = (KeyCode)values[$"{ID}_secondary"];
+                                }
                                 break;
 
                             default:

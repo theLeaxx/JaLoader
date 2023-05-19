@@ -10,6 +10,7 @@ using UnityEngine.EventSystems;
 using System.Reflection;    
 using System.IO;
 using System.Collections;
+using Microsoft.Win32.SafeHandles;
 
 namespace JaLoader
 {
@@ -49,16 +50,22 @@ namespace JaLoader
         public bool InitializedInGameMods;
         private bool InitializedInMenuMods;
         
-        private bool finishedLoadingMods;
+        public bool finishedLoadingMods;
         private bool skippedIntro;
+
+        public bool IsCrackedVersion { get; private set; }
 
         private void Start()
         {
             DontDestroyOnLoad(gameObject);
+
+            CheckForCrack();
+
             settingsManager = gameObject.AddComponent<SettingsManager>();
             uiManager = gameObject.AddComponent<UIManager>();
             gameObject.AddComponent<CustomObjectsManager>();
-            gameObject.AddComponent<CustomKeybind>();
+            gameObject.AddComponent<DebugObjectSpawner>();
+            gameObject.AddComponent<ReferencesLoader>();
 
             if (settingsManager.SkipLanguage && !skippedIntro)
             {
@@ -120,6 +127,12 @@ namespace JaLoader
                         }
                     }
 
+
+                    if (modsNumber == 1)
+                        Console.Instance.LogMessage("JaLoader", $"1 mod found ({disabledMods.Count} disabled)!");
+                    else
+                        Console.Instance.LogMessage("JaLoader", $"{modsNumber} mods found ({disabledMods.Count} disabled)!");
+
                     LoadedDisabledMods = true;
                 }
 
@@ -150,9 +163,14 @@ namespace JaLoader
         public IEnumerator LoadMods()
         {
             GameObject modHelperObj = Instantiate(new GameObject());
-            modHelperObj.name = "ModReferences";
-            modHelperObj.AddComponent<ModReferences>();
+            GameObject uncleHelperObj = Instantiate(new GameObject());
+            modHelperObj.name = "ModHelper";
+            uncleHelperObj.name = "UncleHelper";
+            modHelperObj.AddComponent<ModHelper>();
+            uncleHelperObj.AddComponent<UncleHelper>();
+
             DontDestroyOnLoad(modHelperObj);
+            DontDestroyOnLoad(uncleHelperObj);
 
             DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
@@ -162,7 +180,7 @@ namespace JaLoader
             foreach (FileInfo modFile in mods)
             {
                 uiManager.modTemplateObject = Instantiate(uiManager.modTemplatePrefab);
-                uiManager.modTemplateObject.transform.parent = uiManager.UIVersionCanvas.transform.Find("JMLModsPanel").Find("Scroll View").GetChild(0).GetChild(0).transform;
+                uiManager.modTemplateObject.transform.parent = uiManager.UIVersionCanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform;
                 uiManager.modTemplateObject.SetActive(true);
 
                 try
@@ -171,8 +189,7 @@ namespace JaLoader
 
                     Type[] allModTypes = modAssembly.GetTypes();
 
-                    string modTypeName = $"{Path.GetFileNameWithoutExtension(modFile.Name)}.{allModTypes[0].Name}";
-                    Type modType = modAssembly.GetType(modTypeName);
+                    Type modType = allModTypes.First(t => t.BaseType.Name == "Mod");
 
                     GameObject ModObject = Instantiate(new GameObject());
                     ModObject.transform.parent = null;
@@ -181,30 +198,21 @@ namespace JaLoader
 
                     Component ModComponent = ModObject.AddComponent(modType);
                     Mod mod = ModObject.GetComponent<Mod>();
+                    if (mod.ModID == null || mod.ModName == null || mod.ModAuthor == null || mod.ModVersion == null || mod.ModID == string.Empty || mod.ModName == string.Empty || mod.ModAuthor == string.Empty || mod.ModVersion == string.Empty)
+                    {
+                        Console.Instance.LogError(modFile.Name, $"{modFile.Name} contains no information related to its ID, name, author or version.");
+                        throw new Exception();
+                    }
+
                     ModObject.name = mod.ModID;
                     mod.SettingsDeclaration();
-
-                    if (mod.ModName == null || mod.ModAuthor == null || mod.ModVersion == null)
-                    {
-                        Console.Instance.LogError(modFile.Name, "Empty mod information.");
-                        throw new Exception($"Mod {modFile.Name} contains no information related to its name, author or version.");
-                    }
 
                     if (mod.UseAssets)
                     {
                         mod.AssetsPath = $@"{settingsManager.ModFolderLocation}\Assets\{mod.ModID}";
+
                         if (!Directory.Exists(mod.AssetsPath))
-                        {
-                            Console.Instance.LogError(mod.ModID, "Assets folder does not exist!");
-
-                            uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = mod.ModName;
-                            uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
-                            Destroy(ModObject);
-
-                            uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, mod.ModVersion, $"{mod.ModName} encountered an error while loading! Check the console for more info."); });
-
-                            throw new Exception($"Mod {mod.ModName} uses custom assets, but its assets folder does not exist.");
-                        }
+                            Directory.CreateDirectory(mod.AssetsPath);
                     }
 
                     mod.CustomObjectsRegistration();
@@ -215,11 +223,16 @@ namespace JaLoader
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, mod.ModVersion, mod.ModDescription); });
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"); });
 
-                    if (mod.WhenToInit == WhenToInit.InMenu)
-                        modsInitInMenu.Add(mod);
+                    switch (mod.WhenToInit)
+                    {
+                        case WhenToInit.InMenu:
+                            modsInitInMenu.Add(mod);
+                            break;
 
-                    if (mod.WhenToInit == WhenToInit.InGame)
-                        modsInitInGame.Add(mod);
+                        case WhenToInit.InGame:
+                            modsInitInGame.Add(mod);
+                            break;
+                    }
 
                     GameObject tempObj = uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").Find("Text").gameObject;
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleMod(mod, tempObj.GetComponent<Text>()); });
@@ -265,6 +278,7 @@ namespace JaLoader
                 else
                 {
                     disabledMods.Remove(mod);
+                    disabledMods.Remove(mod); // bug "fix"
                     toggleBtn.text = "Disable";
                     mod.gameObject.SetActive(true);
                 }
@@ -299,6 +313,32 @@ namespace JaLoader
             }
 
             return null;
+        }
+
+        private void CheckForCrack()
+        {
+            var mainGameFolder = $@"{Application.dataPath}\..";
+
+            List<string> commonCrackFiles = new List<string>()
+            {
+                "codex64.dll",
+                "steam_api64.cdx",
+                "steamclient64.dll",
+                "steam_emu.ini",
+                "SmartSteamEmu.dll",
+                "SmartSteamEmu64.dll",
+                "Launcher.exe",
+                "Launcher_x64.exe",
+            };
+
+            foreach (var file in commonCrackFiles)
+            {
+                if (File.Exists($@"{mainGameFolder}\{file}") || Directory.Exists($@"{mainGameFolder}\SmartSteamEmu"))
+                {
+                    IsCrackedVersion = true;
+                    break;
+                }
+            }
         }
     } 
 }

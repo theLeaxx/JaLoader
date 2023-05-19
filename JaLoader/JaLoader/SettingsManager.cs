@@ -32,8 +32,9 @@ namespace JaLoader
         [SerializeField] private Settings _settings = new Settings();
         [SerializeField] private ModsLocation _location = new ModsLocation();
 
-        public float Version = 0.1f;
-        public string ModFolderLocation;
+        private static decimal JaLoaderVersion = 10000.1M;
+        public string ModFolderLocation { get; private set; }
+        public bool IsPreReleaseVersion { get; private set; } = JaLoaderVersion >= 10000;
 
         public bool SkipLanguage;
         public bool DebugMode;
@@ -48,7 +49,36 @@ namespace JaLoader
         public List<string> DisabledMods = new List<string>();
 
         private readonly ModLoader modLoaderReference = ModLoader.Instance;
-        private readonly UIManager uiManager = UIManager.Instance;
+
+        public decimal GetVersion()
+        {
+            if (IsPreReleaseVersion)
+                return JaLoaderVersion - 10000;
+            else return JaLoaderVersion;
+        }
+
+        public string GetVersionString()
+        {
+            if (IsPreReleaseVersion)
+                return $"Pre-Release {GetVersion()}";
+            else return GetVersion().ToString();
+        }
+
+        public bool IsNewerThan(string version)
+        {
+            var versionStr = "";
+
+            if (IsPreReleaseVersion)
+                versionStr = (JaLoaderVersion - 10000).ToString();
+            else
+                GetVersionString();
+
+            var versionSpecified = int.Parse(version.Replace(".", ""));
+            var currentVersion = int.Parse(versionStr.Replace(".", ""));
+
+            if (currentVersion > versionSpecified) return true;
+            else return false;
+        }
 
         private void ReadSettings()
         {
@@ -107,6 +137,8 @@ namespace JaLoader
 
         public void SaveSettings()
         {
+            DisabledMods.Clear();
+
             _settings.SkipLanguageSelector = SkipLanguage;
             _settings.DisableUncle = DisableUncle;
             _settings.DebugMode = DebugMode;

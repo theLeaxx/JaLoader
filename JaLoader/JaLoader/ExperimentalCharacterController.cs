@@ -35,6 +35,8 @@ namespace JaLoader
 
         private bool setParkingBrake;
 
+        public bool isDebugCameraEnabled;
+
         /*bool lerping;
         bool lerpingTo0;
         bool coroutinesStoped;
@@ -77,6 +79,8 @@ namespace JaLoader
 
         void Update()
         {
+            if (isDebugCameraEnabled) return;
+
             if (!mouseLook.isSat && !carLogic.isPushingCar)
             {
                 canMove = true;

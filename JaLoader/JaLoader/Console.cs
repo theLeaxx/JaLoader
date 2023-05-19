@@ -65,11 +65,6 @@ namespace JaLoader
             ToggleVisibility(false);
 
             SetPosition(settingsManager.ConsolePosition);
-
-            if(ModLoader.Instance.modsNumber == 1)
-                LogMessage("JaLoader", "1 mod found & loaded!");
-            else
-                LogMessage("JaLoader", $"{ModLoader.Instance.modsNumber} mods found & loaded!");
         }
 
         public void SetPosition(ConsolePositions pos)
@@ -622,7 +617,7 @@ namespace JaLoader
 
         public void SendVersion()
         {
-            LogMessage("/", $"a_{settingsManager.Version}");
+            LogMessage("/", $"a_{settingsManager.GetVersionString()}");
         }
 
         public void Clear()

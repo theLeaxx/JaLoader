@@ -129,7 +129,7 @@
             // locateFolderDialog
             // 
             locateFolderDialog.FileName = "Jalopy.exe";
-            locateFolderDialog.Filter = "Jalopy executable|*.exe|All files|*.*";
+            locateFolderDialog.Filter = "Jalopy executable|*Jalopy.exe|All files|*.*";
             // 
             // groupBox2
             // 

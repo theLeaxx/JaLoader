@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>1.0</Version>
+    <Title>JaPatcher</Title>
+    <Authors>Leaxx</Authors>
+    <Company>Leaxx</Company>
+    <Product>JaPatcher</Product>
+    <PackageProjectUrl>https://github.com/theLeaxx/JaLoader</PackageProjectUrl>
+    <Description>Installer for JaLoader.</Description>
+    <FileVersion>1.0</FileVersion>
+    <AssemblyVersion></AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+  </ItemGroup>
+
+</Project>
