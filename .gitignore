@@ -365,21 +365,15 @@ FodyWeavers.xsd
 JaLoader/JaLoader/bin
 JaLoader/JaLoader/obj
 JaLoader/JaLoader/Properties
-JaLoader/JaLoader/JaLoader.csproj
 JaLoader/JaLoader/packages.config
-JaLoader/JaLoader.sln
 
 JaPatcher/JaPatcher/bin
 JaPatcher/JaPatcher/obj
 JaPatcher/JaPatcher/Properties
-JaPatcher/JaPatcher/JaPatcher.csproj
 JaPatcher/JaPatcher/packages.config
-JaPatcher/JaPatcher.sln
 
 JaPreLoader/JaPreLoader/bin
 JaPreLoader/JaPreLoader/obj
 JaPreLoader/JaPreLoader/Properties
-JaPreLoader/JaPreLoader/JaPreLoader.csproj
 JaPreLoader/JaPreLoader/packages.config
-JaPreLoader/JaPreLoader.sln
 JaPreLoader/JaPreLoader/packages

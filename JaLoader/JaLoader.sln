@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaLoader", "JaLoader\JaLoader.csproj", "{40DD10DA-319A-4A81-9B79-929DF9DD8F18}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{40DD10DA-319A-4A81-9B79-929DF9DD8F18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40DD10DA-319A-4A81-9B79-929DF9DD8F18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40DD10DA-319A-4A81-9B79-929DF9DD8F18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40DD10DA-319A-4A81-9B79-929DF9DD8F18}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {500E9521-2D14-4202-A6A5-BE71EF4EEF5B}
+	EndGlobalSection
+EndGlobal

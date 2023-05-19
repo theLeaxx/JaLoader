@@ -138,15 +138,11 @@ namespace JaLoader
                 }
 
                 if (waitingFor == WaitingFor.Primary)
-                {
                     SelectedKey = key;
-                    waitingFor = WaitingFor.Nothing;
-                }
                 else if (waitingFor == WaitingFor.Secondary)
-                {
                     AltSelectedKey = key;
-                    waitingFor = WaitingFor.Nothing;
-                }
+
+                waitingFor = WaitingFor.Nothing;
             }
         }
 
