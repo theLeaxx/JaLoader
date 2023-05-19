@@ -23,8 +23,9 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 * [Link](https://trello.com/b/0tgj7ZGk/jaloader)
 
 ## Libraries used
-* [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)
+* [Theraot.Core](https://github.com/theraot/Theraot/) (**MIT**)
 * [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop) (**LGPL 2.1**)
+* [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)
 
 ## Contact
 You can contact me on Discord at `Leaxx#7814`. Feel free to suggest new features.
