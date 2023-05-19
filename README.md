@@ -1,5 +1,8 @@
 # JaLoader
 
+<img src="https://github.com/theLeaxx/JaLoader/assets/101940826/9c3148c2-9db0-4357-874d-a1ed0f929f52" width="300">
+
+
 [![](https://img.shields.io/github/v/release/theLeaxx/JaLoader)](#) 
 
 A mod loader for Jalopy.
