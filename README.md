@@ -17,6 +17,7 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 ## [Trello board](https://trello.com/b/0tgj7ZGk/jaloader)
 
 ## Libraries used
+* [Octokit.NET](https://github.com/octokit/octokit.net/) (**MIT**)
 * [Theraot.Core](https://github.com/theraot/Theraot/) (**MIT**)
 * [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop) (**LGPL 2.1**)
 * [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)
