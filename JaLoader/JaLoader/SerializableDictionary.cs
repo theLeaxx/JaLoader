@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace JaLoader
 {
-    [System.Serializable]
+    /// <summary>
+    /// A Dictionary that can be serialized.
+    /// </summary>
+    [Serializable]
     public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
         [SerializeField]
@@ -15,7 +16,6 @@ namespace JaLoader
         [SerializeField]
         private List<TValue> values = new List<TValue>();
 
-        // save the dictionary to lists
         public void OnBeforeSerialize()
         {
             keys.Clear();
@@ -27,13 +27,12 @@ namespace JaLoader
             }
         }
 
-        // load dictionary from lists
         public void OnAfterDeserialize()
         {
             Clear();
 
             if (keys.Count != values.Count)
-                Console.Instance.LogError(string.Format("there are {0} keys and {1} values after deserialization. Make sure that both key and value types are serializable."));
+                Console.Instance.LogError($"There are {keys.Count} keys and {values.Count} values after deserialization. Make sure that both key and value types are serializable");
 
             for (int i = 0; i < keys.Count; i++)
                 Add(keys[i], values[i]);

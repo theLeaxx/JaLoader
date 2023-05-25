@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using UnityEngine;
 
 namespace JaLoader
 {
@@ -21,23 +16,20 @@ namespace JaLoader
             {
                 Instance = this;
             }
-            SceneManager.activeSceneChanged += OnSceneChange;
+            EventsManager.Instance.OnGameLoad += OnGameLoad;
         }
 
         public bool UncleEnabled = !SettingsManager.Instance.DisableUncle;
         public UncleLogicC Uncle;
 
-        public void OnSceneChange(Scene current, Scene next)
+        public void OnGameLoad()
         {
-            if(SceneManager.GetActiveScene().buildIndex == 3) 
-            {
-                Uncle = FindObjectOfType<UncleLogicC>();
+            Uncle = FindObjectOfType<UncleLogicC>();
 
-                Uncle.uncleGoneForever = !UncleEnabled;
-            }
+            Uncle.uncleGoneForever = !UncleEnabled;
         }
 
-        private void DisableUncle()
+        public void DisableUncle()
         {
             UncleEnabled = false;
             SettingsManager.Instance.DisableUncle = true;
@@ -45,7 +37,7 @@ namespace JaLoader
             Uncle.uncleGoneForever = true;
         }
 
-        private void EnableUncle()
+        public void EnableUncle()
         {
             UncleEnabled = transform;
             SettingsManager.Instance.DisableUncle = false;
@@ -55,7 +47,7 @@ namespace JaLoader
 
         private void Talk(string message)
         {
-
+            // TODO: implement this
         }
     }
 }

@@ -3,6 +3,7 @@ using JaLoader;
 using System.Timers;
 using Object = UnityEngine.Object;
 using Timer = System.Timers.Timer;
+using System.Reflection;
 
 namespace Doorstop
 {
@@ -20,7 +21,6 @@ namespace Doorstop
         private static void RunTimer(object sender, ElapsedEventArgs e)
         {
             GameObject obj = new GameObject();
-            obj.name = "JaLoader";
 
             GameObject insObj = Object.Instantiate(obj);
             insObj.AddComponent<AwakeClass>();
@@ -33,13 +33,19 @@ namespace Doorstop
         }
     }
 
-    class AwakeClass : MonoBehaviour
+    public class AwakeClass : MonoBehaviour
     {
-        void Awake()
+        void Update()
         {
-            gameObject.AddComponent<ModLoader>();
-
-            Destroy(gameObject.GetComponent<AwakeClass>());
+            if (!gameObject.GetComponent<ModLoader>())
+            {
+                gameObject.AddComponent<ModLoader>();
+            }
+            else
+            {
+                gameObject.name = "JaLoader";
+                Destroy(this);
+            }
         }
     }
 }

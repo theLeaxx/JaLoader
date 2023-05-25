@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using Theraot.Collections;
+﻿using System.Reflection;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 
 namespace JaLoader
 {
-    //Code taken from the SimpleCameraController script which is found in URP based games.
+    //Code taken from the SimpleCameraController script which is found in the Unity URP/LWRP Template.
     public class DebugCamera : MonoBehaviour
     {
         class CameraState
@@ -101,10 +95,11 @@ namespace JaLoader
             m_TargetCameraState.SetFromTransform(cameraObj.transform);
             m_InterpolatingCameraState.SetFromTransform(cameraObj.transform);
             
-            SceneManager.activeSceneChanged += OnSceneChange;
+            EventsManager.Instance.OnGameLoad += OnGameLoad;
+            EventsManager.Instance.OnMenuLoad += OnMenuLoad;
         }
 
-        void OnSceneChange(Scene current, Scene next)
+        private void ResetCameraPos()
         {
             mainCameraObj = Camera.main.gameObject;
 
@@ -113,42 +108,56 @@ namespace JaLoader
 
             m_InterpolatingCameraState.SetFromTransform(cameraObj.transform);
             m_TargetCameraState.SetFromTransform(cameraObj.transform);
+        }
 
-            if (SceneManager.GetActiveScene().buildIndex == 3)
+        private void TeleportPlayerToCam()
+        {
+            GameObject.Find("First Person Controller").transform.position = cameraObj.transform.position;
+        }
+
+        private void OnGameLoad()
+        {
+            cameraObj.transform.GetChild(0).gameObject.SetActive(true);
+            cameraObj.transform.GetChild(2).gameObject.SetActive(false);
+
+            mainCameraObj = Camera.main.gameObject;
+
+            if (!createdInGamePPCamera)
             {
-                cameraObj.transform.GetChild(0).gameObject.SetActive(true);
-                cameraObj.transform.GetChild(2).gameObject.SetActive(false);
+                createdInGamePPCamera = true;
 
-                if (!createdInGamePPCamera)
+                var components = mainCameraObj.GetComponents<MonoBehaviour>();
+
+                foreach (MonoBehaviour behaviour in components)
                 {
-                    createdInGamePPCamera = true;
-
-                    var components = mainCameraObj.GetComponents<MonoBehaviour>();
-
-                    foreach (MonoBehaviour behaviour in components)
+                    cameraObj.transform.GetChild(0).gameObject.AddComponent(behaviour.GetType());
+                    FieldInfo[] fields = behaviour.GetType().GetFields();
+                    foreach (FieldInfo field in fields)
                     {
-                        cameraObj.transform.GetChild(0).gameObject.AddComponent(behaviour.GetType());
-                        FieldInfo[] fields = behaviour.GetType().GetFields();
-                        foreach (FieldInfo field in fields)
-                        {
-                            field.SetValue(cameraObj.transform.GetChild(0).GetComponent(behaviour.GetType()), field.GetValue(behaviour));
-                        }
+                        field.SetValue(cameraObj.transform.GetChild(0).GetComponent(behaviour.GetType()), field.GetValue(behaviour));
                     }
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<MouseLook>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<MainMenuC>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<HeadBobberC>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<JoyStick_Example>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<CopyToScreenRT>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<DebugCamera>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC_ModExtension>());
-                    Destroy(cameraObj.transform.GetChild(0).GetComponent<MagazineCatalogueRelayC_ModExtension>());
-
-                    cameraObj.transform.GetChild(0).gameObject.AddComponent<FlareLayer>();
-                    cameraObj.transform.GetChild(0).gameObject.AddComponent<AudioListener>();
                 }
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<MouseLook>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<MainMenuC>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<HeadBobberC>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<JoyStick_Example>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<CopyToScreenRT>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<DebugCamera>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC_ModExtension>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<ModsPageToggle>());
+
+                cameraObj.transform.GetChild(0).gameObject.AddComponent<FlareLayer>();
+                cameraObj.transform.GetChild(0).gameObject.AddComponent<AudioListener>();
             }
+
+            ResetCameraPos();
+        }
+
+        private void OnMenuLoad()
+        {
+            ResetCameraPos();
         }
 
         Vector3 GetInputTranslationDirection()
@@ -266,6 +275,12 @@ namespace JaLoader
                     cameraObj.transform.GetChild(2).gameObject.SetActive(postCamera);
                     cameraObj.transform.GetChild(0).gameObject.SetActive(false);
                 }
+            }
+
+            if (Input.GetKeyDown(KeyCode.F7))
+            {
+                if (SceneManager.GetActiveScene().buildIndex == 3)
+                    TeleportPlayerToCam();
             }
 
             Vector3 translation = Vector3.zero;

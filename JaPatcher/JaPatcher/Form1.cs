@@ -6,6 +6,9 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Runtime.InteropServices;
+using Octokit;
+using System.Diagnostics;
+using System.Security.Policy;
 
 namespace JalopyModLoader
 {
@@ -76,12 +79,14 @@ namespace JalopyModLoader
 
         private bool installed = false;
 
-        private string winhttpDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\winhttp.dll");
-        private string doorstopConfig = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\doorstop_config.ini");
-        private string jsonDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Newtonsoft.Json.dll");
-        private string jaLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaLoader.dll");
-        private string jaPreLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaPreLoader.dll");
-        private string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaLoader_UI.unity3d");
+        private readonly string winhttpDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\winhttp.dll");
+        private readonly string doorstopConfig = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\doorstop_config.ini");
+        private readonly string jaLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaLoader.dll");
+        private readonly string jaPreLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaPreLoader.dll");
+        private readonly string theraotDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Theraot.Core.dll");
+        private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaLoader_UI.unity3d");
+
+        private readonly string version = "1.0.0";
 
         public Form1()
         {
@@ -92,11 +97,14 @@ namespace JalopyModLoader
                 SetDarkMode();
             }
 
-            if (!File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(jsonDLL) || !File.Exists(assetBundle))
+            if (!File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(assetBundle) || !File.Exists(theraotDLL))
             {
-                MessageBox.Show("Please extract all of the contents from the archive!", "DLLs not found", MessageBoxButtons.OK);
+                MessageBox.Show("Please extract all of the contents from the archive!", "DLLs not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Close();
+                return;
             }
+
+            CheckForUpdates();
 
             if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"save.json")))
             {
@@ -108,6 +116,33 @@ namespace JalopyModLoader
             documentsModsText.Text = documentsModsPath;
         }
 
+        public async void CheckForUpdates()
+        {
+            var client = new GitHubClient(new ProductHeaderValue("JaLoader-JaPatcher"));
+
+            var releases = await client.Repository.Release.GetLatest("theLeaxx", "JaLoader");
+
+            var latest = releases.TagName;
+
+            int tagInt = int.Parse(latest.Replace(".", ""));
+            int currentInt = int.Parse(version.Replace(".", ""));
+
+            if (tagInt > currentInt)
+            {
+                TellAboutUpdate(latest);
+            }
+        }
+
+        private void TellAboutUpdate(string tagName)
+        {
+            var message = MessageBox.Show($"A new version of JaLoader is available ({tagName})! Would you like to open the releases tab in a new window?", "JaLoader", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+            
+            if (message == DialogResult.Yes)
+            {
+                Process.Start("explorer", "https://github.com/theLeaxx/JaLoader/releases/latest");
+            }
+        }
+
         public string ReadString(string path)
         {
             if (!File.Exists(path))
@@ -116,7 +151,7 @@ namespace JalopyModLoader
             JObject o1 = JObject.Parse(File.ReadAllText(path));
 
             StreamReader file = File.OpenText(path);
-            JsonTextReader reader = new JsonTextReader(file);
+            JsonTextReader reader = new(file);
 
             JObject o2 = (JObject)JToken.ReadFrom(reader);
             string toReturn = (string)o2.First;
@@ -147,11 +182,21 @@ namespace JalopyModLoader
             File.Copy(doorstopConfig, Path.Combine(gamePath, @"doorstop_config.ini"), true);
             File.Copy(jaPreLoaderDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll"), true);
             File.Copy(jaLoaderDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll"), true);
-            File.Copy(jsonDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\Newtonsoft.Json.dll"), true);
+            File.Copy(theraotDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll"), true);
 
             if (!Directory.Exists(Path.Combine(currentModPath, "Required")))
             {
                 Directory.CreateDirectory(Path.Combine(currentModPath, "Required"));
+            }
+
+            if (!Directory.Exists(Path.Combine(currentModPath, "Assemblies")))
+            {
+                Directory.CreateDirectory(Path.Combine(currentModPath, "Assemblies"));
+            }
+
+            if (!Directory.Exists(Path.Combine(currentModPath, "Assets")))
+            {
+                Directory.CreateDirectory(Path.Combine(currentModPath, "Assets"));
             }
 
             File.Copy(assetBundle, Path.Combine(currentModPath, @"Required\JaLoader_UI.unity3d"), true);
@@ -166,7 +211,7 @@ namespace JalopyModLoader
             File.Delete(Path.Combine(gamePath, @"doorstop_config.ini"));
             File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll"));
             File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll"));
-            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\Newtonsoft.Json.dll"));
+            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll"));
 
             if (MessageBox.Show("Would you like to delete the configuration files too?", "JaPatcher", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
@@ -198,7 +243,7 @@ namespace JalopyModLoader
             gamePath = Path.GetDirectoryName(folder);
             gameFolderModsPath = Path.Combine(gamePath, @"Mods");
 
-            if (File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll")) && File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll")) && File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\Newtonsoft.Json.dll")) && File.Exists(Path.Combine(gamePath, @"winhttp.dll")) && File.Exists(Path.Combine(gamePath, @"doorstop_config.ini")))
+            if (File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll")) && File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll")) && File.Exists(Path.Combine(gamePath, @"winhttp.dll")) && File.Exists(Path.Combine(gamePath, @"doorstop_config.ini")) && File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll")))
             {
                 installed = true;
                 installButton.Text = "Uninstall";

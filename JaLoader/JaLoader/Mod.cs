@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace JaLoader
@@ -46,7 +47,14 @@ namespace JaLoader
         public virtual void OnEnable() { }
         public virtual void OnDisable() { }
 
-        public GameObject LoadAsset(string assetName, string prefabName)
+        /// <summary>
+        /// Loads the specified asset from an assetbundle
+        /// </summary>
+        /// <param name="assetName">The file's name</param>
+        /// <param name="prefabName">The prefab in question</param>
+        /// <param name="fileSuffix">The file's suffix (usually .unity3d, you can leave empty too)</param>
+        /// <returns>The loaded GameObject</returns>
+        public GameObject LoadAsset(string assetName, string prefabName, string fileSuffix)
         {
             if (!UseAssets)
             {
@@ -54,13 +62,13 @@ namespace JaLoader
                 return null;
             }
 
-            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}.unity3d")))
+            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
             {
-                Console.Instance.LogError(ModID, $"Tried to load asset {assetName}.unity3d, but it does not exist.");
+                Console.Instance.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
                 return null;
             }
 
-            var ab = AssetBundle.LoadFromFile(Path.Combine(AssetsPath, $"{assetName}.unity3d"));
+            var ab = AssetBundle.LoadFromFile(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}"));
             var prefab = ab.LoadAsset<GameObject>($"{prefabName}.prefab");
 
             if (prefab == null)
@@ -76,6 +84,56 @@ namespace JaLoader
             ab.Unload(false);
 
             return obj;
+        }
+
+        /// <summary>
+        /// Converts a PNG file to a Texture2D, usable in Materials and UI.
+        /// </summary>
+        /// <param name="name">The file's name</param>
+        /// <returns></returns>
+        public Texture2D PNGToTexture(string name)
+        {
+            if (!UseAssets)
+            {
+                Console.Instance.LogError(ModID, "Tried to call PNGToTexture, but UseAssets is false.");
+                return null;
+            }
+
+            if (!File.Exists(Path.Combine(AssetsPath, $@"{AssetsPath}\{name}.png")))
+            {
+                Console.Instance.LogError(ModID, $"Tried to load PNG {name}.png, but it does not exist.");
+                return null;
+            }
+
+            byte[] bytes = File.ReadAllBytes($@"{AssetsPath}\{name}.png");
+
+            Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
+            texture.LoadImage(bytes);
+
+            return texture;
+        }
+
+        /// <summary>
+        /// Loads a scene from an assetbundle
+        /// </summary>
+        /// <param name="assetName">The file's name</param>
+        /// <param name="sceneName">The scene's name</param>
+        /// <param name="fileSuffix">The file's suffix (usually .unity3d, you can leave empty too)</param>
+        public void LoadSceneFromAsset(string assetName, string sceneName, string fileSuffix)
+        {
+            if (!UseAssets)
+            {
+                Console.Instance.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
+            }
+
+            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
+            {
+                Console.Instance.LogError(ModID, $"Tried to load scene {assetName}{fileSuffix}, but it does not exist.");
+            }
+
+            AssetBundle.LoadFromFile($@"{AssetsPath}\{assetName}{fileSuffix}");
+
+            SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         }
 
         public void InstantiateSettings()

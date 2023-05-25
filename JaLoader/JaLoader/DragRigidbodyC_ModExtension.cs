@@ -111,7 +111,7 @@ namespace JaLoader
                 return;
             }
 
-            if (raycastHit.collider && raycastHit.collider.tag == "Pickup" && raycastHit.collider.GetComponent<ObjectPickupC>() && raycastHit.collider.GetComponent<FixTextOnObjectPickup>())
+            if (raycastHit.collider && raycastHit.collider.tag == "Pickup" && raycastHit.collider.GetComponent<ObjectPickupC>() && raycastHit.collider.GetComponent<CustomObjectInfo>())
             {
                 if (!uiIsOn)
                 {
@@ -122,9 +122,9 @@ namespace JaLoader
                 hitComponent = raycastHit.collider.gameObject;
                 componentUI.SetActive(true);
                 ObjectPickupC component = raycastHit.collider.GetComponent<ObjectPickupC>();
-                componentHeader.GetComponent<UILabel>().text = raycastHit.collider.GetComponent<FixTextOnObjectPickup>().objName;
+                componentHeader.GetComponent<UILabel>().text = raycastHit.collider.GetComponent<CustomObjectInfo>().objName;
                 componentHeader.GetComponent<UILabel>().color = gray;
-                componentTitles[7].GetComponent<UILabel>().text = raycastHit.collider.GetComponent<FixTextOnObjectPickup>().objDescription;
+                componentTitles[7].GetComponent<UILabel>().text = raycastHit.collider.GetComponent<CustomObjectInfo>().objDescription;
                 componentTitles[7].GetComponent<UILabel>().color = gray;
                 componentTitles[0].GetComponent<UILabel>().text = string.Empty;
                 componentTitles[1].GetComponent<UILabel>().text = string.Empty;

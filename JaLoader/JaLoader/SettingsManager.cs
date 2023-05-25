@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime;
-using System.Text;
 using UnityEngine;
 
 namespace JaLoader
@@ -32,9 +28,9 @@ namespace JaLoader
         [SerializeField] private Settings _settings = new Settings();
         [SerializeField] private ModsLocation _location = new ModsLocation();
 
-        private static decimal JaLoaderVersion = 10000.1M;
+        private static readonly string JaLoaderVersion = "1.0.0";
+        public static readonly bool IsPreReleaseVersion = false;
         public string ModFolderLocation { get; private set; }
-        public bool IsPreReleaseVersion { get; private set; } = JaLoaderVersion >= 10000;
 
         public bool SkipLanguage;
         public bool DebugMode;
@@ -50,31 +46,23 @@ namespace JaLoader
 
         private readonly ModLoader modLoaderReference = ModLoader.Instance;
 
-        public decimal GetVersion()
+        public float GetVersion()
         {
-            if (IsPreReleaseVersion)
-                return JaLoaderVersion - 10000;
-            else return JaLoaderVersion;
+            return int.Parse(JaLoaderVersion.Replace(".", ""));
         }
 
         public string GetVersionString()
         {
             if (IsPreReleaseVersion)
-                return $"Pre-Release {GetVersion()}";
-            else return GetVersion().ToString();
+                return $"Pre-Release {JaLoaderVersion}";
+
+            else return JaLoaderVersion;
         }
 
         public bool IsNewerThan(string version)
         {
-            var versionStr = "";
-
-            if (IsPreReleaseVersion)
-                versionStr = (JaLoaderVersion - 10000).ToString();
-            else
-                GetVersionString();
-
             var versionSpecified = int.Parse(version.Replace(".", ""));
-            var currentVersion = int.Parse(versionStr.Replace(".", ""));
+            var currentVersion = int.Parse(GetVersionString().Replace(".", ""));
 
             if (currentVersion > versionSpecified) return true;
             else return false;

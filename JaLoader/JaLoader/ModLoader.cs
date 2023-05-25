@@ -1,22 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
-using System.Runtime.Serialization;
 using UnityEngine.SceneManagement;
-using UnityEngine.EventSystems;
 using System.Reflection;    
 using System.IO;
 using System.Collections;
-using Microsoft.Win32.SafeHandles;
+using Application = UnityEngine.Application;
 
 namespace JaLoader
 {
     public class ModLoader : MonoBehaviour
     {
-        #region Singleton & OnSceneChange
+        #region Singleton
         public static ModLoader Instance { get; private set; }
 
         private void Awake()
@@ -29,8 +27,6 @@ namespace JaLoader
             {
                 Instance = this;
             }
-
-            SceneManager.activeSceneChanged += OnSceneChange;
         }
 
         #endregion
@@ -41,11 +37,11 @@ namespace JaLoader
         public int modsNumber;
 
         public List<Mod> modsInitInGame = new List<Mod>();
-        private List<Mod> modsInitInMenu = new List<Mod>();
+        private readonly List<Mod> modsInitInMenu = new List<Mod>();
 
         public List<Mod> disabledMods = new List<Mod>();
         private bool LoadedDisabledMods;
-        private Dictionary<Mod, Text> modStatusTextRef = new Dictionary<Mod, Text>();
+        private readonly Dictionary<Mod, Text> modStatusTextRef = new Dictionary<Mod, Text>();
    
         public bool InitializedInGameMods;
         private bool InitializedInMenuMods;
@@ -61,11 +57,24 @@ namespace JaLoader
 
             CheckForCrack();
 
+            GameObject helperObj = Instantiate(new GameObject());
+            helperObj.name = "JaLoader Modding Helpers";
+            helperObj.AddComponent<EventsManager>();
+
+            EventsManager.Instance.OnGameLoad += OnGameLoad;
+            EventsManager.Instance.OnGameUnload += OnGameUnload;
+
+            DontDestroyOnLoad(helperObj);
+
             settingsManager = gameObject.AddComponent<SettingsManager>();
             uiManager = gameObject.AddComponent<UIManager>();
             gameObject.AddComponent<CustomObjectsManager>();
             gameObject.AddComponent<DebugObjectSpawner>();
             gameObject.AddComponent<ReferencesLoader>();
+
+            helperObj.AddComponent<ModHelper>();
+            helperObj.AddComponent<UncleHelper>();
+            helperObj.AddComponent<PartIconManager>();
 
             if (settingsManager.SkipLanguage && !skippedIntro)
             {
@@ -74,21 +83,20 @@ namespace JaLoader
             }
         }
 
-        private void OnSceneChange(Scene current, Scene next)
+        private void OnGameLoad()
         {
-            if (InitializedInGameMods && SceneManager.GetActiveScene().buildIndex < 3)
+            if (settingsManager.UseExperimentalCharacterController)
+                GameObject.Find("First Person Controller").AddComponent<ExperimentalCharacterController>();
+        }
+
+        private void OnGameUnload() 
+        {
+            if (InitializedInGameMods)
             {
                 foreach (Mod mod in modsInitInGame)
-                {
                     mod.gameObject.SetActive(false);
-                }
 
                 InitializedInGameMods = false;
-            }
-
-            if (SceneManager.GetActiveScene().buildIndex == 3 && settingsManager.UseExperimentalCharacterController)
-            {
-                GameObject.Find("First Person Controller").AddComponent<ExperimentalCharacterController>();
             }
         }
 
@@ -127,12 +135,6 @@ namespace JaLoader
                         }
                     }
 
-
-                    if (modsNumber == 1)
-                        Console.Instance.LogMessage("JaLoader", $"1 mod found ({disabledMods.Count} disabled)!");
-                    else
-                        Console.Instance.LogMessage("JaLoader", $"{modsNumber} mods found ({disabledMods.Count} disabled)!");
-
                     LoadedDisabledMods = true;
                 }
 
@@ -162,16 +164,6 @@ namespace JaLoader
 
         public IEnumerator LoadMods()
         {
-            GameObject modHelperObj = Instantiate(new GameObject());
-            GameObject uncleHelperObj = Instantiate(new GameObject());
-            modHelperObj.name = "ModHelper";
-            uncleHelperObj.name = "UncleHelper";
-            modHelperObj.AddComponent<ModHelper>();
-            uncleHelperObj.AddComponent<UncleHelper>();
-
-            DontDestroyOnLoad(modHelperObj);
-            DontDestroyOnLoad(uncleHelperObj);
-
             DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
 
@@ -217,10 +209,30 @@ namespace JaLoader
 
                     mod.CustomObjectsRegistration();
 
-                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = mod.ModName;
+                    string modVersionText = mod.ModVersion;
+                    string modName = mod.ModName;
+
+                    if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
+                    {
+                        string[] splitLink = mod.GitHubLink.Split('/');
+
+                        string URL = $"https://api.github.com/repos/{splitLink[3]}/{splitLink[4]}/releases/latest";
+
+                        string version = GetLatestTagFromApiUrl(URL);
+                        int versionInt = int.Parse(version.Replace(".", ""));
+                        int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
+
+                        if(versionInt > currentVersion)
+                        {
+                            modVersionText = $"{mod.ModVersion} (Latest version: {version})";
+                            modName = $"(Update Available!) {mod.ModName}";
+                        }
+                    }
+
+                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modName;
                     uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
 
-                    uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, mod.ModVersion, mod.ModDescription); });
+                    uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, modVersionText, mod.ModDescription); });
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"); });
 
                     switch (mod.WhenToInit)
@@ -262,7 +274,39 @@ namespace JaLoader
                 finishedLoadingMods = true;
             }
 
+            if(modsNumber == 0)
+                Console.Instance.LogMessage("JaLoader", $"No mods found!");
+
             yield return null;
+        }
+
+        private string GetLatestTagFromApiUrl(string URL)
+        {
+            UnityWebRequest request = UnityWebRequest.Get(URL);
+            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
+            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
+
+            request.SendWebRequest();
+
+            while (!request.isDone)
+            {
+                // wait for the request to complete
+            }
+
+            string tagName = null;
+
+            if (!request.isNetworkError && !request.isHttpError)
+            {
+                string json = request.downloadHandler.text;
+                Release release = JsonUtility.FromJson<Release>(json);
+                tagName = release.tag_name;
+            }
+            else
+            {
+                Console.Instance.LogError($"Error getting response for URL \"{URL}\": {request.error}");
+            }
+
+            return tagName;
         }
 
         public void ToggleMod(Mod mod, Text toggleBtn)
@@ -340,5 +384,11 @@ namespace JaLoader
                 }
             }
         }
-    } 
+    }
+
+    [Serializable]
+    class Release
+    {
+        public string tag_name = "";
+    }
 }
