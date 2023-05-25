@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net6.0-windows</TargetFramework>
+	<PublishSingleFile>true</PublishSingleFile>
+	<PublishReadyToRun>true</PublishReadyToRun>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -15,10 +17,16 @@
     <Description>Installer for JaLoader.</Description>
     <FileVersion>1.0</FileVersion>
     <AssemblyVersion></AssemblyVersion>
+    <ApplicationIcon>JaLoader.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="JaLoader.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Octokit" Version="6.0.0" />
   </ItemGroup>
 
 </Project>

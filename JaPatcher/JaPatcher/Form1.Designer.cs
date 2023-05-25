@@ -30,6 +30,7 @@
         {
             Label installedText;
             Label gameFolderText;
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             groupBox1 = new GroupBox();
             installButton = new Button();
             locateFolderButton = new Button();
@@ -206,6 +207,7 @@
             Controls.Add(groupBox1);
             ForeColor = SystemColors.ControlText;
             FormBorderStyle = FormBorderStyle.FixedSingle;
+            Icon = (Icon)resources.GetObject("$this.Icon");
             MaximizeBox = false;
             Name = "Form1";
             Text = "JaPatcher";

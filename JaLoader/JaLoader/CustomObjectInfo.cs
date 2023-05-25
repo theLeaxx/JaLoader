@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace JaLoader
 {
-    public class FixTextOnObjectPickup : MonoBehaviour
+    public class CustomObjectInfo : MonoBehaviour
     {
         public string objName;
         public string objDescription;

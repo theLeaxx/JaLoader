@@ -2,16 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Text.RegularExpressions;
-using Theraot.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
-using static UnityEngine.EventSystems.EventTrigger;
 
 namespace JaLoader
 {
@@ -31,27 +23,29 @@ namespace JaLoader
                 Instance = this;
             }
 
-            SceneManager.activeSceneChanged += OnSceneChange;
-            Application.logMessageReceived += OnLog;
+            EventsManager.Instance.OnSave += OnSave;
+            EventsManager.Instance.OnMenuLoad += OnMenuLoad;
+            EventsManager.Instance.OnGameLoad += OnGameLoad;
         }
         #endregion
 
         [SerializeField] private CustomObjectSave data = new CustomObjectSave();
 
-        private Dictionary<string, GameObject> database = new Dictionary<string, GameObject>();
+        public readonly Dictionary<string, GameObject> database = new Dictionary<string, GameObject>();
         private Dictionary<(string, int), GameObject> spawnedDatabase = new Dictionary<(string, int), GameObject>();
 
-        private List<GameObject> engineCatalogue = new List<GameObject>();
-
+        // TODO: Add custom wheels support
         private List<Transform> bootSlots = new List<Transform>();
         private GameObject boot;
 
-        public int currentFreeID = 0;
+        private int currentFreeID = 0;
         private bool allObjectsRegistered;
+
+        private SettingsManager settingsManager = SettingsManager.Instance;
 
         private void Update()
         {
-            if (!SettingsManager.Instance.DebugMode)
+            if (!settingsManager.DebugMode)
                 return;
 
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))
@@ -69,53 +63,58 @@ namespace JaLoader
             }
         }
 
-        public void OnLog(string message, string stack, LogType type)
+        private void Start()
         {
-            if (message == "Saved" && type == LogType.Log)
-            {
-                SaveData();
-            }
+            if (!allObjectsRegistered)
+                StartCoroutine(WaitUntilLoadFinished());
         }
 
-        public void OnSceneChange(Scene current, Scene next)
+        private void OnSave()
         {
-            if (SceneManager.GetActiveScene().buildIndex == 1)
-            {
-                if (!allObjectsRegistered)
-                {
-                    StartCoroutine(WaitUntilLoadFinished());
-                    return;
-                }
+            SaveData();
+        }
 
-                StartCoroutine(LoadDelay(0.01f, false));
+        private void OnMenuLoad()
+        {
+            StartCoroutine(LoadDelay(0.01f, false));
+        }
+
+        private void OnGameLoad()
+        {
+            if (bootSlots == null)
+                bootSlots = new List<Transform>();
+            else
+                bootSlots.Clear();
+
+            var bootObjects = FindObjectsOfType<InventoryLogicC>();
+
+            for (int i = 0; i < bootObjects.Length; i++)
+            {
+                if (bootObjects[i].gameObject.name == "Boot" && bootObjects[i].transform.parent.parent.parent.name == "FrameHolder")
+                {
+                    boot = bootObjects[i].gameObject;
+                    break;
+                }
             }
 
-            if (SceneManager.GetActiveScene().buildIndex == 3)
+            for (int i = 0; i < boot.transform.GetComponentsInChildren<InventoryRelayC>().Length; i++)
             {
-                ModHelper.Instance.RefreshPartHolders();
-
-                var bootObjects = FindObjectsOfType<InventoryLogicC>();
-
-                for (int i = 0; i < bootObjects.Length; i++)
-                {
-                    if (bootObjects[i].gameObject.name == "Boot" && bootObjects[i].transform.parent.parent.parent.name == "FrameHolder")
-                    {
-                        boot = bootObjects[i].gameObject;
-                        break;
-                    }
-                }
-
-                for (int i = 0; i < boot.transform.GetComponentsInChildren<InventoryRelayC>().Length; i++)
-                {
-                    bootSlots.Add(boot.transform.GetComponentsInChildren<InventoryRelayC>()[i].transform);
-                }
-
-                StartCoroutine(LoadDelay(1f, true));
+                bootSlots.Add(boot.transform.GetComponentsInChildren<InventoryRelayC>()[i].transform);
             }
+
+            ModHelper.Instance.RefreshPartHolders();
+
+            StartCoroutine(LoadDelay(1f, true));
         }
 
         public void RegisterObject(GameObject obj, string registryName)
         {
+            if (database.ContainsKey(registryName))
+            {
+                Console.Instance.LogError("CustomObjectsManager", $"An object with the registry key {registryName} already exists! Please pick another one.");
+                return;
+            }
+
             obj.SetActive(false);
 
             database.Add($"{registryName}", obj);
@@ -161,6 +160,28 @@ namespace JaLoader
             return spawnedObj;
         }
 
+        public void DeleteObject(string registryName)
+        {
+            Destroy(spawnedDatabase[(registryName, currentFreeID)]);
+            spawnedDatabase.Remove((registryName, currentFreeID));
+            currentFreeID--;
+        }
+
+        public GameObject SpawnObjectWithoutRegistering(string registryName, Vector3 pos, Vector3 rot)
+        {
+            GameObject objToSpawn = GetObject(registryName);
+
+            if (objToSpawn == null) return null;
+
+            GameObject spawnedObj = Instantiate(objToSpawn);
+            SceneManager.MoveGameObjectToScene(spawnedObj, SceneManager.GetActiveScene());
+            spawnedObj.transform.position = pos;
+            spawnedObj.transform.eulerAngles = rot;
+            spawnedObj.SetActive(true);
+
+            return spawnedObj;
+        }
+
         public GameObject SpawnObject(string registryName, Vector3 position, Quaternion rotation)
         {
             GameObject objToSpawn = GetObject(registryName);
@@ -201,12 +222,8 @@ namespace JaLoader
                 bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine;
                 string json = "";
                 Vector3 trunkPos = Vector3.zero;
-                bool shouldSaveThisObject = true;
 
                 if (!inEngine && spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt == null)
-                    shouldSaveThisObject = false;
-
-                if (!shouldSaveThisObject)
                     return;
 
                 if (spawnedDatabase[entry].GetComponent<EngineComponentC>())
@@ -286,7 +303,7 @@ namespace JaLoader
                     {
                         obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
                     }
-                    
+
                     #region Load In Engine
                     if (tuple.Item1.Equals(true))
                     {
@@ -429,7 +446,7 @@ namespace JaLoader
             yield return new WaitForSeconds(seconds);
 
             LoadData(fullLoad);
-            LaikaCatalogueExtension.Instance.AddModsPage();
+            LaikaCatalogueExtension.Instance.AddModsPages("");
         }
     }
 

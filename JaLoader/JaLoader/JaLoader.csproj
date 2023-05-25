@@ -12,6 +12,9 @@
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,14 +24,16 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>C:\Program Files %28x86%29\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -65,11 +70,13 @@
     <Reference Include="System.Xml">
       <Private>False</Private>
     </Reference>
-    <Reference Include="Theraot.Core, Version=3.2.11.0, Culture=neutral, PublicKeyToken=b1460dff8a28f7a7, processorArchitecture=MSIL">
-      <HintPath>..\packages\Theraot.Core.3.2.11\lib\net35\Theraot.Core.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
@@ -80,8 +87,18 @@
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.Physics2DModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.Physics2DModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
@@ -96,6 +113,11 @@
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.VehiclesModule">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.VehiclesModule.dll</HintPath>
       <Private>False</Private>
@@ -106,14 +128,16 @@
     <Compile Include="CustomObjectsManager.cs" />
     <Compile Include="DebugCamera.cs" />
     <Compile Include="DebugObjectSpawner.cs" />
+    <Compile Include="EventsManager.cs" />
     <Compile Include="ExperimentalCharacterController.cs" />
     <Compile Include="Console.cs" />
     <Compile Include="DragRigidbodyC_ModExtension.cs" />
-    <Compile Include="FixTextOnObjectPickup.cs" />
+    <Compile Include="CustomObjectInfo.cs" />
     <Compile Include="LaikaCatalogueExtension.cs" />
     <Compile Include="Mod.cs" />
     <Compile Include="ModLoader.cs" />
     <Compile Include="ModHelper.cs" />
+    <Compile Include="PartIconManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RadioVolumeChanger.cs" />
     <Compile Include="ReferencesLoader.cs" />
@@ -124,7 +148,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Theraot.Core">
+      <Version>3.2.11</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

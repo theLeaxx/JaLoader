@@ -199,7 +199,7 @@ namespace JaLoader
             {
                 if (!crouching)
                 {
-                    speed = 10;
+                    speed = 25;
 
                     headBobber.bobbingSpeed = 8f;
                     headBobber.bobbingAmount = 0.045f;

@@ -1,12 +1,5 @@
-﻿using JaLoader;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine.SceneManagement;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using System.Diagnostics;
-using Steamworks;
 using Theraot.Collections;
 using System.Reflection;
 
@@ -27,105 +20,116 @@ namespace JaLoader
             {
                 Instance = this;
             }
-            SceneManager.sceneLoaded += OnSceneChange;
+
+            EventsManager.Instance.OnGameLoad += OnGameLoad;
+            EventsManager.Instance.OnGameUnload += OnGameUnload;
+            EventsManager.Instance.OnMenuLoad += OnMenuLoad;
         }
         #endregion
 
         public GameObject player;
         public GameObject laika;
-        public GameObject pickUpObjectTemplate;
-        public GameObject enginePartTemplate;
-        public GameObject wheelTemplate;
 
         public Material defaultEngineMaterial;
         private AudioClip[] defaultClips;
 
         public Dictionary<PartTypes, Transform> partHolders = new Dictionary<PartTypes, Transform>();
+        //public Dictionary<WheelPositions, Transform> wheelHolders = new Dictionary<WheelPositions, Transform>(); TODO
 
         private bool addedExtensions;
+        private bool createdDebugCamera;
         public GameObject debugCam;
 
-        private void OnEnable()
+        private void OnMenuLoad()
         {
-            GameObject go = GameObject.Find("EngineBlock");
-
-            defaultEngineMaterial = go.GetComponent<MeshRenderer>().material;
-            defaultClips = go.GetComponent<ObjectPickupC>()._audio;
-
             RefreshPartHolders();
 
-            if (SettingsManager.Instance.DebugMode)
+            if (defaultEngineMaterial == null)
             {
-                debugCam = Instantiate(new GameObject());
-                debugCam.name = "JaLoader Debug Camera";
-                debugCam.SetActive(false);
+                GameObject go = GameObject.Find("EngineBlock");
 
-                var effectsCam = Instantiate(new GameObject());
-                effectsCam.name = "JaLoader Menu Post Processing Camera";
+                defaultEngineMaterial = go.GetComponent<MeshRenderer>().material;
+                defaultClips = go.GetComponent<ObjectPickupC>()._audio;
 
-                var inGameEffectsCam = Instantiate(new GameObject());
-                inGameEffectsCam.name = "JaLoader In-Game Post Processing Camera";
-
-                var normalCam = Instantiate(new GameObject());
-                normalCam.name = "JaLoader Normal Camera";
-
-                effectsCam.transform.parent = normalCam.transform.parent = inGameEffectsCam.transform.parent = debugCam.transform;
-
-                var components = Camera.main.GetComponents<MonoBehaviour>();
-                components.RemoveLast();
-                components.RemoveLast();
-                components.RemoveLast();
-                components.RemoveFirst();
-
-                effectsCam.AddComponent<Camera>();
-                inGameEffectsCam.AddComponent<Camera>();
-                normalCam.AddComponent<Camera>();
-
-                foreach (MonoBehaviour behaviour in components)
+                if (SettingsManager.Instance.DebugMode)
                 {
-                    effectsCam.AddComponent(behaviour.GetType());
-                    FieldInfo[] fields = behaviour.GetType().GetFields();
-                    foreach (FieldInfo field in fields)
+                    if (!createdDebugCamera)
                     {
-                        field.SetValue(effectsCam.GetComponent(behaviour.GetType()), field.GetValue(behaviour));
+                        debugCam = Instantiate(new GameObject());
+                        debugCam.name = "JaLoader Debug Camera";
+                        debugCam.SetActive(false);
+
+                        var effectsCam = Instantiate(new GameObject());
+                        effectsCam.name = "JaLoader Menu Post Processing Camera";
+
+                        var inGameEffectsCam = Instantiate(new GameObject());
+                        inGameEffectsCam.name = "JaLoader In-Game Post Processing Camera";
+
+                        var normalCam = Instantiate(new GameObject());
+                        normalCam.name = "JaLoader Normal Camera";
+
+                        effectsCam.transform.parent = normalCam.transform.parent = inGameEffectsCam.transform.parent = debugCam.transform;
+
+                        var components = Camera.main.GetComponents<MonoBehaviour>();
+                        components.RemoveLast();
+                        components.RemoveLast();
+                        components.RemoveLast();
+                        components.RemoveFirst();
+
+                        effectsCam.AddComponent<Camera>();
+                        inGameEffectsCam.AddComponent<Camera>();
+                        normalCam.AddComponent<Camera>();
+
+                        foreach (MonoBehaviour behaviour in components)
+                        {
+                            effectsCam.AddComponent(behaviour.GetType());
+                            FieldInfo[] fields = behaviour.GetType().GetFields();
+                            foreach (FieldInfo field in fields)
+                            {
+                                field.SetValue(effectsCam.GetComponent(behaviour.GetType()), field.GetValue(behaviour));
+                            }
+                        }
+
+                        effectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
+                        normalCam.GetComponent<Camera>().nearClipPlane = 0.025f;
+                        inGameEffectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
+
+                        effectsCam.GetComponent<Camera>().fieldOfView = 80;
+                        normalCam.GetComponent<Camera>().fieldOfView = 80;
+                        inGameEffectsCam.GetComponent<Camera>().fieldOfView = 80;
+
+                        normalCam.SetActive(false);
+                        inGameEffectsCam.SetActive(false);
+                        debugCam.SetActive(false);
+
+                        DontDestroyOnLoad(debugCam);
+
+                        createdDebugCamera = true;
                     }
+
+                    Camera.main.gameObject.AddComponent<DebugCamera>();   
                 }
-
-                effectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
-                normalCam.GetComponent<Camera>().nearClipPlane = 0.025f;
-                inGameEffectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
-
-                effectsCam.GetComponent<Camera>().fieldOfView = 80;
-                normalCam.GetComponent<Camera>().fieldOfView = 80;
-                inGameEffectsCam.GetComponent<Camera>().fieldOfView = 80;
-
-                normalCam.SetActive(false);
-                inGameEffectsCam.SetActive(false);
-                debugCam.SetActive(false);
-
-                DontDestroyOnLoad(debugCam);
             }
-
-            Camera.main.gameObject.AddComponent<DebugCamera>();
         }
 
-        public void OnSceneChange(Scene current, LoadSceneMode mode)
+        private void OnGameLoad()
         {
-            if (SceneManager.GetActiveScene().buildIndex == 3)
-            {
-                if(SettingsManager.Instance.DebugMode)
-                    Camera.main.gameObject.AddComponent<DebugCamera>();
+            if (SettingsManager.Instance.DebugMode)
+                Camera.main.gameObject.AddComponent<DebugCamera>();
 
-                if (!addedExtensions)
-                {
-                    Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
-                    Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
-                    player = Camera.main.transform.parent.gameObject;
-                    addedExtensions = true;
-                }
+            if (!addedExtensions)
+            {
+                Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
+                Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
+                player = Camera.main.transform.parent.gameObject;
+                laika = GameObject.Find("FrameHolder");
+                addedExtensions = true;
             }
-            else
-                addedExtensions = false;
+        }
+
+        private void OnGameUnload()
+        {
+            addedExtensions = false;
         }
 
         public void RefreshPartHolders()
@@ -157,10 +161,13 @@ namespace JaLoader
         /// <param name="objDescription">The description that will pop up in the notebook</param>
         /// <param name="price">The price of the object in stores (only effective if it is buyable)</param>
         /// <param name="weight">The weight of the object</param>
-        /// <param name="canFindInCrates">Should this object be findable in crates?</param>
-        /// <param name="canBuyInStore">Is this object buyable?</param>
+        /// <param name="canFindInCrates">(Not implemented yet) Should this object be findable in crates?</param>
+        /// <param name="canBuyInStore">(Not implemented yet) Is this object buyable?</param>
         public void AddBasicObjectLogic(GameObject obj, string objName, string objDescription, int price, int weight, bool canFindInCrates, bool canBuyInStore)
         {
+            if(obj == null)
+                Console.Instance.LogError("Error");
+
             if (!obj.GetComponent<Collider>())
             {
                 obj.AddComponent<BoxCollider>();
@@ -170,12 +177,17 @@ namespace JaLoader
             obj.transform.localScale = new Vector3(2.2f, 2.2f, 2.2f);
 
             obj.tag = "Pickup";
-            obj.layer = 24;
+            obj.layer = 24; 
+            Console.Instance.Log("11");
             Rigidbody rb = obj.AddComponent<Rigidbody>();
+            Console.Instance.Log(rb);
+            Console.Instance.Log("11.5");
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            Console.Instance.Log("11.8");
             rb.mass = weight;
+            Console.Instance.Log("12");
             ObjectPickupC ob = obj.AddComponent<ObjectPickupC>();
-            ob.objectID = 0;
+            ob.objectID = 0; Console.Instance.Log("10");
             ob.glowMat = obj.GetComponent<MeshRenderer>().materials;
             ob.glowMaterial = GetGlowMaterial(obj.GetComponent<MeshRenderer>().material);
             ob._audio = defaultClips;
@@ -198,7 +210,7 @@ namespace JaLoader
             ob.componentHeader = string.Empty;
             ob.rigidMass = weight;
 
-            FixTextOnObjectPickup fix = obj.AddComponent<FixTextOnObjectPickup>();
+            CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
             fix.objDescription = objDescription;
             fix.objName = objName;
             obj.SetActive(true);
@@ -213,8 +225,8 @@ namespace JaLoader
         /// <param name="price">The price of the object</param>
         /// <param name="durability">Max durability</param>
         /// <param name="canBuyInDealership">Can this object be bought in laika dealerships?</param>
-        /// <param name="canFindInJunkCars">Can this object be found at scrapyards/abandoned cars?</param>
-        public void AddEnginePartLogic(GameObject obj, PartTypes type, string companyName, int price, int durability, bool canBuyInDealership, bool canFindInJunkCars)
+        /// <param name="canFindInJunkCars">(Not implemented yet) Can this object be found at scrapyards/abandoned cars?</param>
+        public void AddEnginePartLogic(GameObject obj, PartTypes type, int durability, bool canBuyInDealership, bool canFindInJunkCars)
         {
             if (!obj.GetComponent<ObjectPickupC>())
             {
@@ -274,12 +286,13 @@ namespace JaLoader
                     break;
 
                 case PartTypes.Extra:
-                    Console.Instance.LogWarning("Extra components are not fully supported yet!");
+                    Console.Instance.LogError("Extra components are not supported yet!");
                     //ob.engineString = "";
                     //obj.name = "";
                     break;
 
                 case PartTypes.Custom:
+                    Console.Instance.LogError("Custom components are not supported yet!");
                     break;
             }
         }
@@ -415,11 +428,12 @@ namespace JaLoader
             audio.priority = 128;
         }
 
-        public void ConfigureCustomWaterTank(GameObject obj, int fuelConsumptionRate)
+        public void ConfigureCustomFuelTank(GameObject obj, int fuelCapacity, int initialFuelCapacity)
         {
             EngineComponentC ec = obj.GetComponent<EngineComponentC>();
 
-            ec.fuelConsumptionRate = fuelConsumptionRate;
+            ec.totalFuelAmount = fuelCapacity;
+            ec.currentFuelAmount = initialFuelCapacity;
 
             AudioSource audio = obj.GetComponent<AudioSource>();
             audio.priority = 128;
@@ -447,6 +461,14 @@ namespace JaLoader
         Wet,
         OffRoad,
         Custom
+    }
+
+    public enum WheelPositions
+    {
+        FL,
+        FR,
+        RL,
+        RR
     }
 
     #endregion
