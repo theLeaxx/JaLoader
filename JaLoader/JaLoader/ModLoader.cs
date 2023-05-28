@@ -140,6 +140,8 @@ namespace JaLoader
 
                 if (!InitializedInMenuMods)
                 {
+                    Console.Instance.Log("JaLoader", $"{modsNumber} mods found! ({disabledMods.Count} disabled)");
+
                     foreach (Mod mod in modsInitInMenu)
                     {
                         if(!disabledMods.Contains(mod))
@@ -218,7 +220,7 @@ namespace JaLoader
 
                         string URL = $"https://api.github.com/repos/{splitLink[3]}/{splitLink[4]}/releases/latest";
 
-                        string version = GetLatestTagFromApiUrl(URL);
+                        string version = ModHelper.Instance.GetLatestTagFromApiUrl(URL, modName);
                         int versionInt = int.Parse(version.Replace(".", ""));
                         int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
 
@@ -251,6 +253,9 @@ namespace JaLoader
 
                     modStatusTextRef.Add(mod, tempObj.GetComponent<Text>());
 
+                    if (mod.settingsIDS.Count > 0)
+                        mod.LoadModSettings();
+
                     modsNumber++;
                 }
                 catch (Exception ex)
@@ -274,39 +279,15 @@ namespace JaLoader
                 finishedLoadingMods = true;
             }
 
-            if(modsNumber == 0)
+            if (modsNumber == 0)
+            {
                 Console.Instance.LogMessage("JaLoader", $"No mods found!");
+                Console.Instance.ToggleVisibility(true);
+
+                UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
+            }
 
             yield return null;
-        }
-
-        private string GetLatestTagFromApiUrl(string URL)
-        {
-            UnityWebRequest request = UnityWebRequest.Get(URL);
-            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
-            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
-
-            request.SendWebRequest();
-
-            while (!request.isDone)
-            {
-                // wait for the request to complete
-            }
-
-            string tagName = null;
-
-            if (!request.isNetworkError && !request.isHttpError)
-            {
-                string json = request.downloadHandler.text;
-                Release release = JsonUtility.FromJson<Release>(json);
-                tagName = release.tag_name;
-            }
-            else
-            {
-                Console.Instance.LogError($"Error getting response for URL \"{URL}\": {request.error}");
-            }
-
-            return tagName;
         }
 
         public void ToggleMod(Mod mod, Text toggleBtn)
@@ -384,11 +365,5 @@ namespace JaLoader
                 }
             }
         }
-    }
-
-    [Serializable]
-    class Release
-    {
-        public string tag_name = "";
     }
 }

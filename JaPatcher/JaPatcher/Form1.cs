@@ -86,7 +86,7 @@ namespace JalopyModLoader
         private readonly string theraotDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Theraot.Core.dll");
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaLoader_UI.unity3d");
 
-        private readonly string version = "1.0.0";
+        private readonly string version = "1.0.1";
 
         public Form1()
         {
@@ -121,8 +121,10 @@ namespace JalopyModLoader
             var client = new GitHubClient(new ProductHeaderValue("JaLoader-JaPatcher"));
 
             var releases = await client.Repository.Release.GetLatest("theLeaxx", "JaLoader");
-
+            
             var latest = releases.TagName;
+
+            if (latest.Contains("Pre-Release")) return;
 
             int tagInt = int.Parse(latest.Replace(".", ""));
             int currentInt = int.Parse(version.Replace(".", ""));
@@ -143,7 +145,7 @@ namespace JalopyModLoader
             }
         }
 
-        public string ReadString(string path)
+        public static string ReadString(string path)
         {
             if (!File.Exists(path))
                 return "";

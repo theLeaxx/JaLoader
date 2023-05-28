@@ -2,6 +2,9 @@
 using UnityEngine;
 using Theraot.Collections;
 using System.Reflection;
+using UnityEngine.SceneManagement;
+using UnityEngine.Networking;
+using System;
 
 namespace JaLoader
 {
@@ -329,11 +332,13 @@ namespace JaLoader
         /// </summary>
         public Material GetGlowMaterial(Material originalMaterial)
         {
-            Material glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"));
-            glowMat.color = originalMaterial.color;
-            glowMat.mainTexture = originalMaterial.mainTexture;
-            glowMat.mainTextureOffset = originalMaterial.mainTextureOffset;
-            glowMat.mainTextureScale = originalMaterial.mainTextureScale;
+            Material glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
+            {
+                color = originalMaterial.color,
+                mainTexture = originalMaterial.mainTexture,
+                mainTextureOffset = originalMaterial.mainTextureOffset,
+                mainTextureScale = originalMaterial.mainTextureScale
+            };
 
             return glowMat;
         }
@@ -438,6 +443,68 @@ namespace JaLoader
             AudioSource audio = obj.GetComponent<AudioSource>();
             audio.priority = 128;
         }
+
+        public string GetLatestTagFromApiUrl(string URL, string modName)
+        {
+            UnityWebRequest request = UnityWebRequest.Get(URL);
+            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
+            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
+
+            request.SendWebRequest();
+
+            while (!request.isDone)
+            {
+                // wait for the request to complete
+            }
+
+            if (request.isHttpError)
+                return "0";
+
+            string tagName = null;
+
+            if (!request.isNetworkError)
+            {
+                string json = request.downloadHandler.text;
+                Release release = JsonUtility.FromJson<Release>(json);
+                tagName = release.tag_name;
+            }
+            else if (request.isNetworkError)
+                return "0";
+            else
+                Console.Instance.LogError(modName, $"Error getting response for URL \"{URL}\": {request.error}");
+
+            return tagName;
+        }
+
+        public string GetLatestTagFromApiUrl(string URL)
+        {
+            UnityWebRequest request = UnityWebRequest.Get(URL);
+            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
+            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
+
+            request.SendWebRequest();
+
+            while (!request.isDone)
+            {
+                // wait for the request to complete
+            }
+
+            string tagName = null;
+
+            if (!request.isNetworkError && !request.isHttpError)
+            {
+                string json = request.downloadHandler.text;
+                Release release = JsonUtility.FromJson<Release>(json);
+                tagName = release.tag_name;
+            }
+            else if (request.isNetworkError)
+                return "0";
+            else
+                Console.Instance.LogError($"Error getting response for URL \"{URL}\": {request.error}");
+
+            return tagName;
+        }
+
     }
 
     #region Part Types
@@ -472,4 +539,10 @@ namespace JaLoader
     }
 
     #endregion
+
+    [Serializable]
+    class Release
+    {
+        public string tag_name = "";
+    }
 }

@@ -278,6 +278,9 @@ namespace JaLoader
 
         public void LoadData(bool full)
         {
+            if (database.Count == 0 || database == null)
+                return;
+
             if (spawnedDatabase != null)
                 spawnedDatabase.Clear();
             else
@@ -446,7 +449,8 @@ namespace JaLoader
             yield return new WaitForSeconds(seconds);
 
             LoadData(fullLoad);
-            LaikaCatalogueExtension.Instance.AddModsPages("");
+            if(fullLoad)
+                LaikaCatalogueExtension.Instance.AddModsPages("");
         }
     }
 

@@ -28,7 +28,7 @@ namespace JaLoader
         [SerializeField] private Settings _settings = new Settings();
         [SerializeField] private ModsLocation _location = new ModsLocation();
 
-        private static readonly string JaLoaderVersion = "1.0.0";
+        private static readonly string JaLoaderVersion = "1.0.1";
         public static readonly bool IsPreReleaseVersion = false;
         public string ModFolderLocation { get; private set; }
 
@@ -46,7 +46,7 @@ namespace JaLoader
 
         private readonly ModLoader modLoaderReference = ModLoader.Instance;
 
-        public float GetVersion()
+        public int GetVersion()
         {
             return int.Parse(JaLoaderVersion.Replace(".", ""));
         }
