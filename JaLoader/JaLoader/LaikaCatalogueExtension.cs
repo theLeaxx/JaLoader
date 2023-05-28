@@ -200,7 +200,7 @@ namespace JaLoader
 
             foreach (var view in scrollViews.Values)
             {
-                view.transform.parent = UIManager.Instance.catalogueTemplate.transform.parent;
+                view.transform.SetParent(UIManager.Instance.catalogueTemplate.transform.parent, false);
                 view.transform.position = UIManager.Instance.catalogueTemplate.transform.position;
             }
 

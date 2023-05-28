@@ -66,7 +66,7 @@ namespace JaLoader
             inputField = uiManager.modConsole.transform.GetChild(2).GetComponent<InputField>();
             consoleRectTransform = uiManager.modConsole.GetComponent<RectTransform>();
 
-            ToggleVisibility(false);
+            //ToggleVisibility(false);
 
             SetPosition(settingsManager.ConsolePosition);
         }
@@ -235,7 +235,7 @@ namespace JaLoader
             float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
 
             GameObject _msg = Instantiate(uiManager.messageTemplatePrefab);
-            _msg.transform.parent = uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0);
+            _msg.transform.SetParent(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
             _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>/</color>: {message}";
             log.Add($"{DateTime.Now} > '/': '{message}'");
             _msg.SetActive(true);
@@ -259,7 +259,7 @@ namespace JaLoader
             float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
 
             GameObject _msg = Instantiate(uiManager.messageTemplatePrefab);
-            _msg.transform.parent = uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0);
+            _msg.transform.SetParent(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
             _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>{sender}</color>: {message}";
             log.Add($"{DateTime.Now} > '{sender}': '{message}'");
             _msg.SetActive(true);
@@ -275,7 +275,7 @@ namespace JaLoader
             float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
 
             GameObject _msg = Instantiate(uiManager.messageTemplatePrefab);
-            _msg.transform.parent = uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0);
+            _msg.transform.SetParent(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
             switch (color)
             {
                 case "grey":

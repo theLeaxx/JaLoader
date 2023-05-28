@@ -254,7 +254,14 @@ namespace JaLoader
             if (settingsManager.HideModFolderLocation)
                 modFolderText.SetActive(false);
 
-            modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
+            string version = ModHelper.Instance.GetLatestTagFromApiUrl("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest");
+            int versionInt = int.Parse(version.Replace(".", ""));
+
+            if (versionInt > settingsManager.GetVersion())
+                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{version} available!</color>)";
+            else
+                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
+
             modFolderText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{settingsManager.ModFolderLocation}</color>";
 
             UIVersionCanvas.transform.Find("JLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
@@ -326,7 +333,7 @@ namespace JaLoader
                 GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {(SettingsManager.IsPreReleaseVersion ? "PR 0.1" : settingsManager.GetVersionString())}";
 
                 if (int.Parse(versionText.Replace(".", "")) < 1105)
-                    StartCoroutine(ShowNoticeAfterLoad("OUTDATED GAME DETECTED", "You are using an outdated version of Jalopy.\r\n\r\nYou may encounter issues with certain mods, as well as more bugs in general.\r\n\r\nIf you encounter bugs, please make sure to ask or check if they exist in newer versions as well before reporting them.\r\n\r\nHave fun!"));
+                    StartCoroutine(ShowNoticeAfterLoad("OUTDATED GAME DETECTED", "You are using an outdated version of Jalopy.\r\n\r\nYou may encounter issues with JaLoader and certain mods, as well as more bugs in general.\r\n\r\nIf you encounter bugs, please make sure to ask or check if they exist in newer versions as well before reporting them.\r\n\r\nHave fun!"));
             }
         }
 
@@ -525,7 +532,7 @@ namespace JaLoader
             ShowNotice(subtitle, message);
         }
 
-        public void ShowNotice(string subtitle, string message)
+        private void ShowNotice(string subtitle, string message)
         {
             noticesToShow.Add((subtitle, message));
 

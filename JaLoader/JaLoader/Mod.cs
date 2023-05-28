@@ -90,7 +90,7 @@ namespace JaLoader
         /// Converts a PNG file to a Texture2D, usable in Materials and UI.
         /// </summary>
         /// <param name="name">The file's name</param>
-        /// <returns></returns>
+        /// <returns>A new Texture2D, containing your PNG file</returns>
         public Texture2D PNGToTexture(string name)
         {
             if (!UseAssets)
@@ -149,7 +149,7 @@ namespace JaLoader
             obj.transform.parent = UIManager.Instance.modSettingsScrollViewContent.transform;
 
             GameObject name = Instantiate(UIManager.Instance.modOptionsNameTemplate);
-            name.transform.parent = obj.transform;
+            name.transform.SetParent(obj.transform, false);
             name.GetComponentInChildren<Text>().text = $"{ModName} Settings";
             name.SetActive(true);
 
@@ -165,7 +165,7 @@ namespace JaLoader
             }
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsHeaderTemplate);
-            obj.transform.parent = UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder");
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.GetComponentInChildren<Text>().text = text;
             obj.SetActive(true);
         }
@@ -185,7 +185,7 @@ namespace JaLoader
             }
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsDropdownTemplate);
-            obj.transform.parent = UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder");
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Dropdown";
 
             List<Dropdown.OptionData> optionData = new List<Dropdown.OptionData>();
@@ -216,7 +216,7 @@ namespace JaLoader
             }
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsToggleTemplate);
-            obj.transform.parent = UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder");
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Toggle";
 
             List<Dropdown.OptionData> optionData = new List<Dropdown.OptionData>
@@ -247,7 +247,7 @@ namespace JaLoader
             }
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsSliderTemplate);
-            obj.transform.parent = UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder");
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Slider";
 
             obj.GetComponentInChildren<Slider>().minValue = minValue;
@@ -275,8 +275,18 @@ namespace JaLoader
         {
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
                 return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown").GetComponentInChildren<Dropdown>();
-            else
-                return null;
+
+            return null;
+        }
+
+        public int GetDropdownValue(string ID)
+        {
+            var dropdown = GetDropdown(ID);
+
+            if(dropdown != null)
+                return dropdown.value;
+
+            return 0;
         }
 
         public Dropdown GetToggle(string ID)
@@ -287,12 +297,32 @@ namespace JaLoader
                 return null;
         }
 
+        public bool GetToggleValue(string ID)
+        {
+            var toggle = GetToggle(ID);
+
+            if (toggle != null)
+                return toggle.value == 0;
+
+            return false;
+        }
+
         public Slider GetSlider(string ID)
         {
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider"))
                 return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider").GetComponentInChildren<Slider>();
             else
                 return null;
+        }
+
+        public float GetSliderValue(string ID)
+        {
+            var slider = GetSlider(ID);
+
+            if (slider != null)
+                return slider.value;
+
+            return 0;
         }
 
         public CustomKeybind GetKeybind(string ID)

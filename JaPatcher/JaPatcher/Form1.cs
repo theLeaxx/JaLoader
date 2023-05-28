@@ -121,8 +121,10 @@ namespace JalopyModLoader
             var client = new GitHubClient(new ProductHeaderValue("JaLoader-JaPatcher"));
 
             var releases = await client.Repository.Release.GetLatest("theLeaxx", "JaLoader");
-
+            
             var latest = releases.TagName;
+
+            if (latest.Contains("Pre-Release")) return;
 
             int tagInt = int.Parse(latest.Replace(".", ""));
             int currentInt = int.Parse(version.Replace(".", ""));
@@ -143,7 +145,7 @@ namespace JalopyModLoader
             }
         }
 
-        public string ReadString(string path)
+        public static string ReadString(string path)
         {
             if (!File.Exists(path))
                 return "";
