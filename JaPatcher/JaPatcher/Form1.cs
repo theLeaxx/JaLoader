@@ -86,7 +86,7 @@ namespace JalopyModLoader
         private readonly string theraotDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Theraot.Core.dll");
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\JaLoader_UI.unity3d");
 
-        private readonly string version = "1.0.0";
+        private readonly string version = "1.0.1";
 
         public Form1()
         {
