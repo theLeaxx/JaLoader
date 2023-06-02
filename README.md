@@ -18,6 +18,7 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 
 ## Libraries used
 * [NAudio](https://github.com/naudio/NAudio) (**MIT**)
+* [Octokit](https://github.com/octokit/octokit.net) (**MIT**)
 * [Theraot.Core](https://github.com/theraot/Theraot) (**MIT**)
 * [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop) (**LGPL 2.1**)
 * [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)
