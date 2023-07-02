@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jaloader-Downloader", "Jaloader-Downloader\Jaloader-Downloader.csproj", "{78E2129B-53F7-4F13-87FA-71EF8E7CF475}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jaloader-Downloader-Setup", "Jaloader-Downloader-Setup\Jaloader-Downloader-Setup.csproj", "{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jaloader-Downloader-Setup-Igniter", "Jaloader-Downloader-Setup-Igniter\Jaloader-Downloader-Setup-Igniter.csproj", "{D769D3B1-F0B4-40E5-96EA-592FD400E182}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
