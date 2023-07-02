@@ -14,7 +14,7 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 ## [For modders](https://github.com/theLeaxx/JaLoader/wiki)
 * **The wiki isn't complete yet**
 
-## [Trello board](https://trello.com/b/0tgj7ZGk/jaloader)
+## [Check out the current progress](https://github.com/users/theLeaxx/projects/1)
 
 ## Libraries used
 * [NAudio](https://github.com/naudio/NAudio) (**MIT**)
