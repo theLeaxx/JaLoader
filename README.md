@@ -3,7 +3,7 @@
 <img src="https://github.com/theLeaxx/JaLoader/assets/101940826/9c3148c2-9db0-4357-874d-a1ed0f929f52" width="300">
 
 
-[![](https://img.shields.io/github/v/release/theLeaxx/JaLoader)](#) [![](https://img.shields.io/github/downloads/theLeaxx/JaLoader/latest/JaPatcher.zip)](#) [![](https://img.shields.io/github/last-commit/theLeaxx/JaLoader/dev)](#) 
+[![](https://img.shields.io/github/v/release/theLeaxx/JaLoader)](#) [![](https://img.shields.io/github/downloads/theLeaxx/JaLoader/latest/JaPatcher.zip)](#) [![](https://img.shields.io/github/downloads/theLeaxx/JaLoader/total)](#) [![](https://img.shields.io/github/last-commit/theLeaxx/JaLoader/dev)](#) 
 
 A mod loader for Jalopy.
 
