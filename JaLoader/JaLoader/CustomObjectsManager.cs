@@ -218,7 +218,7 @@ namespace JaLoader
                     return;
 
                 List<float> parameters = new List<float>();
-                PartTypes type = PartTypes.Engine;
+                PartTypes type = PartTypes.Default;
                 bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine;
                 string json = "";
                 Vector3 trunkPos = Vector3.zero;
@@ -371,6 +371,18 @@ namespace JaLoader
             }
         }
 
+        public void DeleteData()
+        {
+            File.Delete(Path.Combine(Application.persistentDataPath, @"CustomObjectsData.json"));
+
+            if (spawnedDatabase != null)
+                spawnedDatabase.Clear();
+            else
+                spawnedDatabase = new Dictionary<(string, int), GameObject>();
+
+            currentFreeID = 0;
+        }
+
         private void PlaceObjectInEngine(GameObject obj)
         {
             if (obj.transform.parent.GetComponent<HoldingLogicC>().isOccupied)
@@ -450,7 +462,7 @@ namespace JaLoader
 
             LoadData(fullLoad);
             if(fullLoad)
-                LaikaCatalogueExtension.Instance.AddModsPages("");
+                LaikaCatalogueExtension.Instance.AddModsPages("", "", 0);
         }
     }
 

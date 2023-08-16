@@ -34,6 +34,8 @@ namespace JaLoader
 
         public IEnumerator LoadAssemblies()
         {
+            Debug.Log("Loading JaLoader assemblies...");
+
             DirectoryInfo d = new DirectoryInfo($@"{settingsManager.ModFolderLocation}\Assemblies");
             FileInfo[] asm = d.GetFiles("*.dll");
 
@@ -60,6 +62,8 @@ namespace JaLoader
                 Console.Instance.LogMessage("JaLoader", $"1 assembly found and loaded!");
             else if (loadedAsm > 1)
                 Console.Instance.LogMessage("JaLoader", $"{loadedAsm} assemblies found and loaded!");
+
+            Debug.Log("Loaded JaLoader assemblies!");
 
             StartCoroutine(modLoader.LoadMods());
             yield return null;

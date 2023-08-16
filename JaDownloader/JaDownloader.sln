@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33516.290
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaDownloader", "Jaloader-Downloader\JaDownloader.csproj", "{78E2129B-53F7-4F13-87FA-71EF8E7CF475}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaDownloader-Setup", "Jaloader-Downloader-Setup\JaDownloader-Setup.csproj", "{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaDownloader-Setup-Igniter", "Jaloader-Downloader-Setup-Igniter\JaDownloader-Setup-Igniter.csproj", "{D769D3B1-F0B4-40E5-96EA-592FD400E182}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78E2129B-53F7-4F13-87FA-71EF8E7CF475}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82E2E72F-7E85-40E2-9FDA-8E66B459EE82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D769D3B1-F0B4-40E5-96EA-592FD400E182}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FE7E5DA4-83C9-45A0-AFB9-2FFBF141AD7B}
+	EndGlobalSection
+EndGlobal

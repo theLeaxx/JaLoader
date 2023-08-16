@@ -9,6 +9,7 @@ using System.Reflection;
 using System.IO;
 using System.Collections;
 using Application = UnityEngine.Application;
+using Process = System.Diagnostics.Process;
 
 namespace JaLoader
 {
@@ -55,6 +56,19 @@ namespace JaLoader
         {
             DontDestroyOnLoad(gameObject);
 
+            switch (CheckForMissingDLLs())
+            {
+                case "Theraot.Core.dll":
+                    CreateImportantNotice("\n\nThe file 'Theraot.Core.dll' was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the file from JaPatcher's directory/Assets to Jalopy_Data/Managed");
+                    SceneManager.LoadScene("MainMenu");
+                    return;
+
+                case "NAudio.dll":
+                    CreateImportantNotice("\n\nThe file 'NAudio.dll' was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the file from JaPatcher's directory/Assets to Jalopy_Data/Managed");
+                    SceneManager.LoadScene("MainMenu");
+                    return;
+            }
+
             CheckForCrack();
 
             GameObject helperObj = Instantiate(new GameObject());
@@ -71,10 +85,15 @@ namespace JaLoader
             gameObject.AddComponent<CustomObjectsManager>();
             gameObject.AddComponent<DebugObjectSpawner>();
             gameObject.AddComponent<ReferencesLoader>();
+            gameObject.AddComponent<CustomRadioController>();
 
             helperObj.AddComponent<ModHelper>();
             helperObj.AddComponent<UncleHelper>();
             helperObj.AddComponent<PartIconManager>();
+
+            gameObject.AddComponent<DiscordController>();
+
+            Debug.Log("JaLoader initialized!");
 
             if (settingsManager.SkipLanguage && !skippedIntro)
             {
@@ -83,10 +102,23 @@ namespace JaLoader
             }
         }
 
+        private string CheckForMissingDLLs()
+        {
+            var path = $@"{Application.dataPath}\Managed";
+
+            if (!File.Exists($@"{path}\Theraot.Core.dll"))
+                return "Theraot.Core.dll";
+
+            if (!File.Exists($@"{path}\NAudio.dll"))
+                return "NAudio.dll";
+
+            return "None";
+        }
+
         private void OnGameLoad()
         {
             if (settingsManager.UseExperimentalCharacterController)
-                GameObject.Find("First Person Controller").AddComponent<ExperimentalCharacterController>();
+                GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
         }
 
         private void OnGameUnload() 
@@ -104,6 +136,9 @@ namespace JaLoader
         {
             if (modsNumber == 0)
                 return;
+
+            if (Input.GetKeyDown(KeyCode.F12))
+                StartUpdate();
 
             if (finishedLoadingMods)
             {
@@ -166,6 +201,8 @@ namespace JaLoader
 
         public IEnumerator LoadMods()
         {
+            Debug.Log("Loading JaLoader mods...");
+
             DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
 
@@ -174,7 +211,7 @@ namespace JaLoader
             foreach (FileInfo modFile in mods)
             {
                 uiManager.modTemplateObject = Instantiate(uiManager.modTemplatePrefab);
-                uiManager.modTemplateObject.transform.parent = uiManager.UIVersionCanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform;
+                uiManager.modTemplateObject.transform.SetParent(uiManager.UIVersionCanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform, false);
                 uiManager.modTemplateObject.SetActive(true);
 
                 try
@@ -199,6 +236,9 @@ namespace JaLoader
                     }
 
                     ModObject.name = mod.ModID;
+
+                    mod.EventsDeclaration();
+
                     mod.SettingsDeclaration();
 
                     if (mod.UseAssets)
@@ -287,6 +327,7 @@ namespace JaLoader
                 UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
             }
 
+            Debug.Log("Loaded JaLoader mods!");
             yield return null;
         }
 
@@ -364,6 +405,59 @@ namespace JaLoader
                     break;
                 }
             }
+        }
+
+        public void CreateImportantNotice(string issue, string possibleFixes)
+        {
+            if (SceneManager.GetActiveScene().buildIndex == 1)
+            {
+                Debug.Log("JaLoader encounted an error!");
+                Debug.Log($"JaLoader: {issue} {possibleFixes}");
+
+                FindObjectOfType<MenuMouseInteractionsC>().enabled = false;
+
+                GameObject notice = Instantiate(GameObject.Find("UI Root").transform.Find("Notice").gameObject);
+                notice.name = "Error";
+                notice.transform.parent = GameObject.Find("UI Root").transform;
+                notice.transform.localPosition = Vector3.zero;
+                notice.transform.position = new Vector3(notice.transform.position.x, notice.transform.position.y - 0.15f, notice.transform.position.z);
+                notice.transform.localRotation = Quaternion.identity;
+                notice.transform.localScale = Vector3.one;
+                notice.SetActive(true);
+
+                notice.transform.GetChild(5).gameObject.SetActive(false);
+                notice.transform.GetChild(1).GetComponent<UITexture>().height = 600;
+                notice.transform.GetChild(1).position = new Vector3(notice.transform.GetChild(1).position.x, notice.transform.GetChild(1).position.y + 0.2f, notice.transform.GetChild(1).position.z);
+                notice.transform.GetChild(0).GetComponent<UILabel>().text = "JaLoader encountered an error!";
+                notice.transform.GetChild(0).GetComponent<UILabel>().ProcessText();
+                notice.transform.GetChild(3).GetComponent<UILabel>().text = "\nWHAT WENT WRONG";
+                notice.transform.GetChild(3).GetComponent<UILabel>().ProcessText();
+                notice.transform.GetChild(2).GetComponent<UILabel>().text = issue;
+                notice.transform.GetChild(2).GetComponent<UILabel>().height = 550;
+                notice.transform.GetChild(2).GetComponent<UILabel>().ProcessText();
+                notice.transform.GetChild(4).GetComponent<UILabel>().text = possibleFixes;
+                notice.transform.GetChild(4).GetComponent<UILabel>().fontSize = 24;
+                notice.transform.GetChild(4).GetComponent<UILabel>().ProcessText();
+                return;
+            }
+
+            StartCoroutine(WaitUntilMenuNotice(issue, possibleFixes));
+        }
+
+        private void StartUpdate()
+        {
+            Process.Start($@"{Application.dataPath}\..\JaUpdater.exe", $"{settingsManager.ModFolderLocation} Jalopy");
+            Process.GetCurrentProcess().Kill();
+        }
+
+        private IEnumerator WaitUntilMenuNotice(string issue, string possibleFixes)
+        {
+            while (SceneManager.GetActiveScene().buildIndex != 1)
+                yield return null;
+
+            CreateImportantNotice(issue, possibleFixes);
+
+            yield return null;
         }
     }
 }

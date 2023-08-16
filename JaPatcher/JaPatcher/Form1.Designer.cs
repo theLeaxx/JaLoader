@@ -32,6 +32,7 @@
             Label gameFolderText;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             groupBox1 = new GroupBox();
+            launchButton = new Button();
             installButton = new Button();
             locateFolderButton = new Button();
             installedTextValue = new Label();
@@ -42,6 +43,7 @@
             documentsModsText = new Label();
             gameFolderModsButton = new RadioButton();
             documentsButton = new RadioButton();
+            updateButton = new Button();
             installedText = new Label();
             gameFolderText = new Label();
             groupBox1.SuspendLayout();
@@ -69,6 +71,8 @@
             // groupBox1
             // 
             groupBox1.BackColor = SystemColors.Control;
+            groupBox1.Controls.Add(updateButton);
+            groupBox1.Controls.Add(launchButton);
             groupBox1.Controls.Add(installButton);
             groupBox1.Controls.Add(locateFolderButton);
             groupBox1.Controls.Add(installedTextValue);
@@ -82,6 +86,19 @@
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
             groupBox1.Text = "Information";
+            // 
+            // launchButton
+            // 
+            launchButton.ForeColor = SystemColors.ControlText;
+            launchButton.ImeMode = ImeMode.NoControl;
+            launchButton.Location = new Point(138, 67);
+            launchButton.Name = "launchButton";
+            launchButton.Size = new Size(71, 23);
+            launchButton.TabIndex = 7;
+            launchButton.Text = "Launch";
+            launchButton.UseVisualStyleBackColor = true;
+            launchButton.Visible = false;
+            launchButton.Click += launchButton_Click;
             // 
             // installButton
             // 
@@ -197,6 +214,19 @@
             documentsButton.UseVisualStyleBackColor = true;
             documentsButton.CheckedChanged += documentsButton_CheckedChanged;
             // 
+            // updateButton
+            // 
+            updateButton.ForeColor = SystemColors.ControlText;
+            updateButton.ImeMode = ImeMode.NoControl;
+            updateButton.Location = new Point(387, 67);
+            updateButton.Name = "updateButton";
+            updateButton.Size = new Size(71, 23);
+            updateButton.TabIndex = 8;
+            updateButton.Text = "Update";
+            updateButton.UseVisualStyleBackColor = true;
+            updateButton.Visible = false;
+            updateButton.Click += updateButton_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -231,5 +261,7 @@
         private Label documentsModsText;
         private RadioButton gameFolderModsButton;
         private RadioButton documentsButton;
+        private Button launchButton;
+        private Button updateButton;
     }
 }

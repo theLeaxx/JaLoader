@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace JaLoader
 {
-    public class ExperimentalCharacterController : MonoBehaviour
+    public class EnhancedMovement : MonoBehaviour
     {
         private CarLogicC carLogic;
 
@@ -54,7 +54,6 @@ namespace JaLoader
             GetComponent<CapsuleCollider>().enabled = false;
             GetComponent<CapsuleCollider>().isTrigger = true;
 
-
             _camera = Camera.main.gameObject;
             headBobber = _camera.GetComponent<HeadBobberC>();
             footstepsC = _camera.transform.parent.GetComponent<FootstepsC>();
@@ -84,6 +83,7 @@ namespace JaLoader
             if (!mouseLook.isSat && !carLogic.isPushingCar)
             {
                 canMove = true;
+                headBobber.enabled = true;
 
                 if (!setParkingBrake)
                 {
@@ -102,17 +102,22 @@ namespace JaLoader
                 }
             }
 
-            if (mouseLook.isSat || carLogic.isPushingCar)
+            if (mouseLook.isSat)
             {
                 canMove = false;
                 setParkingBrake = false;
 
+                headBobber.enabled = false;
                 headBobber.bobbingSpeed = 0;
                 headBobber.bobbingAmount = 0;
             }
 
             if (carLogic.isPushingCar)
             {
+                canMove = false;
+                setParkingBrake = false;
+
+                headBobber.enabled = true;
                 headBobber.bobbingSpeed = 3f;
                 headBobber.bobbingAmount = 0.025f;
             }
@@ -199,7 +204,7 @@ namespace JaLoader
             {
                 if (!crouching)
                 {
-                    speed = 25;
+                    speed = 10;
 
                     headBobber.bobbingSpeed = 8f;
                     headBobber.bobbingAmount = 0.045f;

@@ -13,7 +13,7 @@ namespace Doorstop
 
         public static void Start()
         {
-            timer = new Timer(2000);
+            timer = new Timer(3000);
             timer.Elapsed += RunTimer;
             timer.Enabled = true;
         }   
@@ -23,7 +23,7 @@ namespace Doorstop
             GameObject obj = new GameObject();
 
             GameObject insObj = Object.Instantiate(obj);
-            insObj.AddComponent<AwakeClass>();
+            insObj.AddComponent<AddModLoaderComponent>();
             Object.DontDestroyOnLoad(insObj);
 
             timer.Enabled = false;
@@ -33,8 +33,13 @@ namespace Doorstop
         }
     }
 
-    public class AwakeClass : MonoBehaviour
+    public class AddModLoaderComponent : MonoBehaviour
     {
+        void Start()
+        {
+            Debug.Log("JaLoader found!");
+        }
+
         void Update()
         {
             if (!gameObject.GetComponent<ModLoader>())

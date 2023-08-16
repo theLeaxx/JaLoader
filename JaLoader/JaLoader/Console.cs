@@ -55,6 +55,8 @@ namespace JaLoader
 
         private readonly List<string> log = new List<string>();
 
+        private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
+
         public bool Visible
         {
             get { return uiManager.modConsole.activeSelf; }
@@ -159,6 +161,20 @@ namespace JaLoader
             }
         }
 
+        public void AddCommand(string commandName, string description, string methodName, Mod mod)
+        {
+            foreach ((string, string, string) pair in customCommands.Keys)
+            {
+                if (pair.Item1 == commandName)
+                {
+                    LogError(mod.ModID, $"A command with the name {commandName} already exists!");
+                    return;
+                }
+            }
+
+            customCommands.Add((commandName, description ,methodName), mod);
+        }
+
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.Tab))
@@ -202,6 +218,7 @@ namespace JaLoader
             LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)sr.transform);
         }
 
+        #region Logging
         /// <summary>
         /// Same as LogMessage().
         /// </summary>
@@ -380,6 +397,8 @@ namespace JaLoader
             File.WriteAllLines(Path.Combine(Application.dataPath, @"..\JaLoader_log.log"), log.ToArray());
         }
 
+        #endregion
+
         private void CheckInput(InputField inputField)
         {
             string input = inputField.text.ToLower();
@@ -462,8 +481,21 @@ namespace JaLoader
                         break;
 
                     default:
-                        LogError("/", $"Invalid command '{input}'.");
-                        LogError("/", "Type 'help' for a list of valid commands.");
+                        bool found = false;
+                        foreach ((string, string, string) pair in customCommands.Keys)
+                        {
+                            if (pair.Item1.ToLower() == input)
+                            {
+                                found = true;
+                                customCommands[pair].Invoke(pair.Item3, 0);
+                                break;
+                            }
+                        }
+                        if (!found)
+                        {
+                            LogError("/", $"Invalid command '{input}'.");
+                            LogError("/", "Type 'help' for a list of valid commands.");
+                        }
                         break;
                 }
             }
@@ -546,18 +578,24 @@ namespace JaLoader
 
         private void ShowHelp()
         {
-            LogMessage("/", "'help' - Shows this");
-            LogMessage("/", "'clear' - Clears the console");
-            LogMessage("/", "'mods' - Toggles the mod list");
-            LogMessage("/", "'path' - Prints the mods path");
-            LogMessage("/", "'version' - Prints the modloader's version");
-            LogMessage("/", "'debug' - Toggle debug messages");
+            LogMessage("'help' - Shows this");
+            LogMessage("'clear' - Clears the console");
+            LogMessage("'mods' - Toggles the mod list");
+            LogMessage("'path' - Prints the mods path");
+            LogMessage("'version' - Prints the modloader's version");
+            LogMessage("'debug' - Toggle debug messages");
             LogMessage("Cheat commands (only work in-game)", "");
-            LogMessage("/", "'money add/set/remove {value}' - Add, set or remove money from your wallet");
+            LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet");
             //LogMessage("/", "'time set {value}' - Sets the time to the specified hour");
-            LogMessage("/", "'repairkit' - Spawns a repair kit near you");
-            LogMessage("/", "'repairall' - Restores every installed part to full condition");
+            LogMessage("'repairkit' - Spawns a repair kit near you");
+            LogMessage("'repairall' - Restores every installed part to full condition");
             //LogMessage("/", "'laika' - Teleports the Laika near you");
+
+            LogMessage("Mods commands", "");
+            foreach ((string, string, string) pair in customCommands.Keys)
+            {
+                LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
+            }
         }
 
         private void SpawnRepairKit()
