@@ -25,3 +25,6 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 
 ## Contact
 You can contact me on Discord at `Leaxx#7814`. Feel free to suggest new features.
+
+### Buy me a coffee :)
+https://ko-fi.com/leaxx 
