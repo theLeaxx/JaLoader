@@ -101,8 +101,6 @@ namespace JaLoader
 
         private void ResetCameraPos()
         {
-            mainCameraObj = Camera.main.gameObject;
-
             cameraObj.transform.position = mainCameraObj.transform.position;
             cameraObj.transform.rotation = mainCameraObj.transform.rotation;
 
@@ -157,6 +155,8 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
+            mainCameraObj = Camera.main.gameObject;
+
             ResetCameraPos();
         }
 
@@ -225,7 +225,7 @@ namespace JaLoader
 
             if (SettingsManager.Instance.UseExperimentalCharacterController)
             {
-                mainCameraObj.transform.parent.GetComponent<ExperimentalCharacterController>().isDebugCameraEnabled = isCameraEnabled;
+                mainCameraObj.transform.parent.GetComponent<EnhancedMovement>().isDebugCameraEnabled = isCameraEnabled;
             }
             else
             {

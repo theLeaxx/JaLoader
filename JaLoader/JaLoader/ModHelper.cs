@@ -47,6 +47,8 @@ namespace JaLoader
         {
             RefreshPartHolders();
 
+            GameObject.Find("FrameHolder").AddComponent<LicensePlateCustomizer>();
+
             if (defaultEngineMaterial == null)
             {
                 GameObject go = GameObject.Find("EngineBlock");
@@ -126,6 +128,7 @@ namespace JaLoader
                 Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
                 player = Camera.main.transform.parent.gameObject;
                 laika = GameObject.Find("FrameHolder");
+                laika.AddComponent<LicensePlateCustomizer>();
                 addedExtensions = true;
             }
         }
@@ -168,8 +171,11 @@ namespace JaLoader
         /// <param name="canBuyInStore">(Not implemented yet) Is this object buyable?</param>
         public void AddBasicObjectLogic(GameObject obj, string objName, string objDescription, int price, int weight, bool canFindInCrates, bool canBuyInStore)
         {
-            if(obj == null)
-                Console.Instance.LogError("Error");
+            if (obj == null)
+            {
+                Console.Instance.LogError("The object you're trying to add logic to is null!");
+                return;
+            }
 
             if (!obj.GetComponent<Collider>())
             {
@@ -181,16 +187,11 @@ namespace JaLoader
 
             obj.tag = "Pickup";
             obj.layer = 24; 
-            Console.Instance.Log("11");
             Rigidbody rb = obj.AddComponent<Rigidbody>();
-            Console.Instance.Log(rb);
-            Console.Instance.Log("11.5");
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-            Console.Instance.Log("11.8");
             rb.mass = weight;
-            Console.Instance.Log("12");
             ObjectPickupC ob = obj.AddComponent<ObjectPickupC>();
-            ob.objectID = 0; Console.Instance.Log("10");
+            ob.objectID = 0;
             ob.glowMat = obj.GetComponent<MeshRenderer>().materials;
             ob.glowMaterial = GetGlowMaterial(obj.GetComponent<MeshRenderer>().material);
             ob._audio = defaultClips;
@@ -519,7 +520,8 @@ namespace JaLoader
         Battery,
         WaterTank,
         Extra,
-        Custom
+        Custom,
+        Default
     }
 
     public enum WheelTypes

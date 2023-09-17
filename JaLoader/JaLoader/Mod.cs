@@ -32,6 +32,11 @@ namespace JaLoader
         [Serializable] class SettingsValues : SerializableDictionary<string, float> { }
 
         /// <summary>
+        /// Subscribe to all of your events here
+        /// </summary>
+        public virtual void EventsDeclaration() { }
+
+        /// <summary>
         /// Declare all of your settings here
         /// </summary>
         public virtual void SettingsDeclaration() { }
@@ -99,7 +104,7 @@ namespace JaLoader
                 return null;
             }
 
-            if (!File.Exists(Path.Combine(AssetsPath, $@"{AssetsPath}\{name}.png")))
+            if (!File.Exists($@"{AssetsPath}\{name}.png"))
             {
                 Console.Instance.LogError(ModID, $"Tried to load PNG {name}.png, but it does not exist.");
                 return null;
@@ -146,7 +151,7 @@ namespace JaLoader
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsHolder);
             obj.name = $"{ModAuthor}_{ModID}_{ModName}-SettingsHolder";
-            obj.transform.parent = UIManager.Instance.modSettingsScrollViewContent.transform;
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform, false);
 
             GameObject name = Instantiate(UIManager.Instance.modOptionsNameTemplate);
             name.transform.SetParent(obj.transform, false);

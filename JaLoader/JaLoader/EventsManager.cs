@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -32,9 +33,10 @@ namespace JaLoader
         #endregion
 
         #region Events
+        public delegate void MiscEvents();
         public delegate void GameEvents();
         public delegate void LogEvents(string message, string stack);
-        public delegate void TravelEvents(string cityName);
+        public delegate void TravelEvents(string startLocation, string endLocation, int distance);
 
         public event GameEvents OnMenuLoad;
         public event GameEvents OnLoadStart;
@@ -43,9 +45,9 @@ namespace JaLoader
 
         public event GameEvents OnSave;
         public event LogEvents OnException;
-
+        
         //public event GameEvents OnStoreTransaction;
-        public event GameEvents OnDealershipOrder;
+        //public event GameEvents OnDealershipOrder;
         //public event GameEvents OnMotelCheckIn;
         public event GameEvents OnTransaction;
 
@@ -54,6 +56,9 @@ namespace JaLoader
         public event TravelEvents OnRouteGenerated;
         //public event TravelEvents OnBorderPass;
         //public event TravelEvents OnBorderRevoke;
+
+        public event MiscEvents OnSettingsLoaded;
+        public event MiscEvents OnSettingsSaved;
         #endregion
 
         private void Update()
@@ -61,6 +66,16 @@ namespace JaLoader
             //CatalogueBuyButtonC
 
             //ShopC
+        }
+
+        public void OnSettingsLoad()
+        {
+            OnSettingsLoaded?.Invoke();
+        }
+
+        public void OnSettingsSave()
+        {
+            OnSettingsSaved?.Invoke();
         }
 
         public void OnSceneUnload(Scene unloadedScene)
@@ -89,7 +104,7 @@ namespace JaLoader
             {
                 OnGameLoad();
                 FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
-                //FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
+                FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
                 return;
             }
         }
@@ -103,9 +118,9 @@ namespace JaLoader
                 OnException(message, stack);
         }
 
-        public void CallRoute(string cityName)
+        public void CallRoute(string start, string destination, int distance)
         {
-            OnRouteGenerated?.Invoke(cityName);
+            OnRouteGenerated?.Invoke(start, destination, distance);
 
             //Console.Instance.Log(cityName);
         }
@@ -123,33 +138,94 @@ namespace JaLoader
                 case "motel":
                     //OnMotelCheckIn?.Invoke();
                     break;
+
+                case "laika":
+                    //OnDealershipOrder?.Invoke();
+                    break;
             }
         }
     }
 
     public class ShopReceiver : MonoBehaviour
     {
-        bool paidMotel;
+        Dictionary<MotelLogicC, bool> paidMotel = new Dictionary<MotelLogicC, bool>();
+
+        List<MotelLogicC> motels = new List<MotelLogicC>();
+        List<ShopC> shops = new List<ShopC>();
+        List<MagazineLogicC> dealerships = new List<MagazineLogicC>();
 
         private void Start()
         {
-            StartCoroutine(WaitForMotelCheck());
+            //StartCoroutine(WaitForMotelCheck());
+
+            //RefreshList(true);
+
+            //EventsManager.Instance.OnRouteGenerated += OnRouteGenerated;
+        }
+
+        private void OnRouteGenerated(string start, string destination, int distance)
+        {
+            RefreshList(false);
+        }
+
+        private void RefreshList(bool firstTime)
+        {
+            Dictionary<MotelLogicC, bool> paidMotel = new Dictionary<MotelLogicC, bool>();
+
+            List<MotelLogicC> motels = new List<MotelLogicC>();
+            List<ShopC> shops = new List<ShopC>();
+            List<MagazineLogicC> dealerships = new List<MagazineLogicC>();
+
+            foreach (var motel in FindObjectsOfType<MotelLogicC>())
+            {
+                motels.Add(motel);
+                paidMotel.Add(motel, motel.hasPaid);
+            }
+            foreach (var shop in FindObjectsOfType<ShopC>())
+                shops.Add(shop);
+            foreach (var dealership in FindObjectsOfType<MagazineLogicC>())
+                dealerships.Add(dealership);
+
+            Console.Instance.Log(motels.Count);
+            Console.Instance.Log(shops.Count);
+            Console.Instance.Log(dealerships.Count);
+
+            if (firstTime) return;
+
+            Console.Instance.Log("---");
+
+            /*paidMotel.Remove(motels[0]);
+            motels.RemoveAt(0);
+            shops.RemoveAt(0);
+            dealerships.RemoveAt(0);
+
+            Console.Instance.Log(motels.Count);
+            Console.Instance.Log(shops.Count);
+            Console.Instance.Log(dealerships.Count);*/
         }
 
         public void ChangeMoney()
         {
-            if (FindObjectOfType<MotelLogicC>().hasPaid && !paidMotel)
+            EventsManager.Instance.CallTransaction("generic");
+            /*for (int i = 0; i < motels.Count; i++)
             {
-                paidMotel = true;
-                //Console.Instance.Log($"paid for motel");
-                EventsManager.Instance.CallTransaction("motel");
-            }
-            else if (FindObjectOfType<ShopC>().shutterOpen)
-            {
-                //Console.Instance.Log($"paid for shop");
-                EventsManager.Instance.CallTransaction("shop");
-            }
-            
+                if (motels[i].hasPaid && !paidMotel[motels[i]])
+                {
+                    paidMotel[motels[i]] = true;
+                    Console.Instance.Log($"paid for motel");
+                    EventsManager.Instance.CallTransaction("motel");
+                }
+                else if (shops[i].shutterOpen)
+                {
+                    Console.Instance.Log($"paid for shop");
+                    EventsManager.Instance.CallTransaction("shop");
+                }
+                else if (dealerships[i].isBookOpen)
+                {
+                    Console.Instance.Log($"paid for dealership");
+                    EventsManager.Instance.CallTransaction("laika");
+                }
+            }*/
         }
 
         IEnumerator WaitForMotelCheck()
@@ -157,7 +233,7 @@ namespace JaLoader
             while (FindObjectOfType<MotelLogicC>() == null)
                 yield return null;
 
-            paidMotel = FindObjectOfType<MotelLogicC>().hasPaid;
+            RefreshList(true);
         }
     }
 
@@ -196,13 +272,22 @@ namespace JaLoader
                     called = false;
             }
 
-            if (routeGenerator.routeGenerated && !called)
+            if (routeGenerator.routeGenerated && !called && routeGenerator.routeChosenLength != 0)
             {
                 slept = false;
                 called = true;
-                string cityName = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ')[2];
-                if (cityName == "M.") cityName = "Malko Tarnovo";
-                EventsManager.Instance.CallRoute(cityName);
+                string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
+                if(info.Length > 0 && info[0] != "" && info[0] != string.Empty)
+                {
+                    string destination = info[2];
+                    string start = info[0];
+                    if (destination == "M.") destination = "Malko Tarnovo";
+                    EventsManager.Instance.CallRoute(start, destination, routeGenerator.routeChosenLength * 70);
+                }
+                else
+                {
+                    EventsManager.Instance.CallRoute("Berlin", "Dresden", routeGenerator.routeChosenLength * 70);
+                }
 
                 StartCoroutine(WaitThenCheck());
             }

@@ -35,13 +35,13 @@ namespace JaLoader
         }
         #endregion
 
-        public void AddModsPages(string cityName)
+        public void AddModsPages(string start, string destination, int distance)
         {
             var magazines = FindObjectsOfType<MagazineLogicC>();
 
             foreach (var magazine in magazines)
             {
-                if (!magazine.transform.Find("ModPages"))
+                if (!magazine.transform.Find("ModPages") && magazine.name == "LaikaCatalogue")
                 {
                     var receipt = magazine.transform.Find("Page2_EngineParts").Find("Receipt");
                     receipt.parent = magazine.transform;
@@ -83,7 +83,6 @@ namespace JaLoader
 
                         if (price.name == "backdrop")
                             Destroy(price.gameObject);
-
                     }
 
                     var desc = template.Find("Stats/ComponentDesc");
@@ -127,7 +126,6 @@ namespace JaLoader
                     buttons[PartTypes.Extra].GetComponent<ModsPageNavigator>().partType = PartTypes.Extra;
                     buttons[PartTypes.Custom].GetComponent<ModsPageNavigator>().partType = PartTypes.Custom;
 
-
                     buttons[PartTypes.Custom].name = "Custom_1";
 
                     if (!createdScrollViews)
@@ -158,7 +156,7 @@ namespace JaLoader
                     template.Find("WATERTANKS").transform.localPosition = new Vector3(-0.05f, 0.02f, 0.0035f);
                     template.Find("Extras").transform.localPosition = new Vector3(-0.05f, -0.01f, 0.0035f);
                     template.Find("Custom").transform.localPosition = new Vector3(-0.05f, -0.04f, 0.0035f);
-                    
+
                     var extension = buttonTemplate.gameObject.AddComponent<ModsPageToggle>();
                     extension.scale = buttonTemplate.gameObject.GetComponent<MagazineCatalogueRelayC>().scale;
                     Destroy(buttonTemplate.gameObject.GetComponent<MagazineCatalogueRelayC>());

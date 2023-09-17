@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -8,6 +9,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 
 namespace JaLoader
 {
@@ -44,7 +46,7 @@ namespace JaLoader
         private readonly ModLoader modLoader = ModLoader.Instance;
         private readonly SettingsManager settingsManager = SettingsManager.Instance;
 
-        public GameObject UIVersionCanvas {get; private set;}
+        public GameObject UICanvas {get; private set;}
         public GameObject modTemplatePrefab { get; private set; }
         public GameObject messageTemplatePrefab { get; private set; }
         public GameObject modConsole { get; private set; }
@@ -67,25 +69,36 @@ namespace JaLoader
 
         public GameObject modLoaderText { get; private set; }
         public GameObject modFolderText { get; private set; }
+        public GameObject fpsText { get; private set; }
 
         private MainMenuBookC book;
         private GameObject exitConfirmButton;
+        private GameObject newGameConfirmButton;
 
-        private bool isOnExitPage;
+        private bool isOnOtherPage;
         private bool inOptions;
         private bool inModsOptions;
         private bool isObstructing;
-        private bool forceRestrictRay;
 
         #region Settings Dropdown
+        // Preferences tab
         private Dropdown consoleModeDropdown;
         private Dropdown consolePositionDropdown;
+        private Dropdown showModsFolderDropdown;
+        private Dropdown enableJaDownloaderDropdown;
+        private Dropdown skipLanguageSelectionDropdown;
+        private Dropdown discordRichPresenceDropdown;
         private Dropdown debugModeDropdown;
+
+        // Tweaks tab
         private Dropdown menuMusicDropdown;
         private Slider menuMusicSlider;
+        private Dropdown songsDropdown;
         private Dropdown uncleDropdown;
-        private Dropdown experimentalCCDropdown;
-        private Dropdown showModsFolderDropdown;
+        private Dropdown enhancedMovementDropdown;
+        private Dropdown changeLicensePlateTextDropdown;
+        private InputField licensePlateTextField;
+        private Dropdown showFPSDropdown;
         #endregion
 
         private GameObject menuMusicPlayer;
@@ -102,30 +115,32 @@ namespace JaLoader
 
         private void Update()
         {
-            if (forceRestrictRay)
-                FindObjectOfType<MenuMouseInteractionsC>().restrictRay = true;
-
-            if (UIVersionCanvas == null)
+            if (UICanvas == null)
                 return;
 
             if (SceneManager.GetActiveScene().buildIndex == 1)
             {
-                if (!isOnExitPage && !IsBookClosed())
+                if (!isOnOtherPage && !IsBookClosed())
                 {
-                    UIVersionCanvas.transform.GetChild(0).Find("BookUI").gameObject.SetActive(true);
+                    UICanvas.transform.GetChild(0).Find("BookUI").gameObject.SetActive(true);
                 }
                 else
                 {
-                    UIVersionCanvas.transform.GetChild(0).Find("BookUI").gameObject.SetActive(false);
+                    UICanvas.transform.GetChild(0).Find("BookUI").gameObject.SetActive(false);
                 }
+
+                if (exitConfirmButton.activeSelf || newGameConfirmButton.activeSelf)
+                    isOnOtherPage = true;
+                else
+                    isOnOtherPage = false;
             }
 
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (UIVersionCanvas.transform.GetChild(1).gameObject.activeSelf)
+                if (UICanvas.transform.GetChild(1).gameObject.activeSelf)
                     ToggleModMenu();
 
-                if (UIVersionCanvas.transform.Find("JLSettingsPanel").Find("Main").gameObject.activeSelf)
+                if (UICanvas.transform.Find("JLSettingsPanel").Find("Main").gameObject.activeSelf)
                     ToggleModLoaderSettings_Main();
 
                 RefreshUI();
@@ -133,7 +148,7 @@ namespace JaLoader
 
             //annoying fix for dropdowns only working once
             if (inOptions && Input.GetMouseButtonDown(0))
-                if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || experimentalCCDropdown.transform.Find("Dropdown List"))
+                if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List"))
                     RefreshUI();
 
             if (inModsOptions && Input.GetMouseButtonDown(0))
@@ -144,21 +159,28 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
-            if (UIVersionCanvas == null)
+            if (UICanvas == null)
                 StartCoroutine(LoadUIDelay());
 
             SetNewspaperText();
 
             menuMusicPlayer = GameObject.Find("RadioFreq");
-            menuMusicPlayer.AddComponent<RadioVolumeChanger>();
+            menuMusicPlayer.AddComponent<MenuVolumeChanger>();
             UpdateMenuMusic(!settingsManager.DisableMenuMusic, (float)settingsManager.MenuMusicVolume / 100);
 
             book = FindObjectOfType<MainMenuBookC>();
 
             exitConfirmButton = GameObject.Find("ExitPage").transform.GetChild(0).gameObject;
-            isOnExitPage = exitConfirmButton.activeSelf;
+            newGameConfirmButton = GameObject.Find("New Game").transform.GetChild(1).gameObject;
+            var skipConfirmButton = GameObject.Find("New Game").transform.GetChild(4).gameObject;
+
+            newGameConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(CustomObjectsManager.Instance, "DeleteData"));
+            skipConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(CustomObjectsManager.Instance, "DeleteData"));
 
             ToggleUIVisibility(true);
+
+            var go = new GameObject();
+            go.AddComponent<MenuCarRotate>();
         }
 
         private void OnLoadStart()
@@ -169,24 +191,28 @@ namespace JaLoader
             if (inOptions)
             {
                 inOptions = false;
-                UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(false);
-                UIVersionCanvas.transform.GetChild(2).transform.GetChild(1).gameObject.SetActive(false);
-                UIVersionCanvas.transform.GetChild(2).transform.GetChild(2).gameObject.SetActive(false);
-                UIVersionCanvas.transform.GetChild(2).transform.GetChild(3).gameObject.SetActive(false);
+                UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(false);
+                UICanvas.transform.GetChild(2).transform.GetChild(1).gameObject.SetActive(false);
+                UICanvas.transform.GetChild(2).transform.GetChild(2).gameObject.SetActive(false);
+                UICanvas.transform.GetChild(2).transform.GetChild(3).gameObject.SetActive(false);
             }
         }
 
         public void ToggleUIVisibility(bool show)
         {
-            if (UIVersionCanvas == null)
+            if (UICanvas == null)
                 return;
 
             RefreshUI();
-            UIVersionCanvas.transform.GetChild(0).gameObject.SetActive(show);
+            UICanvas.transform.GetChild(0).gameObject.SetActive(show);
         }
 
-        IEnumerator LoadUIDelay()
+        private IEnumerator LoadUIDelay()
         {
+            Debug.Log("Loading JaLoader UI...");
+
+            gameObject.GetComponent<Stopwatch>().StartCounting();
+
             yield return new WaitForSeconds(0.1f);
 
             var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(settingsManager.ModFolderLocation, @"Required\JaLoader_UI.unity3d"));
@@ -199,29 +225,9 @@ namespace JaLoader
             {
                 StopAllCoroutines();
 
-                GameObject notice = Instantiate(GameObject.Find("UI Root").transform.Find("Notice").gameObject);
-                forceRestrictRay = true;
-                notice.name = "Error";
-                notice.transform.parent = GameObject.Find("UI Root").transform;
-                notice.transform.localPosition = Vector3.zero;
-                notice.transform.position = new Vector3(notice.transform.position.x, notice.transform.position.y - 0.15f, notice.transform.position.z);
-                notice.transform.localRotation = Quaternion.identity;
-                notice.transform.localScale = Vector3.one;
-                notice.SetActive(true);
-
-                notice.transform.GetChild(5).gameObject.SetActive(false);
-                notice.transform.GetChild(1).GetComponent<UITexture>().height = 600;
-                notice.transform.GetChild(1).position = new Vector3(notice.transform.GetChild(1).position.x, notice.transform.GetChild(1).position.y + 0.2f, notice.transform.GetChild(1).position.z);
-                notice.transform.GetChild(0).GetComponent<UILabel>().text = "JaLoader encountered an error!";
-                notice.transform.GetChild(0).GetComponent<UILabel>().ProcessText();
-                notice.transform.GetChild(3).GetComponent<UILabel>().text = "\nWHAT WENT WRONG";
-                notice.transform.GetChild(3).GetComponent<UILabel>().ProcessText();
-                notice.transform.GetChild(2).GetComponent<UILabel>().text = "\n\nThe file 'JaLoader_UI.unity3d' was not found. You can try:";
-                notice.transform.GetChild(2).GetComponent<UILabel>().height = 550;
-                notice.transform.GetChild(2).GetComponent<UILabel>().ProcessText();
-                notice.transform.GetChild(4).GetComponent<UILabel>().text = "Reinstalling JaLoader with JaPatcher\n\n\n Copying the file from JaPatcher's directory/Assets to Mods/Required";
-                notice.transform.GetChild(4).GetComponent<UILabel>().fontSize = 24;
-                notice.transform.GetChild(4).GetComponent<UILabel>().ProcessText();
+                modLoader.CreateImportantNotice("\n\nThe file 'JaLoader_UI.unity3d' was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the file from JaPatcher's directory/Assets/Required to Mods/Required");
+                Destroy(GameObject.Find("JaLoader Modding Helpers"));
+                Destroy(gameObject);
 
                 yield break;
             }
@@ -232,15 +238,15 @@ namespace JaLoader
 
             var UIPrefab = assetLoadRequest.asset as GameObject;
 
-            UIVersionCanvas = Instantiate(UIPrefab);
-            DontDestroyOnLoad(UIVersionCanvas);
+            UICanvas = Instantiate(UIPrefab);
+            DontDestroyOnLoad(UICanvas);
 
-            modTemplatePrefab = UIVersionCanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).GetChild(0).gameObject;
-            modConsole = UIVersionCanvas.transform.Find("JLConsole/Console").gameObject;
+            modTemplatePrefab = UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).GetChild(0).gameObject;
+            modConsole = UICanvas.transform.Find("JLConsole/Console").gameObject;
             messageTemplatePrefab = modConsole.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
-            moreInfoPanelMods = UIVersionCanvas.transform.Find("JLModsPanel/MoreInfo").gameObject;
-            noticePanel = UIVersionCanvas.transform.Find("JLNotice").gameObject;
-            catalogueTemplate = UIVersionCanvas.transform.Find("JLCatalogue/MainTemplate").gameObject;
+            moreInfoPanelMods = UICanvas.transform.Find("JLModsPanel/MoreInfo").gameObject;
+            noticePanel = UICanvas.transform.Find("JLNotice").gameObject;
+            catalogueTemplate = UICanvas.transform.Find("JLCatalogue/MainTemplate").gameObject;
             catalogueEntryTemplate = catalogueTemplate.transform.Find("Viewport/Content/Template").gameObject;
 
             GameObject consoleObj = Instantiate(new GameObject());
@@ -248,8 +254,8 @@ namespace JaLoader
             consoleObj.name = "ModConsole";
             DontDestroyOnLoad(consoleObj);
 
-            modLoaderText = UIVersionCanvas.transform.GetChild(0).Find("JaLoader").gameObject;
-            modFolderText = UIVersionCanvas.transform.GetChild(0).Find("ModsFolder").gameObject;
+            modLoaderText = UICanvas.transform.GetChild(0).Find("JaLoader").gameObject;
+            modFolderText = UICanvas.transform.GetChild(0).Find("ModsFolder").gameObject;
 
             if (settingsManager.HideModFolderLocation)
                 modFolderText.SetActive(false);
@@ -264,27 +270,27 @@ namespace JaLoader
 
             modFolderText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{settingsManager.ModFolderLocation}</color>";
 
-            UIVersionCanvas.transform.Find("JLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
-            UIVersionCanvas.transform.Find("JLModsPanel/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
+            UICanvas.transform.Find("JLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
+            UICanvas.transform.Find("JLModsPanel/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
 
-            UIVersionCanvas.transform.Find("JLPanel/BookUI/OptionsButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
+            UICanvas.transform.Find("JLPanel/BookUI/OptionsButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
+            UICanvas.transform.Find("JLSettingsPanel/Main/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
 
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/PreferencesButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/TweaksButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/AccessibilityButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
+            UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/PreferencesButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
+            UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/TweaksButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
+            UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/AccessibilityButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
 
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Accessibility/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
+            UICanvas.transform.Find("JLSettingsPanel/Preferences/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
+            UICanvas.transform.Find("JLSettingsPanel/Tweaks/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
+            UICanvas.transform.Find("JLSettingsPanel/Accessibility/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
 
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+            UICanvas.transform.Find("JLSettingsPanel/Preferences/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+            UICanvas.transform.Find("JLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+            UICanvas.transform.Find("JLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
 
             noticePanel.transform.Find("UnderstandButton").GetComponent<Button>().onClick.AddListener(CloseNotice);
 
-            modSettingsScrollView = UIVersionCanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
+            modSettingsScrollView = UICanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
             modSettingsScrollViewContent = modSettingsScrollView.transform.GetChild(0).GetChild(0).gameObject;
 
             modSettingsScrollView.transform.Find("SaveButton").GetComponent<Button>().onClick.AddListener(SaveModSettings);
@@ -296,21 +302,33 @@ namespace JaLoader
             modOptionsToggleTemplate = modSettingsScrollViewContent.transform.Find("ToggleTemplate").gameObject;
             modOptionsSliderTemplate = modSettingsScrollViewContent.transform.Find("SliderTemplate").gameObject;
 
-            consoleModeDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ConsoleMode").gameObject.GetComponent<Dropdown>();
-            consolePositionDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ConsolePosition").gameObject.GetComponent<Dropdown>();
-            showModsFolderDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/TopRow/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
-            debugModeDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Preferences/VerticalLayoutGroup/MiddleRow/DebugMode").gameObject.GetComponent<Dropdown>();
+            consoleModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsoleMode").gameObject.GetComponent<Dropdown>();
+            consolePositionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsolePosition").gameObject.GetComponent<Dropdown>();
+            showModsFolderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
+            enableJaDownloaderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/EnableJaDownloader").gameObject.GetComponent<Dropdown>();
+            skipLanguageSelectionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/SkipLanguageSelectionScreen").gameObject.GetComponent<Dropdown>();
+            discordRichPresenceDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/DiscordRichPresence").gameObject.GetComponent<Dropdown>();
+            debugModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row3/DebugMode").gameObject.GetComponent<Dropdown>();
 
-            menuMusicDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/TopRow/MenuMusic").gameObject.GetComponent<Dropdown>();
-            menuMusicSlider = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/TopRow/MenuMusicVolume").gameObject.GetComponent<Slider>();
-            uncleDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/TopRow/Uncle").gameObject.GetComponent<Dropdown>();
-            experimentalCCDropdown = UIVersionCanvas.transform.Find("JLSettingsPanel/Tweaks/VerticalLayoutGroup/BottomRow/ExperimentalCC").gameObject.GetComponent<Dropdown>();
+            menuMusicDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusic").gameObject.GetComponent<Dropdown>();
+            menuMusicSlider = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusicVolume").gameObject.GetComponent<Slider>();
+            songsDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/CustomSongs").gameObject.GetComponent<Dropdown>();
+            uncleDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/Uncle").gameObject.GetComponent<Dropdown>();
+            enhancedMovementDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/UseEnhancedMovement").gameObject.GetComponent<Dropdown>();
+            changeLicensePlateTextDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/ChangeLicensePlate").gameObject.GetComponent<Dropdown>();
+            licensePlateTextField = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/LicensePlateText/InputField").gameObject.GetComponent<InputField>();
+            showFPSDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row4/ShowFPSCounter").gameObject.GetComponent<Dropdown>();
 
-            UIVersionCanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
+            UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
+
+            fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
+            fpsText.AddComponent<FPSCounter>();
 
             SetOptionsValues();
 
             Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
+            gameObject.GetComponent<Stopwatch>().StopCounting();
+            Debug.Log($"Loaded JaLoader UI! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
 
             StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
 
@@ -320,7 +338,49 @@ namespace JaLoader
             if (SettingsManager.IsPreReleaseVersion)
                 ShowNotice("USING A PRE-RELEASE VERSION OF JALOADER", "You are using a pre-release version of JaLoader.\r\n\r\nThese versions are prone to bugs and may cause issues with certain mods.\r\n\r\nPlease report any bugs you encounter to the JaLoader GitHub page, marking them with the \"pre-release\" tag.\r\n\r\nHave fun!");
 
+            AddWrench();
+
             ab.Unload(false);
+        }
+
+        private void AddWrench()
+        {
+            var toolBox = GameObject.Find("ToolBox");
+            var wrench = toolBox.transform.Find("Cylinder_254");
+            MainMenuToolboxC orgComp = toolBox.GetComponent<MainMenuToolboxC>();
+
+            wrench.localPosition = new Vector3(24.21f, -3.55f, 8.96f); // The wrench in the original toolbox clips through the casing
+
+            var JLWrench = Instantiate(wrench.gameObject);
+            JLWrench.name = "JLWrench";
+            Destroy(JLWrench.transform.GetChild(0).gameObject);
+            JLWrench.transform.position = new Vector3(-51.88f, 38.9877f, -73.8051f);
+            JLWrench.transform.eulerAngles = new Vector3(-68.094f, 111.995f, -94.47f);
+            JLWrench.transform.localScale = new Vector3(2, 2, 2);
+
+            JLWrench.layer = 11;
+            JLWrench.tag = "Pickup";
+
+            BoxCollider col = JLWrench.AddComponent<BoxCollider>();
+            col.isTrigger = true;
+            MenuWrench comp = JLWrench.AddComponent<MenuWrench>();
+            comp.book = orgComp.book;
+            comp.renderTarget = JLWrench;
+
+            Material mat = new Material(Shader.Find("Legacy Shaders/Diffuse"))
+            {
+                color = new Color32(255, 255, 107, 255)
+            };
+
+            Material glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
+            {
+                color = mat.color
+            };
+
+            JLWrench.GetComponent<MeshRenderer>().material = mat;
+
+            comp.startMaterial = mat;
+            comp.glowMaterial = glowMat;
         }
 
         private void SetNewspaperText()
@@ -330,7 +390,7 @@ namespace JaLoader
                 string versionText = GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text;
                 versionText = Regex.Replace(versionText, @"JALOPY", "");
                 versionText = Regex.Replace(versionText, @"\s", "");
-                GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {(SettingsManager.IsPreReleaseVersion ? "PR 0.1" : settingsManager.GetVersionString())}";
+                GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {(SettingsManager.IsPreReleaseVersion ? $"{settingsManager.GetVersionString().Replace("Pre-Release", "PR")}" : settingsManager.GetVersionString())}";
 
                 if (int.Parse(versionText.Replace(".", "")) < 1105)
                     StartCoroutine(ShowNoticeAfterLoad("OUTDATED GAME DETECTED", "You are using an outdated version of Jalopy.\r\n\r\nYou may encounter issues with JaLoader and certain mods, as well as more bugs in general.\r\n\r\nIf you encounter bugs, please make sure to ask or check if they exist in newer versions as well before reporting them.\r\n\r\nHave fun!"));
@@ -364,18 +424,27 @@ namespace JaLoader
             consoleModeDropdown.value = (int)settingsManager.ConsoleMode;
             consolePositionDropdown.value = (int)settingsManager.ConsolePosition;
             showModsFolderDropdown.value = settingsManager.HideModFolderLocation ? 1 : 0;
-            debugModeDropdown.value = settingsManager.DebugMode ? 1 : 0;
+            skipLanguageSelectionDropdown.value = settingsManager.SkipLanguage ? 0 : 1;
+            discordRichPresenceDropdown.value = settingsManager.UseDiscordRichPresence ? 0 : 1;
+            debugModeDropdown.value = settingsManager.DebugMode ? 0 : 1;
 
             menuMusicDropdown.value = settingsManager.DisableMenuMusic ? 1 : 0;
             menuMusicSlider.value = settingsManager.MenuMusicVolume;
             uncleDropdown.value = settingsManager.DisableUncle ? 1 : 0;
-            experimentalCCDropdown.value = settingsManager.UseExperimentalCharacterController ? 1 : 0;
+            songsDropdown.value = settingsManager.UseCustomSongs ? 0 : 1;
+            enhancedMovementDropdown.value = settingsManager.UseExperimentalCharacterController ? 1 : 0;
+            changeLicensePlateTextDropdown.value = (int)settingsManager.ChangeLicensePlateText;
+            licensePlateTextField.text = settingsManager.LicensePlateText;
+            showFPSDropdown.value = settingsManager.ShowFPSCounter ? 1 : 0;
+            enableJaDownloaderDropdown.value = settingsManager.EnableJaDownloader ? 0 : 1;
+
+            fpsText.SetActive(settingsManager.ShowFPSCounter);
         }
 
         public void UpdateMenuMusic(bool enabled, float volume)
         {
             menuMusicPlayer.SetActive(enabled);
-            menuMusicPlayer.GetComponent<RadioVolumeChanger>().volume = volume;
+            menuMusicPlayer.GetComponent<MenuVolumeChanger>().volume = volume;
         }
 
         private void SwitchLanguage()
@@ -388,11 +457,11 @@ namespace JaLoader
 
         private void RefreshUI()
         {
-            if (UIVersionCanvas == null)
+            if (UICanvas == null)
                 return;
 
-            UIVersionCanvas.SetActive(false);
-            UIVersionCanvas.SetActive(true);
+            UICanvas.SetActive(false);
+            UICanvas.SetActive(true);
         }
 
         public void ToggleMoreInfo(string name, string author, string version, string description)
@@ -450,7 +519,7 @@ namespace JaLoader
             if (!IsBookClosed())
                 book.CloseBook();
 
-            UIVersionCanvas.transform.GetChild(1).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(1).gameObject.activeSelf);
+            UICanvas.transform.GetChild(1).gameObject.SetActive(!UICanvas.transform.GetChild(1).gameObject.activeSelf);
             ToggleObstructRay();
         }
 
@@ -460,26 +529,26 @@ namespace JaLoader
                 book.CloseBook();
 
             inOptions = !inOptions;
-            UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
+            UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
             ToggleObstructRay();
         }
 
         public void ToggleModLoaderSettings_Preferences()
         {
-            UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
-            UIVersionCanvas.transform.GetChild(2).transform.GetChild(1).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(1).gameObject.activeSelf);
+            UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
+            UICanvas.transform.GetChild(2).transform.GetChild(1).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(1).gameObject.activeSelf);
         }
 
         public void ToggleModLoaderSettings_Tweaks()
         {
-            UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
-            UIVersionCanvas.transform.GetChild(2).transform.GetChild(2).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(2).gameObject.activeSelf);
+            UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
+            UICanvas.transform.GetChild(2).transform.GetChild(2).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(2).gameObject.activeSelf);
         }
 
         public void ToggleModLoaderSettings_Accessibility()
         {
-            UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
-            UIVersionCanvas.transform.GetChild(2).transform.GetChild(3).gameObject.SetActive(!UIVersionCanvas.transform.GetChild(2).transform.GetChild(3).gameObject.activeSelf);
+            UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
+            UICanvas.transform.GetChild(2).transform.GetChild(3).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(3).gameObject.activeSelf);
         }
 
         private void ToggleObstructRay()
@@ -499,14 +568,37 @@ namespace JaLoader
             ConsoleModes consoleMode = (ConsoleModes)consoleModeDropdown.value;
             ConsolePositions consolePosition = (ConsolePositions)consolePositionDropdown.GetComponent<Dropdown>().value;
 
+            if (settingsManager.UseDiscordRichPresence != !Convert.ToBoolean(discordRichPresenceDropdown.value))
+            {
+                ToggleModLoaderSettings_Preferences();
+                ToggleModLoaderSettings_Main();
+                ShowNotice("RESTART REQUIRED", "Changing the Discord Rich Presence setting requires a game restart for the changes to apply.");
+            }
+
+            var wasJaDownChanged = false;
+
+            if (settingsManager.EnableJaDownloader != !Convert.ToBoolean(enableJaDownloaderDropdown.value))
+            {
+                wasJaDownChanged = true;
+            }
+
             settingsManager.ConsoleMode = consoleMode;
             settingsManager.ConsolePosition = consolePosition;
             settingsManager.HideModFolderLocation = Convert.ToBoolean(showModsFolderDropdown.value);
-            settingsManager.DebugMode = Convert.ToBoolean(debugModeDropdown.value);
+            settingsManager.DebugMode = !Convert.ToBoolean(debugModeDropdown.value);
             settingsManager.DisableMenuMusic = Convert.ToBoolean(menuMusicDropdown.value);
             settingsManager.MenuMusicVolume = (int)menuMusicSlider.value;
             settingsManager.DisableUncle = Convert.ToBoolean(uncleDropdown.value);
-            settingsManager.UseExperimentalCharacterController = Convert.ToBoolean(experimentalCCDropdown.value);
+            settingsManager.UseCustomSongs = !Convert.ToBoolean(songsDropdown.value);
+            settingsManager.UseExperimentalCharacterController = Convert.ToBoolean(enhancedMovementDropdown.value);
+            settingsManager.SkipLanguage = !Convert.ToBoolean(skipLanguageSelectionDropdown.value);
+            settingsManager.UseDiscordRichPresence = !Convert.ToBoolean(discordRichPresenceDropdown.value);
+            settingsManager.ChangeLicensePlateText = (LicensePlateStyles)changeLicensePlateTextDropdown.value;
+            settingsManager.LicensePlateText = licensePlateTextField.text;
+            settingsManager.ShowFPSCounter = Convert.ToBoolean(showFPSDropdown.value);
+            settingsManager.EnableJaDownloader = !Convert.ToBoolean(enableJaDownloaderDropdown.value);
+
+            fpsText.SetActive(settingsManager.ShowFPSCounter);
 
             settingsManager.SaveSettings();
 
@@ -519,6 +611,19 @@ namespace JaLoader
             UpdateMenuMusic(!Convert.ToBoolean(menuMusicDropdown.value), (float)menuMusicSlider.value / 100);
 
             UncleHelper.Instance.UncleEnabled = !settingsManager.DisableUncle;
+
+            if (wasJaDownChanged)
+            {
+                if (settingsManager.EnableJaDownloader)
+                {
+                    var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, ".."), "JaDownloader.exe"));
+                    Process.Start($@"{Application.dataPath}\..\JaDownloaderSetup.exe", $"\"{path}\"");
+                }
+                else
+                {
+                    Process.Start($@"{Application.dataPath}\..\JaDownloaderSetup.exe", "Uninstall");
+                }
+            }
         }
 
         private List<(string, string)> noticesToShow = new List<(string, string)>();
@@ -564,6 +669,46 @@ namespace JaLoader
                 noticePanel.transform.Find("Subtitle").GetComponent<Text>().text = noticesToShow[0].Item1;
                 noticePanel.transform.Find("Message").GetComponent<Text>().text = noticesToShow[0].Item2;
             }
+        }
+    }
+
+    public class MenuWrench : MonoBehaviour
+    {
+        public bool isGlowing;
+
+        public Material startMaterial;
+
+        public Material glowMaterial;
+
+        public GameObject renderTarget;
+
+        public GameObject book;
+
+        public void Action()
+        {
+            book.SendMessage("CloseBookNoParticle");
+            UIManager.Instance.ToggleModLoaderSettings_Main();
+        }
+
+        private void Update()
+        {
+            if (isGlowing)
+            {
+                float value = Mathf.PingPong(Time.time, 0.75f) + 1.25f;
+                renderTarget.GetComponent<Renderer>().material.SetFloat("_RimPower", value);
+            }
+        }
+
+        public void RaycastEnter()
+        {
+            isGlowing = true;
+            renderTarget.GetComponent<Renderer>().material = glowMaterial;
+        }
+
+        public void RaycastExit()
+        {
+            isGlowing = false;
+            renderTarget.GetComponent<Renderer>().material = startMaterial;
         }
     }
 }

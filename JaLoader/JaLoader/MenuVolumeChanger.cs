@@ -6,11 +6,11 @@ using UnityEngine;
 
 namespace JaLoader
 {
-    class RadioVolumeChanger : MonoBehaviour
+    public class MenuVolumeChanger : MonoBehaviour
     {
         private AudioSource radioSource;
         public float volume;
-        private bool muted;
+        public bool muted;
 
         void Start()
         {
@@ -22,13 +22,15 @@ namespace JaLoader
             if (!radioSource.gameObject.activeSelf)
                 return;
 
+            radioSource.volume = volume;
+
             if (Input.GetKeyDown(KeyCode.F6))
                 FindObjectOfType<RadioFreqLogicC>().NextSong();
 
             if (Input.GetKeyDown(KeyCode.F7))
                 muted = !muted;
 
-            radioSource.volume = muted ? 0 : volume;
+            radioSource.mute = muted;
         }
     }
 }
