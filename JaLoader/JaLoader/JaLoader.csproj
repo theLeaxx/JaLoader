@@ -152,6 +152,7 @@
     <Compile Include="Console.cs" />
     <Compile Include="DragRigidbodyC_ModExtension.cs" />
     <Compile Include="CustomObjectInfo.cs" />
+    <Compile Include="FPSCounter.cs" />
     <Compile Include="LaikaCatalogueExtension.cs" />
     <Compile Include="LicensePlateCustomizer.cs" />
     <Compile Include="MarketManager.cs" />
@@ -165,6 +166,7 @@
     <Compile Include="ReferencesLoader.cs" />
     <Compile Include="SerializableDictionary.cs" />
     <Compile Include="SettingsManager.cs" />
+    <Compile Include="Stopwatch.cs" />
     <Compile Include="UIManager.cs" />
     <Compile Include="UncleHelper.cs" />
   </ItemGroup>

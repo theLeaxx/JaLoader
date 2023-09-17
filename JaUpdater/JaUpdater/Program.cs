@@ -1,5 +1,6 @@
 ﻿using System.IO.Compression;
 using Timer = System.Timers.Timer;
+using Microsoft.Win32;
 
 // this will only work with releases 1.1.0 and above, as the zip file contents have been rearranged
 Console.WriteLine("Downloading update...");
@@ -9,8 +10,9 @@ if (args.Length == 2)
     var currentDir = Directory.GetCurrentDirectory();
     var filesPath = $@"{currentDir}\Files";
 
-    var extractLocation = args[0].Replace("-", "");
-    var type = args[1].Replace("-", "");
+    var extractLocation = "";
+    if (args[0].Contains("\"")) extractLocation = args[0].Replace("\"", "");
+    var type = args[1];
 
     using var client = new HttpClient();
     using var s = client.GetStreamAsync(file);
@@ -51,44 +53,98 @@ if (args.Length == 2)
 
     Console.WriteLine("Replacing files...");
 
-    if (type == "Jalopy")
+#pragma warning disable CA1416
+#pragma warning disable CS8602
+#pragma warning disable CS8600
+
+    RegistryKey parentKey = Registry.CurrentUser;
+
+    RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
+
+    RegistryKey jalopyKey = softwareKey?.CreateSubKey("Jalopy", true);
+
+    var jalopyPath = jalopyKey?.GetValue("JalopyPath").ToString();
+    var modsPath = jalopyKey?.GetValue("ModsLocation").ToString();
+
+#pragma warning restore CA1416
+#pragma warning restore CS8602
+#pragma warning restore CS8600
+
+    switch (type)
     {
-        foreach (var updateFile in mainFiles)
-        {
-            File.Copy(updateFile.FullName, $@"{currentDir}\{updateFile.Name}", true);
-        }
+        case "Jalopy":
+            foreach (var updateFile in mainFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{currentDir}\{updateFile.Name}", true);
+            }
 
-        foreach (var updateFile in managedFiles)
-        {
-            File.Copy(updateFile.FullName, $@"{currentDir}\Jalopy_Data\Managed\{updateFile.Name}", true);
-        }
+            foreach (var updateFile in managedFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{currentDir}\Jalopy_Data\Managed\{updateFile.Name}", true);
+            }
 
-        foreach (var updateFile in requiredFiles)
-        {
-            File.Copy(updateFile.FullName, $@"{extractLocation}\{updateFile.Name}", true);
-        }
+            foreach (var updateFile in requiredFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{extractLocation}\{updateFile.Name}", true);
+            }
+            break;
+
+        case "Patcher":
+            foreach (var updateFile in mainFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Main\{updateFile.Name}", true);
+            }
+
+            foreach (var updateFile in managedFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Managed\{updateFile.Name}", true);
+            }
+
+            foreach (var updateFile in requiredFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Required\{updateFile.Name}", true);
+            }
+
+            File.Copy($@"{filesPath}\JaPatcher.exe", $@"{extractLocation}\JaPatcher.exe", true);
+            break;
+
+        case "Both":
+            if (!string.IsNullOrEmpty(jalopyPath) && !string.IsNullOrEmpty(modsPath))
+            {
+                foreach (var updateFile in mainFiles)
+                {
+                    File.Copy(updateFile.FullName, $@"{jalopyPath}\..\{updateFile.Name}", true);
+                }
+
+                foreach (var updateFile in managedFiles)
+                {
+                    File.Copy(updateFile.FullName, $@"{jalopyPath}\..\Jalopy_Data\Managed\{updateFile.Name}", true);
+                }
+
+                foreach (var updateFile in requiredFiles)
+                {
+                    File.Copy(updateFile.FullName, $@"{modsPath}\Required\{updateFile.Name}", true);
+                }
+            }
+
+            foreach (var updateFile in mainFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Main\{updateFile.Name}", true);
+            }
+
+            foreach (var updateFile in managedFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Managed\{updateFile.Name}", true);
+            }
+
+            foreach (var updateFile in requiredFiles)
+            {
+                File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Required\{updateFile.Name}", true);
+            }
+
+            File.Copy($@"{filesPath}\JaPatcher.exe", $@"{extractLocation}\JaPatcher.exe", true);
+            break;
     }
-    else if (type == "Patcher")
-    {
-        foreach (var updateFile in mainFiles)
-        {
-            File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Main\{updateFile.Name}", true);
-        }
-
-        foreach (var updateFile in managedFiles)
-        {
-            File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Managed\{updateFile.Name}", true);
-        }
-
-        foreach (var updateFile in requiredFiles)
-        {
-            File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Required\{updateFile.Name}", true);
-        }
-
-        File.Copy($@"{filesPath}\JaPatcher.exe", $@"{extractLocation}\JaPatcher.exe", true);
-    }
-
-    Console.WriteLine("Update applied successfully!");
 
     File.Delete($@"{currentDir}\JaPatcher.zip");
     Directory.Delete(filesPath, true);

@@ -54,6 +54,8 @@ namespace JaLoader
         private RectTransform consoleRectTransform;
 
         private readonly List<string> log = new List<string>();
+        private readonly List<string> enteredCommands = new List<string>();
+        private int currentInList = 0;
 
         private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
 
@@ -185,9 +187,35 @@ namespace JaLoader
                 if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
                 {
                     log.Add($">> {inputField.text.ToLower()}");
+                    enteredCommands.Add(inputField.text);
+                    currentInList = enteredCommands.Count;
                     WriteLog();
 
                     CheckInput(inputField);
+                }
+            }
+
+            if (Visible)
+            {
+                if (Input.GetKeyDown(KeyCode.UpArrow))
+                {
+                    if (currentInList > 0)
+                    {
+                        currentInList--;
+                        inputField.text = enteredCommands[currentInList];
+
+                        inputField.caretPosition = inputField.text.Length;
+                    }
+                }
+                else if (Input.GetKeyDown(KeyCode.DownArrow))
+                {
+                    if (currentInList < enteredCommands.Count)
+                    {
+                        currentInList++;
+                        inputField.text = enteredCommands[currentInList];
+
+                        inputField.caretPosition = inputField.text.Length;
+                    }
                 }
             }
         }
@@ -419,6 +447,10 @@ namespace JaLoader
 
                     case "mods":
                         ToggleModList();
+                        break;
+
+                    case "settings":
+                        ToggleSettings();
                         break;
 
                     case "path":
@@ -670,6 +702,11 @@ namespace JaLoader
         private void ToggleModList()
         {
             uiManager.ToggleModMenu();
+        }
+
+        private void ToggleSettings()
+        {
+            uiManager.ToggleModLoaderSettings_Main();
         }
 
         private void SendPath()

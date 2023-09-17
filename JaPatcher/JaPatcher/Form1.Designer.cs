@@ -32,6 +32,7 @@
             Label gameFolderText;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             groupBox1 = new GroupBox();
+            updateButton = new Button();
             launchButton = new Button();
             installButton = new Button();
             locateFolderButton = new Button();
@@ -39,11 +40,13 @@
             folderTextValue = new Label();
             locateFolderDialog = new OpenFileDialog();
             groupBox2 = new GroupBox();
+            customFolderModsText = new Label();
+            customModsLocationButton = new RadioButton();
             gameFolderModsText = new Label();
             documentsModsText = new Label();
             gameFolderModsButton = new RadioButton();
             documentsButton = new RadioButton();
-            updateButton = new Button();
+            customModsDialog = new FolderBrowserDialog();
             installedText = new Label();
             gameFolderText = new Label();
             groupBox1.SuspendLayout();
@@ -86,6 +89,19 @@
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
             groupBox1.Text = "Information";
+            // 
+            // updateButton
+            // 
+            updateButton.ForeColor = SystemColors.ControlText;
+            updateButton.ImeMode = ImeMode.NoControl;
+            updateButton.Location = new Point(387, 67);
+            updateButton.Name = "updateButton";
+            updateButton.Size = new Size(71, 23);
+            updateButton.TabIndex = 8;
+            updateButton.Text = "Update";
+            updateButton.UseVisualStyleBackColor = true;
+            updateButton.Visible = false;
+            updateButton.Click += updateButton_Click;
             // 
             // launchButton
             // 
@@ -151,17 +167,43 @@
             // 
             // groupBox2
             // 
+            groupBox2.Controls.Add(customFolderModsText);
+            groupBox2.Controls.Add(customModsLocationButton);
             groupBox2.Controls.Add(gameFolderModsText);
             groupBox2.Controls.Add(documentsModsText);
             groupBox2.Controls.Add(gameFolderModsButton);
             groupBox2.Controls.Add(documentsButton);
             groupBox2.Location = new Point(12, 130);
             groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(541, 115);
+            groupBox2.Size = new Size(541, 162);
             groupBox2.TabIndex = 2;
             groupBox2.TabStop = false;
             groupBox2.Text = "Select Mod Folder";
             groupBox2.Visible = false;
+            // 
+            // customFolderModsText
+            // 
+            customFolderModsText.AutoSize = true;
+            customFolderModsText.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            customFolderModsText.ImeMode = ImeMode.NoControl;
+            customFolderModsText.Location = new Point(34, 135);
+            customFolderModsText.Name = "customFolderModsText";
+            customFolderModsText.Size = new Size(175, 15);
+            customFolderModsText.TabIndex = 5;
+            customFolderModsText.Text = "Locate the Jalopy folder first...";
+            // 
+            // customModsLocationButton
+            // 
+            customModsLocationButton.AutoSize = true;
+            customModsLocationButton.Enabled = false;
+            customModsLocationButton.ImeMode = ImeMode.NoControl;
+            customModsLocationButton.Location = new Point(6, 114);
+            customModsLocationButton.Name = "customModsLocationButton";
+            customModsLocationButton.Size = new Size(67, 19);
+            customModsLocationButton.TabIndex = 4;
+            customModsLocationButton.Text = "Custom";
+            customModsLocationButton.UseVisualStyleBackColor = true;
+            customModsLocationButton.CheckedChanged += customModsLocationButton_CheckedChanged;
             // 
             // gameFolderModsText
             // 
@@ -214,25 +256,12 @@
             documentsButton.UseVisualStyleBackColor = true;
             documentsButton.CheckedChanged += documentsButton_CheckedChanged;
             // 
-            // updateButton
-            // 
-            updateButton.ForeColor = SystemColors.ControlText;
-            updateButton.ImeMode = ImeMode.NoControl;
-            updateButton.Location = new Point(387, 67);
-            updateButton.Name = "updateButton";
-            updateButton.Size = new Size(71, 23);
-            updateButton.TabIndex = 8;
-            updateButton.Text = "Update";
-            updateButton.UseVisualStyleBackColor = true;
-            updateButton.Visible = false;
-            updateButton.Click += updateButton_Click;
-            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
-            ClientSize = new Size(565, 260);
+            ClientSize = new Size(565, 300);
             Controls.Add(groupBox2);
             Controls.Add(groupBox1);
             ForeColor = SystemColors.ControlText;
@@ -263,5 +292,8 @@
         private RadioButton documentsButton;
         private Button launchButton;
         private Button updateButton;
+        private Label customFolderModsText;
+        private RadioButton customModsLocationButton;
+        private FolderBrowserDialog customModsDialog;
     }
 }

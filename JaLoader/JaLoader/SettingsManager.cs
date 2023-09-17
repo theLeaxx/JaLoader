@@ -47,6 +47,8 @@ namespace JaLoader
         public LicensePlateStyles ChangeLicensePlateText;
         public bool UseDiscordRichPresence;
         public string LicensePlateText;
+        public bool ShowFPSCounter;
+        public bool EnableJaDownloader;
 
         public List<string> DisabledMods = new List<string>();
 
@@ -80,9 +82,9 @@ namespace JaLoader
 
             RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
 
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy");
+            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
 
-            jalopyKey?.SetValue("JaLoaderVersion", GetVersion(), RegistryValueKind.String);
+            jalopyKey?.SetValue("JaLoaderVersion", GetVersion().ToString(), RegistryValueKind.String);
         }
 
         private void ReadSettings()
@@ -91,7 +93,7 @@ namespace JaLoader
 
             RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
 
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy");
+            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
 
             if (jalopyKey != null && jalopyKey.GetValue("ModsLocation") != null)
             {
@@ -137,6 +139,10 @@ namespace JaLoader
             ChangeLicensePlateText = _settings.ChangeLicensePlateText;
             LicensePlateText = _settings.LicensePlateText;
             UseDiscordRichPresence = _settings.UseDiscordRichPresence;
+            ShowFPSCounter = _settings.ShowFPSCounter;
+            EnableJaDownloader = _settings.EnableJaDownloader;
+
+            EventsManager.Instance.OnSettingsLoad();
         }
 
         public void SaveSettings()
@@ -158,6 +164,8 @@ namespace JaLoader
             _settings.ChangeLicensePlateText = ChangeLicensePlateText;
             _settings.LicensePlateText = LicensePlateText;
             _settings.UseDiscordRichPresence = UseDiscordRichPresence;
+            _settings.ShowFPSCounter = ShowFPSCounter;
+            _settings.EnableJaDownloader = EnableJaDownloader;
 
             for (int i = 0; i < modLoaderReference.disabledMods.ToArray().Length; i++)
             {
@@ -167,6 +175,8 @@ namespace JaLoader
             _settings.DisabledMods = DisabledMods;
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
+
+            EventsManager.Instance.OnSettingsSave();
         }
 
         private void Update()
@@ -196,5 +206,7 @@ namespace JaLoader
         [SerializeField] public LicensePlateStyles ChangeLicensePlateText = LicensePlateStyles.None;
         [SerializeField] public string LicensePlateText = "";
         [SerializeField] public bool UseDiscordRichPresence = true;
+        [SerializeField] public bool ShowFPSCounter = false;
+        [SerializeField] public bool EnableJaDownloader = false;
     }
 }

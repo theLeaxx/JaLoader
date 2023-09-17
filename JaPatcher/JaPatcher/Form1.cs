@@ -68,6 +68,7 @@ namespace JalopyModLoader
             documentsButton.ForeColor = Color.White;
             installedTextValue.ForeColor = Color.White;
             gameFolderModsButton.ForeColor = Color.White;
+            customModsLocationButton.ForeColor = Color.White;
             locateFolderButton.ForeColor = Color.White;
             installButton.ForeColor = Color.White;
             launchButton.ForeColor = Color.White;
@@ -77,6 +78,7 @@ namespace JalopyModLoader
         private string gamePath = "";
         private readonly string documentsModsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Jalopy\Mods");
         private string gameFolderModsPath = "";
+        private string customModsPath = "";
 
         private string currentModPath = "";
 
@@ -90,6 +92,10 @@ namespace JalopyModLoader
         private readonly string theraotDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\Theraot.Core.dll");
         private readonly string naudioDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\NAudio.dll");
         private readonly string discordDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\discord_game_sdk.dll");
+
+        private readonly string jsonDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\Newtonsoft.Json.dll");
+        private readonly string jaDownloader = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\JaDownloader.exe");
+        private readonly string jaDownloaderSetup = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\JaDownloaderSetup.exe");
 
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
 
@@ -105,7 +111,7 @@ namespace JalopyModLoader
                 SetDarkMode();
             }
 
-            if (!File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(assetBundle) || !File.Exists(theraotDLL) || !File.Exists(naudioDLL) || !File.Exists(discordDLL))
+            if (!File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(assetBundle) || !File.Exists(theraotDLL) || !File.Exists(naudioDLL) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
             {
                 MessageBox.Show("Please extract all of the contents from the archive!", "DLLs not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Close();
@@ -178,7 +184,7 @@ namespace JalopyModLoader
 
             RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
 
-            RegistryKey jalopyKey = softwareKey?.CreateSubKey("Jalopy");
+            RegistryKey jalopyKey = softwareKey?.CreateSubKey("Jalopy", true);
 
             jalopyKey?.SetValue("ModsLocation", modsLocation, RegistryValueKind.String);
         }
@@ -189,7 +195,7 @@ namespace JalopyModLoader
 
             RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
 
-            RegistryKey jalopyKey = softwareKey?.CreateSubKey("Jalopy");
+            RegistryKey jalopyKey = softwareKey?.CreateSubKey("Jalopy", true);
 
             jalopyKey?.SetValue("JalopyPath", path, RegistryValueKind.String);
         }
@@ -200,7 +206,7 @@ namespace JalopyModLoader
 
             RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
 
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy");
+            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
 
             if (jalopyKey != null && jalopyKey.GetValue("JalopyPath") != null)
                 return jalopyKey.GetValue("JalopyPath").ToString();
@@ -214,11 +220,11 @@ namespace JalopyModLoader
 
             RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
 
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy");
+            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
 
             if (jalopyKey != null && jalopyKey.GetValue("ModsLocation") != null)
                 return jalopyKey.GetValue("ModsLocation").ToString();
-            else 
+            else
                 return "";
         }
 
@@ -234,6 +240,10 @@ namespace JalopyModLoader
             {
                 gameFolderModsButton.Checked = true;
             }
+            else
+            {
+                customModsLocationButton.Checked = true;
+            }
         }
 
         public void Patch()
@@ -245,6 +255,9 @@ namespace JalopyModLoader
             File.Copy(theraotDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll"), true);
             File.Copy(naudioDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\NAudio.dll"), true);
             File.Copy(discordDLL, Path.Combine(gamePath, @"discord_game_sdk.dll"), true);
+            File.Copy(jsonDLL, Path.Combine(gamePath, @"Newtonsoft.Json.dll"), true);
+            File.Copy(jaDownloader, Path.Combine(gamePath, @"JaDownloader.exe"), true);
+            File.Copy(jaDownloaderSetup, Path.Combine(gamePath, @"JaDownloaderSetup.exe"), true);
 
             File.Copy(updater, Path.Combine(gamePath, @"JaUpdater.exe"), true);
 
@@ -268,6 +281,8 @@ namespace JalopyModLoader
             _settings.ModFolderLocation = currentModPath;
             //File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
             AddRegistryKeys(_settings.ModFolderLocation);
+
+            MessageBox.Show("JaLoader successfully installed!", "JaPatcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         public void Uninstall()
@@ -280,12 +295,15 @@ namespace JalopyModLoader
             File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\NAudio.dll"));
             File.Delete(Path.Combine(gamePath, @"discord_game_sdk.dll"));
             File.Delete(Path.Combine(gamePath, @"JaUpdater.exe"));
+            File.Delete(Path.Combine(gamePath, @"Newtonsoft.Json.dll"));
+            File.Delete(Path.Combine(gamePath, @"JaDownloader.exe"));
+            File.Delete(Path.Combine(gamePath, @"JaDownloaderSetup.exe"));
 
             if (MessageBox.Show("Would you like to delete the configuration files too?", "JaPatcher", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {
                 //File.Delete(Path.Combine(gamePath, @"ModsLocation.json"));
                 //TODO: delete registry keys
-                File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"..\LocalLow\MinskWorks\Jalopy\JMLConfig.json"));
+                File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"..\LocalLow\MinskWorks\Jalopy\JaConfig.json"));
             }
         }
 
@@ -306,6 +324,7 @@ namespace JalopyModLoader
 
             documentsButton.Enabled = true;
             gameFolderModsButton.Enabled = true;
+            customModsLocationButton.Enabled = true;
 
             gamePath = Path.GetDirectoryName(folder);
             gameFolderModsPath = Path.Combine(gamePath, @"Mods");
@@ -418,6 +437,13 @@ namespace JalopyModLoader
                 Directory.CreateDirectory(documentsModsPath);
             }
 
+            if (!Directory.Exists($@"{documentsModsPath}\Required"))
+            {
+                Directory.CreateDirectory($@"{documentsModsPath}\Required");
+            }
+
+            File.Copy(assetBundle, $@"{documentsModsPath}\Required\JaLoader_UI.unity3d", true);
+
             //File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
         }
 
@@ -436,6 +462,13 @@ namespace JalopyModLoader
                 Directory.CreateDirectory(gameFolderModsPath);
             }
 
+            if(!Directory.Exists($@"{gameFolderModsPath}\Required"))
+            {
+                Directory.CreateDirectory($@"{gameFolderModsPath}\Required");
+            }
+
+            File.Copy(assetBundle, $@"{gameFolderModsPath}\Required\JaLoader_UI.unity3d", true);
+
             //File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
         }
 
@@ -446,15 +479,40 @@ namespace JalopyModLoader
 
         private void updateButton_Click(object sender, EventArgs e)
         {
-            if (!updateRequired) return;
+            if (!updateRequired)
+            {
+                MessageBox.Show("There are no updates available!", "JaPatcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
             UpdateFiles();
         }
 
         private static void UpdateFiles()
         {
-            Process.Start($@"{Directory.GetCurrentDirectory}\JaUpdater.exe", $"{Directory.GetCurrentDirectory} Patcher");
+            Process.Start($@"{Directory.GetCurrentDirectory}\JaUpdater.exe", $"{Directory.GetCurrentDirectory} Both");
             Application.Exit();
+        }
+
+        private void customModsLocationButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (customModsDialog.ShowDialog() == DialogResult.OK)
+            {
+                currentModPath = customModsDialog.SelectedPath;
+
+                customFolderModsText.Text = currentModPath;
+
+                _settings.ModFolderLocation = currentModPath;
+                AddRegistryKeys(_settings.ModFolderLocation);
+
+                if (!installed)
+                    return;
+
+                if (!Directory.Exists($@"{currentModPath}\Mods"))
+                {
+                    Directory.CreateDirectory($@"{currentModPath}\Mods");
+                }
+            }
         }
     }
 

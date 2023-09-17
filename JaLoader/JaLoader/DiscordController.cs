@@ -17,9 +17,17 @@ namespace JaLoader
         private string State;
         private string Details;
         private string LargeText;
+
+        private SettingsManager settings = SettingsManager.Instance;
         
         void Start()
         {
+            if (!settings.UseDiscordRichPresence)
+            {
+                Destroy(this);
+                return;
+            }
+
             discord = new Discord.Discord(1104362708134006827, (ulong)CreateFlags.NoRequireDiscord);
 
             time = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;

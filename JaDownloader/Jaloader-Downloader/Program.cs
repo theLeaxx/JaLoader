@@ -9,10 +9,12 @@ using System.IO;
 using Microsoft.Win32;
 using System.IO.Compression;
 using System.Net;
+using System.Diagnostics;
 
-namespace Jaloader_Downloader;
-// This program is the program that is used for downloading mods from the internet. 
-// Meb & Leaxx
+namespace JaDownloader;
+// This program is used for downloading mods from the internet. 
+// Main code -- Meb
+// Edits -- Leaxx
 
 internal abstract class Program
 {
@@ -32,14 +34,16 @@ internal abstract class Program
         _repo = args[0].Split('\u002F')[4];
         _modsLocation = GetModsLocation();
         _workingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Jalopy\.cache";
-        
+
         if (_workingDirectory != null && !Directory.Exists(_workingDirectory)) Directory.CreateDirectory(_workingDirectory);
         if (_param != "install") return;
-            
+        
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12; // For backwards compatibility with older OS's (such as Win7/8/8.1)
+
         Client.DefaultRequestHeaders.Accept.Clear();
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
         Client.DefaultRequestHeaders.Add("User-Agent", ".NET Foundation Repository Reporter");
-        
+
         Console.WriteLine($"Got link -> https://api.github.com/repos/{_author}/{_repo}/releases/latest");
         await ProcessRepositoriesAsync($"https://api.github.com/repos/{_author}/{_repo}/releases/latest");
         Console.WriteLine("Done! Exiting in 5 seconds...");
@@ -77,25 +81,33 @@ internal abstract class Program
 
         try
         {
-            asset = JObject.Parse(await Client.GetStringAsync(uri)).ToObject<GitRepo>().assets[0];
+            asset = JObject.Parse(await Client.GetStringAsync(uri)).ToObject<GitRepo>().Assets[0];
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             Console.WriteLine("Invalid URL!");
             return;
             throw;
         }
         
         using var client = new WebClient();
-        client.DownloadFile(asset.browser_download_url, _workingDirectory + @"\" + asset.name);
-        if (!Directory.Exists(_workingDirectory + @"\" + _repo)) Directory.CreateDirectory(_workingDirectory + @"\" + _repo);
-        if (asset.name.EndsWith(".zip"))
+        client.DownloadFile(asset.Browser_Download_URL, _workingDirectory + @"\" + asset.Name);
+        if (!Directory.Exists(_workingDirectory + @"\" + _repo))
         {
-            ZipFile.ExtractToDirectory(_workingDirectory + @"\" + asset.name, _workingDirectory + @"\" + _repo);
+            Directory.CreateDirectory(_workingDirectory + @"\" + _repo);
         }
-        else if (asset.name.EndsWith(".dll"))
+        else
         {
-            File.Move(_workingDirectory + @"\" + asset.name, _workingDirectory + @"\" + _repo + @"\" + asset.name);
+            Directory.Delete(_workingDirectory + @"\" + _repo, true);
+        }
+        if (asset.Name.EndsWith(".zip"))
+        {
+            ZipFile.ExtractToDirectory(_workingDirectory + @"\" + asset.Name, _workingDirectory + @"\" + _repo);
+        }
+        else if (asset.Name.EndsWith(".dll"))
+        {
+            File.Move(_workingDirectory + @"\" + asset.Name, _workingDirectory + @"\" + _repo + @"\" + asset.Name);
         }
         else
         {
@@ -129,7 +141,7 @@ internal abstract class Program
                     FileInfo[] files = contents.GetFiles();
 
                     Directory.CreateDirectory(assetsFolder + @$"\{folderName}");
-                    
+
                     foreach (var file in files)
                     {
                         File.Copy(file.FullName, assetsFolder + @$"\{folderName}\{file.Name}", true);
@@ -153,19 +165,19 @@ internal abstract class Program
 
         Console.WriteLine("Mod successfully installed! Cleaning up...");
 
-        File.Delete(_workingDirectory + @"\" + asset.name);
+        File.Delete(_workingDirectory + @"\" + asset.Name);
         Directory.Delete(_workingDirectory + @"\" + _repo, true);
     }
 }
 
 public class GitRepo
 {
-    public List<GitAsset> assets { get; set; }
+    public List<GitAsset> Assets { get; set; }
 }
 
 public class GitAsset
 {
-    public string browser_download_url { get; set;}
-    public string name { get; set;}
+    public string Browser_Download_URL { get; set;}
+    public string Name { get; set;}
 }
 // jaloader://install/jalopy-mods/DDR-PaperPlease

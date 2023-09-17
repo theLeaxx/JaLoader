@@ -27,8 +27,8 @@ namespace JaLoader
 
         private void Start()
         {
-            //if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
-            //    return;
+            if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
+                return;
 
             var frame = transform.Find("TweenHolder/Frame");
 
@@ -41,6 +41,13 @@ namespace JaLoader
             defaultWhiteColor = frontPlate.material.color;
 
             SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+
+            EventsManager.Instance.OnSettingsSaved += OnSettingsSave;
+        }
+
+        private void OnSettingsSave()
+        {
+            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
         }
 
         private void Update()
@@ -48,21 +55,6 @@ namespace JaLoader
             if (Input.GetKeyDown(KeyCode.F5) && settingsManager.DebugMode)
             {
                 SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
-            }
-
-            if (Input.GetKeyDown(KeyCode.Alpha1))
-            {
-                settingsManager.ChangeLicensePlateText = LicensePlateStyles.DiplomaticRed;
-            }
-
-            if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                settingsManager.ChangeLicensePlateText = LicensePlateStyles.Default;
-            }
-
-            if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                settingsManager.ChangeLicensePlateText = LicensePlateStyles.DiplomaticBlue;
             }
         }
 

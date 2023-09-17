@@ -33,6 +33,7 @@ namespace JaLoader
         #endregion
 
         #region Events
+        public delegate void MiscEvents();
         public delegate void GameEvents();
         public delegate void LogEvents(string message, string stack);
         public delegate void TravelEvents(string startLocation, string endLocation, int distance);
@@ -55,6 +56,9 @@ namespace JaLoader
         public event TravelEvents OnRouteGenerated;
         //public event TravelEvents OnBorderPass;
         //public event TravelEvents OnBorderRevoke;
+
+        public event MiscEvents OnSettingsLoaded;
+        public event MiscEvents OnSettingsSaved;
         #endregion
 
         private void Update()
@@ -62,6 +66,16 @@ namespace JaLoader
             //CatalogueBuyButtonC
 
             //ShopC
+        }
+
+        public void OnSettingsLoad()
+        {
+            OnSettingsLoaded?.Invoke();
+        }
+
+        public void OnSettingsSave()
+        {
+            OnSettingsSaved?.Invoke();
         }
 
         public void OnSceneUnload(Scene unloadedScene)

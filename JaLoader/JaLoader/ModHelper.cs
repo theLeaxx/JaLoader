@@ -47,6 +47,8 @@ namespace JaLoader
         {
             RefreshPartHolders();
 
+            GameObject.Find("FrameHolder").AddComponent<LicensePlateCustomizer>();
+
             if (defaultEngineMaterial == null)
             {
                 GameObject go = GameObject.Find("EngineBlock");
@@ -109,8 +111,6 @@ namespace JaLoader
 
                         createdDebugCamera = true;
                     }
-
-                    GameObject.Find("FrameHolder").AddComponent<LicensePlateCustomizer>();
 
                     Camera.main.gameObject.AddComponent<DebugCamera>();   
                 }

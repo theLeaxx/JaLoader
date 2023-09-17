@@ -52,6 +52,8 @@ namespace JaLoader
 
         public bool IsCrackedVersion { get; private set; }
 
+        Stopwatch stopWatch;
+
         private void Start()
         {
             DontDestroyOnLoad(gameObject);
@@ -92,6 +94,8 @@ namespace JaLoader
             helperObj.AddComponent<PartIconManager>();
 
             gameObject.AddComponent<DiscordController>();
+
+            stopWatch = gameObject.AddComponent<Stopwatch>();
 
             Debug.Log("JaLoader initialized!");
 
@@ -136,9 +140,6 @@ namespace JaLoader
         {
             if (modsNumber == 0)
                 return;
-
-            if (Input.GetKeyDown(KeyCode.F12))
-                StartUpdate();
 
             if (finishedLoadingMods)
             {
@@ -202,6 +203,7 @@ namespace JaLoader
         public IEnumerator LoadMods()
         {
             Debug.Log("Loading JaLoader mods...");
+            gameObject.GetComponent<Stopwatch>().StartCounting();
 
             DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
@@ -211,7 +213,7 @@ namespace JaLoader
             foreach (FileInfo modFile in mods)
             {
                 uiManager.modTemplateObject = Instantiate(uiManager.modTemplatePrefab);
-                uiManager.modTemplateObject.transform.SetParent(uiManager.UIVersionCanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform, false);
+                uiManager.modTemplateObject.transform.SetParent(uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform, false);
                 uiManager.modTemplateObject.SetActive(true);
 
                 try
@@ -327,7 +329,12 @@ namespace JaLoader
                 UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
             }
 
-            Debug.Log("Loaded JaLoader mods!");
+            gameObject.GetComponent<Stopwatch>().StopCounting();
+            Debug.Log($"Loaded JaLoader mods! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
+
+            Debug.Log($"JaLoader fully loaded! ({gameObject.GetComponent<Stopwatch>().totalTimePassed}s)");
+            Destroy(gameObject.GetComponent<Stopwatch>());
+
             yield return null;
         }
 

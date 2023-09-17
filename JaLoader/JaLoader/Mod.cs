@@ -104,7 +104,7 @@ namespace JaLoader
                 return null;
             }
 
-            if (!File.Exists(Path.Combine(AssetsPath, $@"{AssetsPath}\{name}.png")))
+            if (!File.Exists($@"{AssetsPath}\{name}.png"))
             {
                 Console.Instance.LogError(ModID, $"Tried to load PNG {name}.png, but it does not exist.");
                 return null;
