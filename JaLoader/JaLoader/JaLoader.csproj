@@ -160,6 +160,7 @@
     <Compile Include="Mod.cs" />
     <Compile Include="ModLoader.cs" />
     <Compile Include="ModHelper.cs" />
+    <Compile Include="ObjectIdentification.cs" />
     <Compile Include="PartIconManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MenuVolumeChanger.cs" />

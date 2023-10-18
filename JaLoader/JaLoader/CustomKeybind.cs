@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace JaLoader
 {
@@ -11,35 +12,126 @@ namespace JaLoader
     {
         public KeyCode SelectedKey;
         public KeyCode AltSelectedKey;
-        public bool EnableAltKey;
+        private bool enableAltKey;
+        public bool EnableAltKey
+        {
+            get { return enableAltKey; }
+            set
+            {
+                enableAltKey = value;
+                secondaryKey?.SetActive(value);
+            }
+        }
 
         bool waiting;
         WaitingFor waitingFor = WaitingFor.Nothing;
 
+        private GameObject primaryKey;
+        private GameObject secondaryKey;
+
+        private Text primaryText;
+        private Text secondaryText;
+
+        bool updatePrimary;
+        bool updateSecondary;
+        bool addedReferences;
+
+        readonly Dictionary<KeyCode, string> keyDisplayNames = new Dictionary<KeyCode, string>()
+        {
+            { KeyCode.Alpha0, "0" },
+            { KeyCode.Alpha1, "1" },
+            { KeyCode.Alpha2, "2" },
+            { KeyCode.Alpha3, "3" },
+            { KeyCode.Alpha4, "4" },
+            { KeyCode.Alpha5, "5" },
+            { KeyCode.Alpha6, "6" },
+            { KeyCode.Alpha7, "7" },
+            { KeyCode.Alpha8, "8" },
+            { KeyCode.Alpha9, "9" },
+
+            { KeyCode.Minus, "-" },
+            { KeyCode.Plus, "+" },
+            { KeyCode.Equals, "=" },
+            { KeyCode.LeftBracket, "[" },
+            { KeyCode.RightBracket, "]" },
+            { KeyCode.Backslash, "\\" },
+            { KeyCode.Slash, "/" },
+            { KeyCode.Semicolon, ";" },
+            { KeyCode.Quote, "'" },
+            { KeyCode.BackQuote, "`" },
+            { KeyCode.Comma, "," },
+            { KeyCode.Period, "." },
+            { KeyCode.Asterisk, "*" },
+
+            { KeyCode.LeftShift, "LShift" },
+            { KeyCode.RightShift, "RShift" },
+            { KeyCode.CapsLock, "Caps" },
+            { KeyCode.LeftControl, "LCtrl" },
+            { KeyCode.RightControl, "RCtrl" },
+            { KeyCode.LeftAlt, "LAlt" },
+            { KeyCode.RightAlt, "RAlt" },
+            { KeyCode.AltGr, "AltGr" },
+            { KeyCode.UpArrow, "↑" },
+            { KeyCode.DownArrow, "↓" },
+            { KeyCode.LeftArrow, "←" },
+            { KeyCode.RightArrow, "→" },
+
+            { KeyCode.Mouse0, "M1" },
+            { KeyCode.Mouse1, "M2" },
+            { KeyCode.Mouse2, "M3" }
+        };
+
+        private string GetKeyDisplayName(KeyCode key)
+        {
+            if (keyDisplayNames.ContainsKey(key))
+            {
+                return keyDisplayNames[key];
+            }
+            return key.ToString();
+        }
+
+        private void AddReferences()
+        {
+            primaryKey = transform.GetChild(1).gameObject;
+            secondaryKey = transform.GetChild(2).gameObject;
+
+            primaryText = primaryKey.transform.GetChild(0).GetComponent<Text>();
+
+            secondaryText = secondaryKey.transform.GetChild(0).GetComponent<Text>();
+
+            primaryKey.GetComponent<Button>().onClick.AddListener(WaitForPrimary);
+            secondaryKey.GetComponent<Button>().onClick.AddListener(WaitForSecondary);
+
+            addedReferences = true;
+        }
+
         private void Update()
         {
+            if(!addedReferences)
+            {
+                AddReferences();
+            }
+
             if (waiting && Input.anyKeyDown)
             {
                 KeyCode key = KeyCode.None;
                 waiting = false;
                 string strToCheck = Input.inputString.ToUpper();
+                //Console.Instance.Log($"'{strToCheck}'");
                 if (strToCheck != string.Empty)
                 {
-                    if (Input.GetKeyDown(KeyCode.KeypadEnter))
-                    {
-                        key = KeyCode.KeypadEnter;
-                        return;
-                    }
-                    else if (Input.GetKeyDown(KeyCode.Return))
-                    {
-                        key = KeyCode.Return;
-                        return;
-                    }
-
                     switch (strToCheck)
                     {
                         default:
-                            key = (KeyCode)Enum.Parse(typeof(KeyCode), strToCheck);
+                            try
+                            {
+                                key = (KeyCode)Enum.Parse(typeof(KeyCode), strToCheck);
+                            }
+                            catch (Exception)
+                            {
+                                waiting = true;
+                                return;
+                            }
                             break;
 
                         case "0":
@@ -98,6 +190,15 @@ namespace JaLoader
                             key = KeyCode.Asterisk;
                             break;
                     }
+
+                    if (Input.GetKeyDown(KeyCode.KeypadEnter))
+                    {
+                        key = KeyCode.KeypadEnter;
+                    }
+                    else if (strToCheck == " ")
+                    {
+                        key = KeyCode.Space;
+                    }
                 }
                 else
                 {
@@ -119,8 +220,6 @@ namespace JaLoader
                         key = KeyCode.RightAlt;
                     else if (Input.GetKeyDown(KeyCode.AltGr))
                         key = KeyCode.AltGr;
-                    else if (Input.GetKeyDown(KeyCode.Backspace))
-                        key = KeyCode.Backspace;
                     else if (Input.GetKeyDown(KeyCode.UpArrow))
                         key = KeyCode.UpArrow;
                     else if (Input.GetKeyDown(KeyCode.DownArrow))
@@ -138,22 +237,59 @@ namespace JaLoader
                 }
 
                 if (waitingFor == WaitingFor.Primary)
-                    SelectedKey = key;
+                    SetPrimaryKey(key);
                 else if (waitingFor == WaitingFor.Secondary)
-                    AltSelectedKey = key;
+                    SetSecondaryKey(key);
+
+                //Console.Instance.Log(key);
 
                 waitingFor = WaitingFor.Nothing;
+            }
+
+            if (updatePrimary && primaryText != null)
+            {
+                primaryText.text = GetKeyDisplayName(SelectedKey);
+
+                updatePrimary = false;
+            }
+
+            if (updateSecondary && secondaryText != null)
+            {
+                secondaryText.text = GetKeyDisplayName(AltSelectedKey);
+
+                updateSecondary = false;
+            }
+
+            if (!EnableAltKey && secondaryKey != null && secondaryKey.activeSelf)
+            {
+                secondaryKey.SetActive(false);
             }
         }
 
         public void WaitForPrimary()
         {
             waitingFor = WaitingFor.Primary;
+            waiting = true;
         }
 
         public void WaitForSecondary()
         {
             waitingFor = WaitingFor.Secondary;
+            waiting = true;
+        }
+
+        public void SetPrimaryKey(KeyCode key)
+        {
+            SelectedKey = key;
+            if (primaryText == null) updatePrimary = true;
+            else primaryText.text = GetKeyDisplayName(key);
+        }
+
+        public void SetSecondaryKey(KeyCode key)
+        {
+            AltSelectedKey = key;
+            if (secondaryText == null) updateSecondary = true;
+            else secondaryText.text = GetKeyDisplayName(key);
         }
     }
 

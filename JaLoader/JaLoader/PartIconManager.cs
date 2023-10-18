@@ -61,6 +61,8 @@ namespace JaLoader
 
         private void OnLoadStart()
         {
+            //Console.Instance.Log("Started");
+
             //FindObjectOfType<LoadLevelManagerC>().enabled = false;
 
             //camera.enabled = true;
@@ -72,8 +74,10 @@ namespace JaLoader
 
             foreach (var entry in objectsManager.database.Keys)
             {
+                //Console.Instance.Log(entry);
+
                 if (!objectsManager.GetObject(entry).GetComponent<EngineComponentC>())
-                    return;
+                    continue;
 
                 var obj = objectsManager.SpawnObjectWithoutRegistering(entry, new Vector3(1000, 1000, 1000), Vector3.zero);
                 obj.GetComponent<Rigidbody>().isKinematic = true;
@@ -116,6 +120,7 @@ namespace JaLoader
 
                 obj.SetActive(true);
 
+                //var comp = obj.GetComponent<ObjectIdentification>();
                 SaveScreenshot(entry);
 
                 DestroyImmediate(obj);
@@ -147,7 +152,7 @@ namespace JaLoader
             renderedTexture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
             RenderTexture.active = null;
             byte[] byteArray = renderedTexture.EncodeToPNG();
-
+            //Console.Instance.Log(entry + ", " + ModID);
             File.WriteAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png", byteArray);
         }
     }

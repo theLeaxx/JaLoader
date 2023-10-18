@@ -274,6 +274,7 @@ namespace JaLoader
                             break;
                     }
 
+                    //var comp = obj.GetComponent<ObjectIdentification>();
                     var objInfo = obj.GetComponent<CustomObjectInfo>();
                     Texture2D tex = PartIconManager.Instance.GetTexture(objName);
                     AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName, magazine);

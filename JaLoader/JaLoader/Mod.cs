@@ -52,7 +52,9 @@ namespace JaLoader
         public virtual void OnEnable() { }
         public virtual void OnDisable() { }
 
+        [Obsolete]
         /// <summary>
+        /// (Deprecated, use LoadAsset<T>())
         /// Loads the specified asset from an assetbundle
         /// </summary>
         /// <param name="assetName">The file's name</param>
@@ -86,9 +88,70 @@ namespace JaLoader
 
             obj.name = $"{ModID}_{prefabName}";
 
+            var identification = obj.AddComponent<ObjectIdentification>();
+            identification.ModID = ModID;
+            identification.ModName = ModName;
+            identification.Author = ModAuthor;
+            identification.Version = ModVersion;
+
+            ab.Unload(false);
+            Type type = obj.GetType();
+            return obj;
+        }
+
+        /// <summary>
+        /// Loads the specified asset from an assetbundle
+        /// </summary>
+        /// <typeparam name="T">The type of the asset you want to load</typeparam>
+        /// <param name="assetName">The file's name</param>
+        /// <param name="prefabName">The prefab in question</param>
+        /// <param name="fileSuffix">The file's suffix (usually .unity3d, you can leave empty too)</param>
+        /// <param name="prefabSuffix">The prefab's suffix (varies on T, for example .mp3 or .png)</param>
+        /// <returns>The loaded GameObject</returns>
+        public T LoadAsset<T>(string assetName, string prefabName, string fileSuffix, string prefabSuffix) where T: UnityEngine.Object
+        {
+            if (!UseAssets)
+            {
+                Console.Instance.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
+                return null;
+            }
+
+            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
+            {
+                Console.Instance.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
+                return null;
+            }
+
+            var ab = AssetBundle.LoadFromFile(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}"));
+            var asset = ab.LoadAsset<T>($"{prefabName}{prefabSuffix}");
+
+            if (asset == null)
+            {
+                Console.Instance.LogError(ModID, $"Tried to load {typeof(T).Name} {prefabName}{prefabSuffix} from asset {assetName}, but it does not exist.");
+                ab.Unload(true);
+                return null;
+            }
+
+            if (typeof(T) == typeof(GameObject))
+            {
+                GameObject obj = asset as GameObject;
+
+                obj.name = $"{ModID}_{prefabName}";
+
+                var identification = obj.AddComponent<ObjectIdentification>();
+                identification.ModID = ModID;
+                identification.ModName = ModName;
+                identification.Author = ModAuthor;
+                identification.Version = ModVersion;
+
+                ab.Unload(false);
+
+                return (T)(object)obj;
+            }
+
             ab.Unload(false);
 
-            return obj;
+            return asset;
         }
 
         /// <summary>
@@ -265,14 +328,60 @@ namespace JaLoader
             settingsIDS.Add($"{ID}_Slider");
         }
 
-        //TO DO: make a keybind template
         public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey)
         {
+            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            {
+                Console.Instance.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
+                return;
+            }
+
+            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+            {
+                Console.Instance.LogError(ModID, $"Keybind with ID {ID} already exists!");
+                return;
+            }
+
+            GameObject obj = Instantiate(UIManager.Instance.modOptionsKeybindTemplate);
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            obj.name = $"{ID}_Keybind";
+
+            obj.SetActive(true);
+
+            obj.AddComponent<CustomKeybind>();
+            obj.GetComponent<CustomKeybind>().SetPrimaryKey(defaultPrimaryKey);
+            obj.GetComponent<CustomKeybind>().EnableAltKey = false;
+            obj.transform.Find("HeaderText").GetComponent<Text>().text = name;
+
             settingsIDS.Add($"{ID}_Keybind");
         }
 
         public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey, KeyCode defaultSecondaryKey)
         {
+            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            {
+                Console.Instance.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
+                return;
+            }
+
+            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+            {
+                Console.Instance.LogError(ModID, $"Keybind with ID {ID} already exists!");
+                return;
+            }
+
+            GameObject obj = Instantiate(UIManager.Instance.modOptionsKeybindTemplate);
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            obj.name = $"{ID}_Keybind";
+
+            obj.SetActive(true);
+
+            obj.AddComponent<CustomKeybind>();
+            obj.GetComponent<CustomKeybind>().SetPrimaryKey(defaultPrimaryKey);
+            obj.GetComponent<CustomKeybind>().EnableAltKey = true;
+            obj.GetComponent<CustomKeybind>().SetSecondaryKey(defaultSecondaryKey);
+            obj.transform.Find("HeaderText").GetComponent<Text>().text = name;
+
             settingsIDS.Add($"{ID}_Keybind");
         }
 
@@ -330,12 +439,20 @@ namespace JaLoader
             return 0;
         }
 
-        public CustomKeybind GetKeybind(string ID)
+        public KeyCode GetPrimaryKeybind(string ID)
         {
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponentInChildren<CustomKeybind>();
+                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().SelectedKey;
             else
-                return null;
+                return KeyCode.None;
+        }
+
+        public KeyCode GetSecondaryKeybind(string ID)
+        {
+            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().AltSelectedKey;
+            else
+                return KeyCode.None;
         }
 
         public void SaveModSettings()
@@ -361,10 +478,10 @@ namespace JaLoader
                         break;
 
                     case "eybind":
-                        values.Add($"{ID}_primary", (int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().SelectedKey);
-                        if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().EnableAltKey)
+                        values.Add($"{ID}_primary", (int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SelectedKey);
+                        if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().EnableAltKey)
                         {
-                            values.Add($"{ID}_secondary", (int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().AltSelectedKey);
+                            values.Add($"{ID}_secondary", (int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().AltSelectedKey);
                         }
                         break;
 
@@ -415,19 +532,21 @@ namespace JaLoader
                                 UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = values[ID];
                                 break;
 
-                            case "eybind":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().SelectedKey = (KeyCode)values[$"{ID}_primary"];
-                                if (values.ContainsKey($"{ID}_secondary"))
-                                {
-                                    UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<CustomKeybind>().AltSelectedKey = (KeyCode)values[$"{ID}_secondary"];
-                                }
-                                break;
-
                             default:
                                 break;
                         }
-                    }                  
-
+                    }
+                    else if (values.ContainsKey($"{ID}_primary"))
+                    {
+                        //Debug.Log($"Primary! ({ID})");
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)values[$"{ID}_primary"]);
+                        
+                        if (values.ContainsKey($"{ID}_secondary"))
+                        {
+                            //Debug.Log($"Secondary! ({ID})");
+                            UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetSecondaryKey((KeyCode)values[$"{ID}_secondary"]);
+                        }
+                    }
                 }
             }
             else

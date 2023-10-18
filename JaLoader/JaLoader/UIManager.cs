@@ -60,7 +60,8 @@ namespace JaLoader
         public GameObject modOptionsDropdownTemplate { get; private set; }
         public GameObject modOptionsToggleTemplate { get; private set; }
         public GameObject modOptionsSliderTemplate { get; private set; }
-
+        public GameObject modOptionsKeybindTemplate { get; private set; }
+        
         private GameObject noticePanel;
         public GameObject modTemplateObject;
 
@@ -301,6 +302,7 @@ namespace JaLoader
             modOptionsDropdownTemplate = modSettingsScrollViewContent.transform.Find("DropdownTemplate").gameObject;
             modOptionsToggleTemplate = modSettingsScrollViewContent.transform.Find("ToggleTemplate").gameObject;
             modOptionsSliderTemplate = modSettingsScrollViewContent.transform.Find("SliderTemplate").gameObject;
+            modOptionsKeybindTemplate = modSettingsScrollViewContent.transform.Find("KeybindTemplate").gameObject;
 
             consoleModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsoleMode").gameObject.GetComponent<Dropdown>();
             consolePositionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsolePosition").gameObject.GetComponent<Dropdown>();
