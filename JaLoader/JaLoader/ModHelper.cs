@@ -201,9 +201,9 @@ namespace JaLoader
                 obj
             };
 
-            for (int i = 0; i < obj.GetComponentsInChildren<Transform>().Length; i++)
+            for (int i = 0; i < obj.GetComponentsInChildren<Renderer>().Length; i++)
             {
-                objToRender.Add(obj.GetComponentsInChildren<Transform>()[i].gameObject);
+                objToRender.Add(obj.GetComponentsInChildren<Renderer>()[i].gameObject);
             }
 
             ob.renderTargets = objToRender.ToArray();
@@ -338,7 +338,8 @@ namespace JaLoader
                 color = originalMaterial.color,
                 mainTexture = originalMaterial.mainTexture,
                 mainTextureOffset = originalMaterial.mainTextureOffset,
-                mainTextureScale = originalMaterial.mainTextureScale
+                mainTextureScale = originalMaterial.mainTextureScale,
+                name = originalMaterial.name + "_Glow"
             };
 
             return glowMat;
