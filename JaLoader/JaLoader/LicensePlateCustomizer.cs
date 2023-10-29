@@ -80,6 +80,19 @@ namespace JaLoader
                     }
                     break;
 
+                case LicensePlateStyles.WhiteOnBlack:
+                    if (!isInMenu)
+                    {
+                        frontPlate.material.color = rearPlate.material.color = Color.black;
+                        rearText.GetComponent<TextMeshPro>().fontMaterial.color = frontText.GetComponent<TextMeshPro>().fontMaterial.color = defaultWhiteColor;
+                    }
+                    else
+                    {
+                        frontPlate.material.color = Color.black;
+                        frontText.GetComponent<TextMeshPro>().fontMaterial.color = defaultWhiteColor;
+                    }
+                    break;
+
                 case LicensePlateStyles.DiplomaticRed:
                     if (!isInMenu)
                     {
@@ -113,6 +126,7 @@ namespace JaLoader
     {
         None,
         Default,
+        WhiteOnBlack,
         DiplomaticRed,
         DiplomaticBlue
     }
