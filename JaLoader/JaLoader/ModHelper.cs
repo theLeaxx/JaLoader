@@ -502,7 +502,10 @@ namespace JaLoader
             else if (request.isNetworkError)
                 return "0";
             else
+            {
                 Console.Instance.LogError($"Error getting response for URL \"{URL}\": {request.error}");
+                return "-1";
+            }
 
             return tagName;
         }

@@ -30,9 +30,6 @@ namespace JaLoader
 
         private void Start()
         {
-            if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
-                return;
-
             var frame = transform.Find("TweenHolder/Frame");
 
             if (!isInMenu) rearText = frame.Find("R_LicensePlate/LicensePlate1").gameObject;
@@ -45,9 +42,12 @@ namespace JaLoader
 
             oldText = frontText.GetComponent<TextMeshPro>().text;
 
-            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
-
             EventsManager.Instance.OnSettingsSaved += OnSettingsSave;
+
+            if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
+                return;
+
+            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
         }
 
         private void OnSettingsSave()
