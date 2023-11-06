@@ -474,6 +474,15 @@ namespace JaLoader
                         SpawnRepairKit();
                         break;
 
+                    case "gascan":
+                        if (SceneManager.GetActiveScene().buildIndex != 3)
+                        {
+                            LogError("/", "This command only works in-game!");
+                            break;
+                        }
+                        SpawnGasCan();
+                        break;
+
                     case "repairall":
                         if (SceneManager.GetActiveScene().buildIndex != 3)
                         {
@@ -600,9 +609,9 @@ namespace JaLoader
                                 break;
                         }
                         break;
-
                     default:
                         LogError("/", "Invalid command; type 'help' for a list of commands");
+                        Log(FindObjectOfType<MainMenuC>().name); //223 objects
                         break;
                 }
             }
@@ -620,6 +629,7 @@ namespace JaLoader
             LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet");
             //LogMessage("/", "'time set {value}' - Sets the time to the specified hour");
             LogMessage("'repairkit' - Spawns a repair kit near you");
+            LogMessage("'gascan' - Spawns a filled gas can near you");
             LogMessage("'repairall' - Restores every installed part to full condition");
             //LogMessage("/", "'laika' - Teleports the Laika near you");
 
@@ -632,19 +642,16 @@ namespace JaLoader
 
         private void SpawnRepairKit()
         {
-            var obj = GameObject.Find("EngineRepairKit");
-            if (obj != null)
-            {
-                var instantiated = Instantiate(obj);
-                instantiated.GetComponent<ObjectPickupC>().isPurchased = true;
-                instantiated.transform.position = ModHelper.Instance.player.transform.position;
-            }
-            else
-            {
-                LogError("/", $"Failed to spawn a repair kit.");
-            }
+            DebugObjectSpawner.Instance.SpawnVanillaObject(162);
 
             Log("/", $"Spawned a repair kit!");
+        }
+
+        private void SpawnGasCan()
+        {
+            DebugObjectSpawner.Instance.SpawnVanillaObject(158);
+
+            Log("/", $"Spawned a gas can!");
         }
 
         private void RepairAll()

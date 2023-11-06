@@ -12,6 +12,7 @@ if (args.Length == 2)
 
     var extractLocation = "";
     if (args[0].Contains("\"")) extractLocation = args[0].Replace("\"", "");
+    else extractLocation = args[0];
     var type = args[1];
 
     using var client = new HttpClient();
@@ -70,12 +71,16 @@ if (args.Length == 2)
 #pragma warning restore CS8602
 #pragma warning restore CS8600
 
+
     switch (type)
     {
         case "Jalopy":
-            foreach (var updateFile in mainFiles)
+
+            Thread.Sleep(2500);
+
+            foreach (var updateFile in requiredFiles)
             {
-                File.Copy(updateFile.FullName, $@"{currentDir}\{updateFile.Name}", true);
+                File.Copy(updateFile.FullName, $@"{extractLocation}\Required\{updateFile.Name}", true);
             }
 
             foreach (var updateFile in managedFiles)
@@ -83,10 +88,12 @@ if (args.Length == 2)
                 File.Copy(updateFile.FullName, $@"{currentDir}\Jalopy_Data\Managed\{updateFile.Name}", true);
             }
 
-            foreach (var updateFile in requiredFiles)
+            foreach (var updateFile in mainFiles)
             {
-                File.Copy(updateFile.FullName, $@"{extractLocation}\{updateFile.Name}", true);
+                if (updateFile.Name == "winhttp.dll") continue;
+                File.Copy(updateFile.FullName, $@"{currentDir}\{updateFile.Name}", true);
             }
+
             break;
 
         case "Patcher":
@@ -106,6 +113,7 @@ if (args.Length == 2)
             }
 
             File.Copy($@"{filesPath}\JaPatcher.exe", $@"{extractLocation}\JaPatcher.exe", true);
+
             break;
 
         case "Both":
@@ -127,6 +135,8 @@ if (args.Length == 2)
                 }
             }
 
+            Console.WriteLine(extractLocation);
+
             foreach (var updateFile in mainFiles)
             {
                 File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Main\{updateFile.Name}", true);
@@ -143,6 +153,7 @@ if (args.Length == 2)
             }
 
             File.Copy($@"{filesPath}\JaPatcher.exe", $@"{extractLocation}\JaPatcher.exe", true);
+
             break;
     }
 

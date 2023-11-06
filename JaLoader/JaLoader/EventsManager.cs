@@ -59,6 +59,8 @@ namespace JaLoader
 
         public event MiscEvents OnSettingsLoaded;
         public event MiscEvents OnSettingsSaved;
+        public event MiscEvents OnCustomObjectsRegisterFinished;
+        public event MiscEvents OnUILoadFinished;
         #endregion
 
         private void Update()
@@ -66,6 +68,11 @@ namespace JaLoader
             //CatalogueBuyButtonC
 
             //ShopC
+        }
+
+        public void OnUILoadFinish()
+        {
+            OnUILoadFinished?.Invoke();
         }
 
         public void OnSettingsLoad()
@@ -76,6 +83,11 @@ namespace JaLoader
         public void OnSettingsSave()
         {
             OnSettingsSaved?.Invoke();
+        }
+
+        public void OnCustomObjectsRegisterFinish()
+        {
+            OnCustomObjectsRegisterFinished?.Invoke();
         }
 
         public void OnSceneUnload(Scene unloadedScene)

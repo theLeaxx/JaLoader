@@ -30,7 +30,7 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        private static readonly string JaLoaderVersion = "1.1.1";
+        private static readonly string JaLoaderVersion = "1.1.2";
         public static readonly bool IsPreReleaseVersion = false;
         public string ModFolderLocation { get; private set; }
 
@@ -49,6 +49,8 @@ namespace JaLoader
         public string LicensePlateText;
         public bool ShowFPSCounter;
         public bool EnableJaDownloader;
+
+        public bool updateAvailable;
 
         public List<string> DisabledMods = new List<string>();
 

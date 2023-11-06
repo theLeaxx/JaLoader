@@ -67,6 +67,7 @@ namespace JaLoader
 
             switch (style)
             {
+                case LicensePlateStyles.None:
                 case LicensePlateStyles.Default:
                     if (!isInMenu)
                     {
@@ -126,8 +127,8 @@ namespace JaLoader
     {
         None,
         Default,
-        WhiteOnBlack,
         DiplomaticRed,
-        DiplomaticBlue
+        DiplomaticBlue,
+        WhiteOnBlack
     }
 }

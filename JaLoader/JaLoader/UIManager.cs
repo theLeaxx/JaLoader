@@ -1,8 +1,10 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using TMPro;
@@ -61,6 +63,10 @@ namespace JaLoader
         public GameObject modOptionsToggleTemplate { get; private set; }
         public GameObject modOptionsSliderTemplate { get; private set; }
         public GameObject modOptionsKeybindTemplate { get; private set; }
+
+        public GameObject objectsList { get; private set; }
+        public GameObject objectTemplate { get; private set; }
+        public Text currentlySelectedText { get; private set; }
         
         private GameObject noticePanel;
         public GameObject modTemplateObject;
@@ -249,6 +255,9 @@ namespace JaLoader
             noticePanel = UICanvas.transform.Find("JLNotice").gameObject;
             catalogueTemplate = UICanvas.transform.Find("JLCatalogue/MainTemplate").gameObject;
             catalogueEntryTemplate = catalogueTemplate.transform.Find("Viewport/Content/Template").gameObject;
+            objectsList = UICanvas.transform.Find("JLObjectsList/ObjectsList").gameObject;
+            objectTemplate = objectsList.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
+            currentlySelectedText = objectsList.transform.Find("CurrentlySelectedText").GetComponent<Text>();
 
             GameObject consoleObj = Instantiate(new GameObject());
             consoleObj.AddComponent<Console>();
@@ -265,7 +274,17 @@ namespace JaLoader
             int versionInt = int.Parse(version.Replace(".", ""));
 
             if (versionInt > settingsManager.GetVersion())
+            {
                 modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{version} available!</color>)";
+
+                var dialog = UICanvas.transform.Find("JLUpdateDialog").gameObject;
+                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {version}";
+                dialog.transform.Find("YesButton").GetComponent<Button>().onClick.AddListener(() => modLoader.StartUpdate());
+                dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(() => dialog.SetActive(false));
+                dialog.SetActive(true);
+
+                settingsManager.updateAvailable = true;
+            }
             else
                 modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
 
@@ -341,6 +360,8 @@ namespace JaLoader
                 ShowNotice("USING A PRE-RELEASE VERSION OF JALOADER", "You are using a pre-release version of JaLoader.\r\n\r\nThese versions are prone to bugs and may cause issues with certain mods.\r\n\r\nPlease report any bugs you encounter to the JaLoader GitHub page, marking them with the \"pre-release\" tag.\r\n\r\nHave fun!");
 
             AddWrench();
+
+            EventsManager.Instance.OnUILoadFinish();
 
             ab.Unload(false);
         }
