@@ -166,6 +166,9 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
+            var loadingScreenScript = gameObject.AddComponent<LoadingScreen>();
+            loadingScreenScript.ShowLoadingScreen();
+
             if (UICanvas == null)
                 StartCoroutine(LoadUIDelay());
 

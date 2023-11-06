@@ -335,6 +335,8 @@ namespace JaLoader
             Debug.Log($"JaLoader fully loaded! ({gameObject.GetComponent<Stopwatch>().totalTimePassed}s)");
             Destroy(gameObject.GetComponent<Stopwatch>());
 
+            GetComponent<LoadingScreen>().DeleteLoadingScreen();
+
             yield return null;
         }
 

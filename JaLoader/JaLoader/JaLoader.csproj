@@ -113,6 +113,16 @@
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIElementsModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.UnityWebRequestAudioModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
@@ -155,6 +165,7 @@
     <Compile Include="FPSCounter.cs" />
     <Compile Include="LaikaCatalogueExtension.cs" />
     <Compile Include="LicensePlateCustomizer.cs" />
+    <Compile Include="LoadingScreen.cs" />
     <Compile Include="MarketManager.cs" />
     <Compile Include="MenuCarRotate.cs" />
     <Compile Include="Mod.cs" />

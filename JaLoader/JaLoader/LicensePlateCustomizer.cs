@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.OleDb;
 using System.Linq;
 using System.Text;
 using TMPro;
@@ -23,6 +24,8 @@ namespace JaLoader
         private Color32 blueColor = new Color32(0, 137, 255, 255);
         private Color32 redColor = new Color32(186, 35, 35, 255);
 
+        private string oldText = "";
+
         private bool isInMenu = SceneManager.GetActiveScene().buildIndex == 1;
 
         private void Start()
@@ -39,6 +42,8 @@ namespace JaLoader
             frontPlate = frame.Find("F_LicensePlate").GetChild(2).gameObject.GetComponent<MeshRenderer>();
 
             defaultWhiteColor = frontPlate.material.color;
+
+            oldText = frontText.GetComponent<TextMeshPro>().text;
 
             SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
 
@@ -68,6 +73,19 @@ namespace JaLoader
             switch (style)
             {
                 case LicensePlateStyles.None:
+                    if (!isInMenu)
+                    {
+                        frontPlate.material.color = rearPlate.material.color = defaultWhiteColor;
+                        rearText.GetComponent<TextMeshPro>().fontMaterial.color = frontText.GetComponent<TextMeshPro>().fontMaterial.color = Color.black;
+                        rearText.GetComponent<TextMeshPro>().text = frontText.GetComponent<TextMeshPro>().text = oldText;
+                    }
+                    else
+                    {
+                        frontPlate.material.color = defaultWhiteColor;
+                        frontText.GetComponent<TextMeshPro>().fontMaterial.color = Color.black;
+                        frontText.GetComponent<TextMeshPro>().text = oldText;
+                    }
+                    break;
                 case LicensePlateStyles.Default:
                     if (!isInMenu)
                     {
