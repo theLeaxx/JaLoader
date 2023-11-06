@@ -62,6 +62,7 @@ namespace JalopyModLoader
             locateFolderButton.BackColor = dark;
             installButton.BackColor = dark;
             launchButton.BackColor = dark;
+            updateButton.BackColor = dark;
 
             groupBox1.ForeColor = Color.White;
             groupBox2.ForeColor = Color.White;
@@ -72,6 +73,7 @@ namespace JalopyModLoader
             locateFolderButton.ForeColor = Color.White;
             installButton.ForeColor = Color.White;
             launchButton.ForeColor = Color.White;
+            updateButton.ForeColor = Color.White;
         }
         #endregion
 
@@ -100,7 +102,7 @@ namespace JalopyModLoader
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
-        private readonly string version = "1.1.1";
+        private readonly string version = "1.1.2";
 
         public Form1()
         {
@@ -145,6 +147,9 @@ namespace JalopyModLoader
 
             if (tagInt > currentInt)
             {
+                updateButton.Visible = true;
+                installedTextValue.Text = "Yes, Update Available";
+                installedTextValue.ForeColor = Color.Orange;
                 updateRequired = true;
                 TellAboutUpdate(latest);
             }
@@ -490,7 +495,7 @@ namespace JalopyModLoader
 
         private static void UpdateFiles()
         {
-            Process.Start($@"{Directory.GetCurrentDirectory}\JaUpdater.exe", $"{Directory.GetCurrentDirectory} Both");
+            Process.Start(Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe"), $"{Directory.GetCurrentDirectory()} Both");
             Application.Exit();
         }
 

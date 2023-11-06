@@ -451,7 +451,7 @@ namespace JaLoader
             StartCoroutine(WaitUntilMenuNotice(issue, possibleFixes));
         }
 
-        private void StartUpdate()
+        public void StartUpdate()
         {
             Process.Start($@"{Application.dataPath}\..\JaUpdater.exe", $"{settingsManager.ModFolderLocation} Jalopy");
             Process.GetCurrentProcess().Kill();

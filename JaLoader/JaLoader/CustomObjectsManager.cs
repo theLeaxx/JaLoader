@@ -448,6 +448,7 @@ namespace JaLoader
                 yield return null;
 
             allObjectsRegistered = true;
+            EventsManager.Instance.OnCustomObjectsRegisterFinish();
 
             LoadData(false);
 
