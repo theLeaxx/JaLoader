@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
@@ -166,6 +167,9 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
+            var loadingScreenScript = gameObject.AddComponent<LoadingScreen>();
+            loadingScreenScript.ShowLoadingScreen();
+
             if (UICanvas == null)
                 StartCoroutine(LoadUIDelay());
 
@@ -273,7 +277,15 @@ namespace JaLoader
             string version = ModHelper.Instance.GetLatestTagFromApiUrl("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest");
             int versionInt = int.Parse(version.Replace(".", ""));
 
-            if (versionInt > settingsManager.GetVersion())
+            if (version == "-1")
+            {
+                //couldn't check for updates
+
+                Console.Instance.LogError("Couldn't check for updates!");
+
+                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
+            }
+            else if (versionInt > settingsManager.GetVersion())
             {
                 modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{version} available!</color>)";
 

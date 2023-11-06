@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.OleDb;
 using System.Linq;
 using System.Text;
 using TMPro;
@@ -23,13 +24,12 @@ namespace JaLoader
         private Color32 blueColor = new Color32(0, 137, 255, 255);
         private Color32 redColor = new Color32(186, 35, 35, 255);
 
+        private string oldText = "";
+
         private bool isInMenu = SceneManager.GetActiveScene().buildIndex == 1;
 
         private void Start()
         {
-            if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
-                return;
-
             var frame = transform.Find("TweenHolder/Frame");
 
             if (!isInMenu) rearText = frame.Find("R_LicensePlate/LicensePlate1").gameObject;
@@ -40,9 +40,14 @@ namespace JaLoader
 
             defaultWhiteColor = frontPlate.material.color;
 
-            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+            oldText = frontText.GetComponent<TextMeshPro>().text;
 
             EventsManager.Instance.OnSettingsSaved += OnSettingsSave;
+
+            if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
+                return;
+
+            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
         }
 
         private void OnSettingsSave()
@@ -68,6 +73,19 @@ namespace JaLoader
             switch (style)
             {
                 case LicensePlateStyles.None:
+                    if (!isInMenu)
+                    {
+                        frontPlate.material.color = rearPlate.material.color = defaultWhiteColor;
+                        rearText.GetComponent<TextMeshPro>().fontMaterial.color = frontText.GetComponent<TextMeshPro>().fontMaterial.color = Color.black;
+                        rearText.GetComponent<TextMeshPro>().text = frontText.GetComponent<TextMeshPro>().text = oldText;
+                    }
+                    else
+                    {
+                        frontPlate.material.color = defaultWhiteColor;
+                        frontText.GetComponent<TextMeshPro>().fontMaterial.color = Color.black;
+                        frontText.GetComponent<TextMeshPro>().text = oldText;
+                    }
+                    break;
                 case LicensePlateStyles.Default:
                     if (!isInMenu)
                     {

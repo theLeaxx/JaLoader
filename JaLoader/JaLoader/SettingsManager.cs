@@ -30,7 +30,7 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        private static readonly string JaLoaderVersion = "1.1.2";
+        private static readonly string JaLoaderVersion = "1.1.3";
         public static readonly bool IsPreReleaseVersion = false;
         public string ModFolderLocation { get; private set; }
 
