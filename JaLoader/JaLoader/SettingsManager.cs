@@ -52,6 +52,9 @@ namespace JaLoader
 
         public bool updateAvailable;
 
+        public bool loadedFirstTime;
+        public bool selectedLanguage;
+
         public List<string> DisabledMods = new List<string>();
 
         private readonly ModLoader modLoaderReference = ModLoader.Instance;

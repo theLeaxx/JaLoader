@@ -102,6 +102,7 @@ namespace JaLoader
             if (settingsManager.SkipLanguage && !skippedIntro)
             {
                 skippedIntro = true;
+                settingsManager.selectedLanguage = true;
                 SceneManager.LoadScene("MainMenu");
             }
         }
