@@ -22,7 +22,6 @@ namespace JaLoader
             Canvas canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
-
             CanvasScaler canvasScaler = canvasGO.AddComponent<CanvasScaler>();
             canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             canvasScaler.referenceResolution = new Vector2(1920, 1080);
@@ -85,6 +84,8 @@ namespace JaLoader
 
             canvasGroup.alpha = 0;
             isFading = false;
+
+            SettingsManager.Instance.loadedFirstTime = true;
 
             Destroy(GameObject.Find("JaLoader Loading Screen Canvas"));
             Destroy(gameObject.GetComponent<LoadingScreen>());

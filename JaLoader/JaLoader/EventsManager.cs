@@ -119,6 +119,11 @@ namespace JaLoader
                 FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
                 return;
             }
+
+            if(current.buildIndex == 0 && SettingsManager.Instance.SkipLanguage && SettingsManager.Instance.selectedLanguage)
+            {
+                SceneManager.LoadScene("MainMenu");
+            }
         }
 
         public void OnLog(string message, string stack, LogType type)

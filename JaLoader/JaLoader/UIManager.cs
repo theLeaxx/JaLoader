@@ -167,8 +167,11 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
-            var loadingScreenScript = gameObject.AddComponent<LoadingScreen>();
-            loadingScreenScript.ShowLoadingScreen();
+            if (!settingsManager.loadedFirstTime)
+            {
+                var loadingScreenScript = gameObject.AddComponent<LoadingScreen>();
+                loadingScreenScript.ShowLoadingScreen();
+            }
 
             if (UICanvas == null)
                 StartCoroutine(LoadUIDelay());
@@ -192,6 +195,8 @@ namespace JaLoader
 
             var go = new GameObject();
             go.AddComponent<MenuCarRotate>();
+
+            AddWrench();
         }
 
         private void OnLoadStart()
@@ -371,8 +376,6 @@ namespace JaLoader
             if (SettingsManager.IsPreReleaseVersion)
                 ShowNotice("USING A PRE-RELEASE VERSION OF JALOADER", "You are using a pre-release version of JaLoader.\r\n\r\nThese versions are prone to bugs and may cause issues with certain mods.\r\n\r\nPlease report any bugs you encounter to the JaLoader GitHub page, marking them with the \"pre-release\" tag.\r\n\r\nHave fun!");
 
-            AddWrench();
-
             EventsManager.Instance.OnUILoadFinish();
 
             ab.Unload(false);
@@ -484,6 +487,8 @@ namespace JaLoader
 
         private void SwitchLanguage()
         {
+            settingsManager.selectedLanguage = false;
+
             SaveValues();
 
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
