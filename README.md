@@ -16,8 +16,6 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 
 ## [Check out the current progress](https://github.com/users/theLeaxx/projects/1)
 
-![image](https://github.com/theLeaxx/JaLoader/assets/101940826/7c242857-0dff-4b08-8c44-e0ff3d63424a)
-
 ## Libraries used
 * [NAudio](https://github.com/naudio/NAudio) (**MIT**)
 * [Octokit](https://github.com/octokit/octokit.net) (**MIT**)
