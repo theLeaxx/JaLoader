@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine;
 using System.IO;
 using System.Diagnostics;
+using System.Linq;
 
 namespace JaLoader
 {
@@ -175,6 +176,24 @@ namespace JaLoader
             }
 
             customCommands.Add((commandName, description ,methodName), mod);
+        }
+
+        public void RemoveCommandsFromMod(Mod mod)
+        {
+            var keysToRemove = new List<(string, string, string)>();
+
+            foreach (var kv in customCommands)
+            {
+                if (kv.Value == mod)
+                {
+                    keysToRemove.Add(kv.Key);
+                }
+            }
+
+            foreach (var key in keysToRemove)
+            {
+                customCommands.Remove(key);
+            }
         }
 
         private void Update()

@@ -42,6 +42,7 @@ namespace JaLoader
         private bool allObjectsRegistered;
 
         private SettingsManager settingsManager = SettingsManager.Instance;
+        public bool ignoreAlreadyExists;
 
         private void Update()
         {
@@ -111,7 +112,10 @@ namespace JaLoader
         {
             if (database.ContainsKey(registryName))
             {
-                Console.Instance.LogError("CustomObjectsManager", $"An object with the registry key {registryName} already exists! Please pick another one.");
+                if (!ignoreAlreadyExists)
+                {
+                    Console.Instance.LogError("CustomObjectsManager", $"An object with the registry key {registryName} already exists! Please pick another one.");
+                }
                 return;
             }
 

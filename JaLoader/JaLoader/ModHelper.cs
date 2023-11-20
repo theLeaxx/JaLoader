@@ -130,6 +130,13 @@ namespace JaLoader
                 laika = GameObject.Find("FrameHolder");
                 laika.AddComponent<LicensePlateCustomizer>();
                 addedExtensions = true;
+
+                if (SettingsManager.IsPreReleaseVersion)
+                {
+                    var obj = Instantiate(new GameObject());
+                    obj.name = "JaLoader Game Scripts";
+                    obj.AddComponent<MarketManager>();
+                }
             }
         }
 
@@ -177,6 +184,9 @@ namespace JaLoader
                 return;
             }
 
+            if (obj.GetComponent<ObjectIdentification>() && obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic)
+                return;
+
             if (!obj.GetComponent<Collider>())
             {
                 obj.AddComponent<BoxCollider>();
@@ -217,6 +227,7 @@ namespace JaLoader
             CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
             fix.objDescription = objDescription;
             fix.objName = objName;
+            obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic = true;
             obj.SetActive(true);
         }
 
@@ -232,6 +243,15 @@ namespace JaLoader
         /// <param name="canFindInJunkCars">(Not implemented yet) Can this object be found at scrapyards/abandoned cars?</param>
         public void AddEnginePartLogic(GameObject obj, PartTypes type, int durability, bool canBuyInDealership, bool canFindInJunkCars)
         {
+            if (obj == null)
+            {
+                Console.Instance.LogError("The object you're trying to add logic to is null!");
+                return;
+            }
+
+            if (obj.GetComponent<ObjectIdentification>() && obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic)
+                return;
+
             if (!obj.GetComponent<ObjectPickupC>())
             {
                 Console.Instance.LogError("You need to add basic object logic before adding engine part logic!");
@@ -299,6 +319,9 @@ namespace JaLoader
                     Console.Instance.LogError("Custom components are not supported yet!");
                     break;
             }
+
+            obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic = true;
+
         }
 
         /// <summary>
@@ -366,6 +389,11 @@ namespace JaLoader
             ec.engineAudio = GameObject.Find("EngineBlock").GetComponent<EngineComponentC>().engineAudio;
             audio.priority = 128;
             audio.pitch = 9.5f;
+        }
+
+        public void ConfigureCustomExtra(GameObject obj, int rarity)
+        {
+
         }
 
         /// <summary>

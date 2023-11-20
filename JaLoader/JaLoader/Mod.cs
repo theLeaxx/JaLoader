@@ -25,6 +25,7 @@ namespace JaLoader
         public virtual bool UseAssets { get; set; }
         public virtual WhenToInit WhenToInit { get; set; }
 
+        public virtual List<(string, string, string)> Dependencies { get; set; } = new List<(string, string, string)>();
 
         public string AssetsPath { get; set; }
 
