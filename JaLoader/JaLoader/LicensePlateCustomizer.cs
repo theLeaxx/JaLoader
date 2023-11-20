@@ -50,6 +50,11 @@ namespace JaLoader
             SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
         }
 
+        private void OnDestroy()
+        {
+            EventsManager.Instance.OnSettingsSaved -= OnSettingsSave;
+        }
+
         private void OnSettingsSave()
         {
             SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
@@ -60,6 +65,11 @@ namespace JaLoader
             if (Input.GetKeyDown(KeyCode.F5) && settingsManager.DebugMode)
             {
                 SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+                Console.Instance.Log(MainMenuC.Global.gameObject.name);
+                foreach (var item in MainMenuC.Global.assignedInputStrings)
+                {
+                    Console.Instance.Log(item);
+                }
             }
         }
 
@@ -69,7 +79,7 @@ namespace JaLoader
                 rearText.GetComponent<TextMeshPro>().text = frontText.GetComponent<TextMeshPro>().text = plateText;
             else
                 frontText.GetComponent<TextMeshPro>().text = plateText;
-
+            
             switch (style)
             {
                 case LicensePlateStyles.None:

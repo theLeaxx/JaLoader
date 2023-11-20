@@ -12,5 +12,8 @@ namespace JaLoader
         public string ModName = "";
         public string Author = "";
         public string Version = "";
+
+        public bool HasReceivedPartLogic;
+        public bool HasReceivedBasicLogic;
     }
 }

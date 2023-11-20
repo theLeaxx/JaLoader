@@ -295,8 +295,8 @@ namespace JaLoader
                 modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{version} available!</color>)";
 
                 var dialog = UICanvas.transform.Find("JLUpdateDialog").gameObject;
-                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {version}";
                 dialog.transform.Find("YesButton").GetComponent<Button>().onClick.AddListener(() => modLoader.StartUpdate());
+                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {version}";
                 dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(() => dialog.SetActive(false));
                 dialog.SetActive(true);
 
@@ -527,12 +527,13 @@ namespace JaLoader
                 moreInfoPanelMods.transform.Find("ModName").GetComponent<Text>().text = "Welcome to the mods list!";
                 moreInfoPanelMods.transform.Find("ModAuthor").GetComponent<Text>().text = "";
                 moreInfoPanelMods.transform.Find("ModVersion").GetComponent<Text>().text = "";
-                moreInfoPanelMods.transform.Find("ModDescription").GetComponent<Text>().text = "You can enable or disable mods or see more information about them!";
+                moreInfoPanelMods.transform.Find("ModDescription").GetComponent<Text>().text = "You can enable/disable mods, view more information about them, adjust their settings, and arrange them in a desired load order using the provided directional arrows!";
             }
         }
 
         public void ToggleSettings(string objName)
         {
+            Console.Instance.Log("Toggled settings");
             modSettingsScrollView.SetActive(true);
             inModsOptions = true;
 
@@ -677,7 +678,7 @@ namespace JaLoader
             ShowNotice(subtitle, message);
         }
 
-        private void ShowNotice(string subtitle, string message)
+        public void ShowNotice(string subtitle, string message)
         {
             noticesToShow.Add((subtitle, message));
 
