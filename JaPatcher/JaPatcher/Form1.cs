@@ -90,6 +90,7 @@ namespace JalopyModLoader
         private readonly string winhttpDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\winhttp.dll");
         private readonly string doorstopConfig = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\doorstop_config.ini");
         private readonly string jaLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\JaLoader.dll");
+        private readonly string jaLoaderXML = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\JaLoader.xml");
         private readonly string jaPreLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\JaPreLoader.dll");
         private readonly string theraotDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\Theraot.Core.dll");
         private readonly string naudioDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\NAudio.dll");
@@ -102,7 +103,9 @@ namespace JalopyModLoader
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
-        private readonly string version = "1.1.4";
+        private readonly string version = "1.2.0";
+
+        private bool canClickCustom = false;
 
         public Form1()
         {
@@ -113,7 +116,7 @@ namespace JalopyModLoader
                 SetDarkMode();
             }
 
-            if (!File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(assetBundle) || !File.Exists(theraotDLL) || !File.Exists(naudioDLL) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
+            if (!File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(jaLoaderXML) || !File.Exists(assetBundle) || !File.Exists(theraotDLL) || !File.Exists(naudioDLL) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
             {
                 MessageBox.Show("Please extract all of the contents from the archive!", "DLLs not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Close();
@@ -247,8 +250,11 @@ namespace JalopyModLoader
             }
             else
             {
+                customFolderModsText.Text = _settings.ModFolderLocation;
                 customModsLocationButton.Checked = true;
             }
+
+            canClickCustom = true;
         }
 
         public void Patch()
@@ -257,6 +263,7 @@ namespace JalopyModLoader
             File.Copy(doorstopConfig, Path.Combine(gamePath, @"doorstop_config.ini"), true);
             File.Copy(jaPreLoaderDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll"), true);
             File.Copy(jaLoaderDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll"), true);
+            File.Copy(jaLoaderXML, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.xml"), true);
             File.Copy(theraotDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll"), true);
             File.Copy(naudioDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\NAudio.dll"), true);
             File.Copy(discordDLL, Path.Combine(gamePath, @"discord_game_sdk.dll"), true);
@@ -296,6 +303,7 @@ namespace JalopyModLoader
             File.Delete(Path.Combine(gamePath, @"doorstop_config.ini"));
             File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll"));
             File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll"));
+            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.xml"));
             File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll"));
             File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\NAudio.dll"));
             File.Delete(Path.Combine(gamePath, @"discord_game_sdk.dll"));
@@ -376,6 +384,7 @@ namespace JalopyModLoader
             }
             else
             {
+                canClickCustom = true;
                 _settings.ModFolderLocation = currentModPath;
             }
 
@@ -467,7 +476,7 @@ namespace JalopyModLoader
                 Directory.CreateDirectory(gameFolderModsPath);
             }
 
-            if(!Directory.Exists($@"{gameFolderModsPath}\Required"))
+            if (!Directory.Exists($@"{gameFolderModsPath}\Required"))
             {
                 Directory.CreateDirectory($@"{gameFolderModsPath}\Required");
             }
@@ -501,6 +510,9 @@ namespace JalopyModLoader
 
         private void customModsLocationButton_CheckedChanged(object sender, EventArgs e)
         {
+            if (!customModsLocationButton.Checked || !canClickCustom)
+                return;
+
             if (customModsDialog.ShowDialog() == DialogResult.OK)
             {
                 currentModPath = customModsDialog.SelectedPath;
@@ -517,6 +529,13 @@ namespace JalopyModLoader
                 {
                     Directory.CreateDirectory($@"{currentModPath}\Mods");
                 }
+
+                if (!Directory.Exists($@"{currentModPath}\Required"))
+                {
+                    Directory.CreateDirectory($@"{currentModPath}\Required");
+                }
+
+                File.Copy(assetBundle, $@"{currentModPath}\Required\JaLoader_UI.unity3d", true);
             }
         }
     }

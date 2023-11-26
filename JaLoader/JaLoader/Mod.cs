@@ -32,19 +32,10 @@ namespace JaLoader
         public List<string> settingsIDS = new List<string>();
         [Serializable] class SettingsValues : SerializableDictionary<string, float> { }
 
-        /// <summary>
-        /// Subscribe to all of your events here
-        /// </summary>
         public virtual void EventsDeclaration() { }
 
-        /// <summary>
-        /// Declare all of your settings here
-        /// </summary>
         public virtual void SettingsDeclaration() { }
 
-        /// <summary>
-        /// Declare all of your custom objects here
-        /// </summary>
         public virtual void CustomObjectsRegistration() { }
 
         public virtual void Update() { }
@@ -53,15 +44,16 @@ namespace JaLoader
         public virtual void OnEnable() { }
         public virtual void OnDisable() { }
 
-        [Obsolete]
+
         /// <summary>
-        /// (Deprecated, use LoadAsset<T>())
+        /// (Deprecated, use LoadAsset<![CDATA[<T>]]>())
         /// Loads the specified asset from an assetbundle
-        /// </summary>
         /// <param name="assetName">The file's name</param>
         /// <param name="prefabName">The prefab in question</param>
         /// <param name="fileSuffix">The file's suffix (usually .unity3d, you can leave empty too)</param>
         /// <returns>The loaded GameObject</returns>
+        /// </summary>
+        [Obsolete]
         public GameObject LoadAsset(string assetName, string prefabName, string fileSuffix)
         {
             if (!UseAssets)

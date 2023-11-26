@@ -67,7 +67,7 @@ namespace JaLoader
             gameObject.GetComponent<Stopwatch>().StopCounting();
             Debug.Log($"Loaded JaLoader assemblies! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
 
-            StartCoroutine(modLoader.LoadMods());
+            StartCoroutine(modLoader.InitializeMods());
             yield return null;
         }
     }

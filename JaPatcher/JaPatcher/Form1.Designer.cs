@@ -186,11 +186,11 @@
             customFolderModsText.AutoSize = true;
             customFolderModsText.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
             customFolderModsText.ImeMode = ImeMode.NoControl;
-            customFolderModsText.Location = new Point(34, 135);
+            customFolderModsText.Location = new Point(26, 136);
             customFolderModsText.Name = "customFolderModsText";
-            customFolderModsText.Size = new Size(175, 15);
+            customFolderModsText.Size = new Size(107, 15);
             customFolderModsText.TabIndex = 5;
-            customFolderModsText.Text = "Locate the Jalopy folder first...";
+            customFolderModsText.Text = "Select a location...";
             // 
             // customModsLocationButton
             // 
