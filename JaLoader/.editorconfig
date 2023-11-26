@@ -2,3 +2,6 @@
 
 # IDE0051: Remove unused private members
 dotnet_diagnostic.IDE0051.severity = silent
+
+# CS1591: Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity = none

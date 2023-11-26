@@ -688,22 +688,22 @@ namespace JaLoader
 
         private void SetMoney(int value)
         {
-            FindObjectOfType<WalletC>().TotalWealth = value;
-            FindObjectOfType<WalletC>().UpdateWealth();
+            ModHelper.Instance.wallet.TotalWealth = value;
+            ModHelper.Instance.wallet.UpdateWealth();
             Log("/", $"Set money to {value}!");
         }
 
         private void AddMoney(int value)
         {
-            FindObjectOfType<WalletC>().TotalWealth += value;
-            FindObjectOfType<WalletC>().UpdateWealth();
+            ModHelper.Instance.wallet.TotalWealth += value;
+            ModHelper.Instance.wallet.UpdateWealth();
             Log("/", $"Added {value} money!");
         }
 
         private void RemoveMoney(int value)
         {
-            FindObjectOfType<WalletC>().TotalWealth -= value;
-            FindObjectOfType<WalletC>().UpdateWealth();
+            ModHelper.Instance.wallet.TotalWealth -= value;
+            ModHelper.Instance.wallet.UpdateWealth();
             Log("/", $"Removed {value} money!");
         }
 

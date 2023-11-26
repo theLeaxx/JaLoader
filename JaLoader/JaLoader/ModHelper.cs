@@ -32,6 +32,8 @@ namespace JaLoader
 
         public GameObject player;
         public GameObject laika;
+        public WalletC wallet;
+        public DirectorC director;
 
         public Material defaultEngineMaterial;
         private AudioClip[] defaultClips;
@@ -128,6 +130,8 @@ namespace JaLoader
                 Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
                 player = Camera.main.transform.parent.gameObject;
                 laika = GameObject.Find("FrameHolder");
+                wallet = FindObjectOfType<WalletC>();
+                director = FindObjectOfType<DirectorC>();
                 laika.AddComponent<LicensePlateCustomizer>();
                 addedExtensions = true;
 
@@ -236,8 +240,6 @@ namespace JaLoader
         /// </summary>
         /// <param name="obj">The object in question</param>
         /// <param name="type">What type of engine component is this?</param>
-        /// <param name="companyName">What company made this part? (shown in the laika catalogue)</param>
-        /// <param name="price">The price of the object</param>
         /// <param name="durability">Max durability</param>
         /// <param name="canBuyInDealership">Can this object be bought in laika dealerships?</param>
         /// <param name="canFindInJunkCars">(Not implemented yet) Can this object be found at scrapyards/abandoned cars?</param>
@@ -327,6 +329,10 @@ namespace JaLoader
         /// <summary>
         /// Adjust how the object will sit in the trunk
         /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="position">Adjustments you may need to make so the object doesn't clip through the body panels/roof rack/through other objects</param>
+        /// <param name="rotation">Adjustments you may need to make so the object doesn't clip through the body panels/roof rack/through other objects</param>
+        /// <param name="dimensions">Dimensions of the object. The trunk has 2 4x2x3 slots (this are also the default dimensions for most of the engine parts). Try to experiment with whatever works for your object</param>
         public void AdjustCustomObjectTrunkPosition(GameObject obj, Vector3 position, Vector3 rotation, Vector3 dimensions)
         {
             ObjectPickupC ob = obj.GetComponent<ObjectPickupC>();
@@ -342,6 +348,9 @@ namespace JaLoader
         /// <summary>
         /// Adjust how the object looks like when being held
         /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="throwRotation">The euler angles that the object will have, relative to the player once the item is no longer being held (dropped)</param>
+        /// <param name="position">The object's position relative to the player while being held</param>
         public void AdjustCustomObjectPosition(GameObject obj, Vector3 throwRotation, Vector3 position)
         {
             ObjectPickupC ob = obj.GetComponent<ObjectPickupC>();
@@ -391,6 +400,11 @@ namespace JaLoader
             audio.pitch = 9.5f;
         }
 
+        /// <summary>
+        /// This method is not implemented yet
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="rarity"></param>
         public void ConfigureCustomExtra(GameObject obj, int rarity)
         {
 
@@ -403,6 +417,7 @@ namespace JaLoader
         /// <param name="acceleration">The 0-80 speed, in seconds</param>
         /// <param name="topSpeed">The max speed achievable with this engine</param>
         /// <param name="customAudio">The audio this engine should use</param>
+        /// <param name="audioPitch">The pitch of the audio (Default is 9.5f)</param>
         public void ConfigureCustomEngine(GameObject obj, int acceleration, int topSpeed, AudioClip customAudio, float audioPitch)
         {
             EngineComponentC ec = obj.GetComponent<EngineComponentC>();
@@ -435,7 +450,7 @@ namespace JaLoader
         /// Configure a custom air filter to your likings
         /// </summary>
         /// <param name="obj">The object in question</param>
-        /// <param name="engineWearRate">How </param>
+        /// <param name="engineWearRate">How should the engine's wear rate be affected? (ideally, make this lower than 1, as the default value is 0.0001; the formula for calculating the wear rate is 0.0001 - (0.0001 * engineWearRate))</param>
         public void ConfigureCustomAirFilter(GameObject obj, float engineWearRate)
         {
             EngineComponentC ec = obj.GetComponent<EngineComponentC>();
@@ -463,6 +478,12 @@ namespace JaLoader
             audio.priority = 128;
         }
 
+        /// <summary>
+        /// Configure a custom fuel tank to your likings
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="fuelCapacity">The maximum fuel capacity it can hold</param>
+        /// <param name="initialFuelCapacity">How many liters of fuel should the object have when it's spawned?</param>
         public void ConfigureCustomFuelTank(GameObject obj, int fuelCapacity, int initialFuelCapacity)
         {
             EngineComponentC ec = obj.GetComponent<EngineComponentC>();

@@ -12,6 +12,7 @@ using Application = UnityEngine.Application;
 using Process = System.Diagnostics.Process;
 using NAudio.Midi;
 using System.Text.RegularExpressions;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
 
 namespace JaLoader
 {
@@ -55,9 +56,6 @@ namespace JaLoader
         public bool IsCrackedVersion { get; private set; }
 
         Stopwatch stopWatch;
-
-        private List<(string, string, int)> modLoadOrderList = new List<(string, string, int)>();
-        private readonly string loadOrderFilePath = Path.Combine(Application.persistentDataPath, @"LoadOrder.json");
 
         private void Start()
         {
@@ -190,7 +188,6 @@ namespace JaLoader
 
                     foreach (Mod mod in modsInitInMenu)
                     {
-                        Console.Instance.Log("starting load");
                         mod.EventsDeclaration();
 
                         mod.SettingsDeclaration();
@@ -202,8 +199,12 @@ namespace JaLoader
 
                         CheckForDependencies(mod);
 
+                        Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
+
                         if (!disabledMods.Contains(mod))
                             mod.gameObject.SetActive(true);
+
+                        Debug.Log($"Loaded mod {mod.ModName}");
                     }
 
                     foreach (Mod mod in modsInitInGame)
@@ -218,7 +219,14 @@ namespace JaLoader
 
                         if (mod.settingsIDS.Count > 0)
                             mod.LoadModSettings();
+
+                        Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
                     }
+
+                    stopWatch.StopCounting();
+                    Debug.Log($"Loaded JaLoader mods! ({stopWatch.timePassed}s)");
+                    Debug.Log($"JaLoader successfully loaded! ({stopWatch.totalTimePassed}s)");
+                    Destroy(stopWatch);
 
                     InitializedInMenuMods = true;
                 }
@@ -229,6 +237,8 @@ namespace JaLoader
                     {
                         if (!disabledMods.Contains(mod))
                             mod.gameObject.SetActive(true);
+
+                        Debug.Log($"Loaded mod {mod.ModName}");
                     }
 
                     InitializedInGameMods = true;
@@ -240,7 +250,6 @@ namespace JaLoader
         {
             if (mod.Dependencies.Count > 0)
             {
-                Console.Instance.Log($"Dependency check {mod.ModID}");
                 foreach (var dependency in mod.Dependencies)
                 {
                     int version = int.Parse(dependency.Item3.Replace(".", ""));
@@ -270,9 +279,9 @@ namespace JaLoader
             }
         }
 
-        public IEnumerator LoadMods()
+        public IEnumerator InitializeMods()
         {
-            Debug.Log("Loading JaLoader mods...");
+            Debug.Log("Initializing JaLoader mods...");
             gameObject.GetComponent<Stopwatch>().StartCounting();
 
             DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
@@ -328,6 +337,7 @@ namespace JaLoader
                         string URL = $"https://api.github.com/repos/{splitLink[3]}/{splitLink[4]}/releases/latest";
 
                         string version = ModHelper.Instance.GetLatestTagFromApiUrl(URL, modName);
+
                         int versionInt = int.Parse(version.Replace(".", ""));
                         int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
 
@@ -370,12 +380,15 @@ namespace JaLoader
 
                     modStatusTextRef.Add(mod, tempObj.GetComponent<Text>());
 
+                    Debug.Log($"Part 1/2 of initialization for mod {mod.ModName} completed");
+
                     modsNumber++;
                 }
                 catch (Exception ex)
                 {
                     validMods--;
 
+                    Debug.Log($"Failed to initialize mod {modFile.Name}");
                     Console.Instance.LogError("JaLoader", $"An error occured while trying to load mod \"{modFile.Name}\": ");
 
                     uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modFile.Name;
@@ -398,6 +411,7 @@ namespace JaLoader
                                 string versionNumber = versionSection.Substring(versionIndex + "Version=".Length).Trim();
 
                                 string errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}, version {versionNumber}";
+                                Debug.Log(errorMessage);
                                 Console.Instance.LogError("JaLoader", errorMessage);
                                 Console.Instance.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                             }
@@ -407,6 +421,8 @@ namespace JaLoader
                     }
 
                     Console.Instance.LogError("/", ex);
+                    Debug.Log(ex);
+                    Debug.Log("You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                     Console.Instance.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                     //Console.Instance.LogError("JaLoader", $"\"{modFile.Name}\" is not a valid mod! Please remove it from the Mods folder.");
                 }
@@ -428,12 +444,6 @@ namespace JaLoader
 
                 UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
             }
-
-            gameObject.GetComponent<Stopwatch>().StopCounting();
-            Debug.Log($"Loaded JaLoader mods! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
-
-            Debug.Log($"JaLoader fully loaded! ({gameObject.GetComponent<Stopwatch>().totalTimePassed}s)");
-            Destroy(gameObject.GetComponent<Stopwatch>());
 
             GetComponent<LoadingScreen>().DeleteLoadingScreen();
 
@@ -487,6 +497,8 @@ namespace JaLoader
                     writer.WriteLine($"{modInfo[0]}_{modInfo[1]}_{modInfo[2]}_{i}");
                 }
             }
+
+            Debug.Log("Saved mods order");
         }
 
         private void LoadModOrder()
@@ -541,14 +553,16 @@ namespace JaLoader
                             }
                         }
                     }
-
-                    SaveModsOrder();
                 }
+
+                SaveModsOrder();
             }
             else
             {
                 SaveModsOrder();
             }
+
+            Debug.Log("Loaded mods order");
         }
 
         private void ReloadMod(Mod modToReload)
@@ -654,6 +668,13 @@ namespace JaLoader
             settingsManager.SaveSettings();
         }
 
+        /// <summary>
+        /// Searches for a mod with the specified ID, name and author and returns it if found, otherwise returns null.
+        /// </summary>
+        /// <param name="author">The mod's author</param>
+        /// <param name="ID">The mod's ID</param>
+        /// <param name="name">The mod's name</param>
+        /// <returns>The searched Mod if found, otherwise null</returns>
         public Mod FindMod(string author, string ID, string name)
         {
             if (modsInitInGame.Find(i => i.ModID == ID && i.ModName == name && i.ModAuthor == author))
@@ -668,6 +689,12 @@ namespace JaLoader
             return null;
         }
 
+        /// <summary>
+        /// Searches for a mod with the specified ID and author and returns it if found, otherwise returns null.
+        /// </summary>
+        /// <param name="author">The mod's author</param>
+        /// <param name="ID">The mod's ID</param>
+        /// <returns>The searched Mod if found, otherwise null</returns>
         public Mod FindMod(string author, string ID)
         {
             Mod inGameMod = modsInitInGame.Find(i => i.ModID == ID && i.ModAuthor == author);
