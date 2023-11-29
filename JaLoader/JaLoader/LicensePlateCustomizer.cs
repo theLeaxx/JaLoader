@@ -35,7 +35,7 @@ namespace JaLoader
             if (!isInMenu) rearText = frame.Find("R_LicensePlate/LicensePlate1").gameObject;
             frontText = frame.Find("F_LicensePlate").GetChild(0).gameObject;
 
-            if (!isInMenu) rearPlate = frame.Find("").gameObject.GetComponent<MeshRenderer>();
+            if (!isInMenu) rearPlate = frame.Find("R_LicensePlate").gameObject.GetComponent<MeshRenderer>();
             frontPlate = frame.Find("F_LicensePlate").GetChild(2).gameObject.GetComponent<MeshRenderer>();
 
             defaultWhiteColor = frontPlate.material.color;
@@ -65,11 +65,6 @@ namespace JaLoader
             if (Input.GetKeyDown(KeyCode.F5) && settingsManager.DebugMode)
             {
                 SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
-                Console.Instance.Log(MainMenuC.Global.gameObject.name);
-                foreach (var item in MainMenuC.Global.assignedInputStrings)
-                {
-                    Console.Instance.Log(item);
-                }
             }
         }
 
