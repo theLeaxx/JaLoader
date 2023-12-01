@@ -1,5 +1,8 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 //TODO: implement check so we dont cache everytime
 namespace JaLoader
@@ -32,6 +35,8 @@ namespace JaLoader
 
         private Camera camera;
         private Light lightComponent;
+
+        public Dictionary<string, GameObject> extraParts = new Dictionary<string, GameObject>();
 
         private void Start()
         {
@@ -76,11 +81,12 @@ namespace JaLoader
             {
                 //Console.Instance.Log(entry);
 
-                if (!objectsManager.GetObject(entry).GetComponent<EngineComponentC>())
+                if (!objectsManager.GetObject(entry).GetComponent<EngineComponentC>() || objectsManager.GetObject(entry).GetComponent<ExtraComponentC_ModExtension>())
                     continue;
 
-                var obj = objectsManager.SpawnObjectWithoutRegistering(entry, new Vector3(1000, 1000, 1000), Vector3.zero);
-                obj.GetComponent<Rigidbody>().isKinematic = true;
+                var obj = objectsManager.SpawnObjectWithoutRegistering(entry, new Vector3(1000, 1000, 1000), Vector3.zero, false);
+                ModHelper.RemoveAllComponents(obj, typeof(MeshFilter), typeof(MeshRenderer), typeof(ObjectPickupC));
+
                 obj.layer = 21;
 
                 switch (obj.GetComponent<ObjectPickupC>().engineString)
@@ -117,6 +123,7 @@ namespace JaLoader
                     case "WaterContainer":
                         break;
                 }
+                DestroyImmediate(obj.GetComponent<ObjectPickupC>());
 
                 obj.SetActive(true);
 
@@ -125,6 +132,24 @@ namespace JaLoader
 
                 DestroyImmediate(obj);
             }
+
+            foreach (var entry in extraParts.Keys)
+            {
+                var objToSpawn = Instantiate(extraParts[entry]);
+                SceneManager.MoveGameObjectToScene(objToSpawn, SceneManager.GetActiveScene());
+                ModHelper.RemoveAllComponents(objToSpawn, typeof(MeshFilter), typeof(MeshRenderer));
+                objToSpawn.transform.position = new Vector3(1000, 1000, 1000);
+                objToSpawn.transform.eulerAngles = new Vector3(90, 0, -90);
+                objToSpawn.layer = 21;
+                objToSpawn.SetActive(true);
+                SaveScreenshot(entry);
+                objToSpawn.SetActive(false);
+
+                DestroyImmediate(objToSpawn);
+                DestroyImmediate(extraParts[entry]);
+            }
+
+            extraParts.Clear();
         }
 
         private void OnGameLoad()

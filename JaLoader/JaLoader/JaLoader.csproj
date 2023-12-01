@@ -150,6 +150,7 @@
     <Compile Include="CustomRadioController.cs" />
     <Compile Include="DebugCamera.cs" />
     <Compile Include="DebugObjectSpawner.cs" />
+    <Compile Include="DebugPosition.cs" />
     <Compile Include="DiscordController.cs" />
     <Compile Include="Discord\ActivityManager.cs" />
     <Compile Include="Discord\Constants.cs" />
@@ -163,6 +164,7 @@
     <Compile Include="Console.cs" />
     <Compile Include="DragRigidbodyC_ModExtension.cs" />
     <Compile Include="CustomObjectInfo.cs" />
+    <Compile Include="ExtrasManager.cs" />
     <Compile Include="FPSCounter.cs" />
     <Compile Include="LaikaCatalogueExtension.cs" />
     <Compile Include="LicensePlateCustomizer.cs" />

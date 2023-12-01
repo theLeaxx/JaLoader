@@ -15,5 +15,16 @@ namespace JaLoader
 
         public bool HasReceivedPartLogic;
         public bool HasReceivedBasicLogic;
+        public bool IsExtra;
+        public bool IsCustom;
+        public int ExtraID;
+        public int CustomID;
+        public BoxSizes BoxSize;
+    }
+
+    public class HolderInformation : MonoBehaviour
+    {
+        public bool Installed;
+        public int Weight;
     }
 }

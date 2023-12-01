@@ -159,6 +159,6 @@ namespace JaLoader
             yield return new WaitForEndOfFrame();
 
             FindObjectOfType<MenuVolumeChanger>().muted = false;
-        }
+        }//BoxContentsC
     }
 }

@@ -78,6 +78,7 @@ namespace JaLoader
         public GameObject modLoaderText { get; private set; }
         public GameObject modFolderText { get; private set; }
         public GameObject fpsText { get; private set; }
+        public GameObject positionText { get; private set; }
 
         private MainMenuBookC book;
         private GameObject exitConfirmButton;
@@ -188,8 +189,8 @@ namespace JaLoader
             newGameConfirmButton = GameObject.Find("New Game").transform.GetChild(1).gameObject;
             var skipConfirmButton = GameObject.Find("New Game").transform.GetChild(4).gameObject;
 
-            newGameConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(CustomObjectsManager.Instance, "DeleteData"));
-            skipConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(CustomObjectsManager.Instance, "DeleteData"));
+            newGameConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(EventsManager.Instance, "OnNewGameStart"));
+            skipConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(EventsManager.Instance, "OnNewGameStart"));
 
             ToggleUIVisibility(true);
 
@@ -362,6 +363,9 @@ namespace JaLoader
             fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
             fpsText.AddComponent<FPSCounter>();
 
+            positionText = UICanvas.transform.Find("DebugPosition").gameObject;
+            positionText.AddComponent<DebugPosition>();
+
             SetOptionsValues();
 
             Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
@@ -533,7 +537,6 @@ namespace JaLoader
 
         public void ToggleSettings(string objName)
         {
-            Console.Instance.Log("Toggled settings");
             modSettingsScrollView.SetActive(true);
             inModsOptions = true;
 
@@ -640,6 +643,7 @@ namespace JaLoader
             settingsManager.EnableJaDownloader = !Convert.ToBoolean(enableJaDownloaderDropdown.value);
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
+            positionText.gameObject.SetActive(settingsManager.DebugMode);
 
             settingsManager.SaveSettings();
 

@@ -44,6 +44,7 @@ namespace JaLoader
         public event GameEvents OnGameUnload;
 
         public event GameEvents OnSave;
+        public event GameEvents OnNewGame;
         public event LogEvents OnException;
         
         //public event GameEvents OnStoreTransaction;
@@ -85,6 +86,11 @@ namespace JaLoader
             OnSettingsSaved?.Invoke();
         }
 
+        public void OnNewGameStart()
+        {
+            OnNewGame?.Invoke();
+        }
+
         public void OnCustomObjectsRegisterFinish()
         {
             OnCustomObjectsRegisterFinished?.Invoke();
@@ -102,7 +108,7 @@ namespace JaLoader
 
             if (OnLoadStart != null && current.buildIndex == 2)
             {
-                OnLoadStart.Invoke();
+                OnLoadStart();
                 return;
             }
 

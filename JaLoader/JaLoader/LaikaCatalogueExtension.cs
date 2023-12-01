@@ -274,6 +274,11 @@ namespace JaLoader
                             break;
                     }
 
+                    if (obj.GetComponent<ExtraComponentC_ModExtension>())
+                    {
+                        type = PartTypes.Extra;
+                    }
+
                     //var comp = obj.GetComponent<ObjectIdentification>();
                     var objInfo = obj.GetComponent<CustomObjectInfo>();
                     Texture2D tex = PartIconManager.Instance.GetTexture(objName);

@@ -39,6 +39,7 @@ namespace JaLoader
         private UIManager uiManager;
 
         public int modsNumber;
+        private int modsNeedUpdate;
 
         public List<Mod> modsInitInGame = new List<Mod>();
         private readonly List<Mod> modsInitInMenu = new List<Mod>();
@@ -50,7 +51,8 @@ namespace JaLoader
         public bool InitializedInGameMods;
         private bool InitializedInMenuMods;
         
-        public bool finishedLoadingMods;
+        public bool finishedInitializingPartOneMods;
+        public bool finishedInitializingPartTwoMods;
         private bool skippedIntro;
 
         public bool IsCrackedVersion { get; private set; }
@@ -91,6 +93,7 @@ namespace JaLoader
             gameObject.AddComponent<DebugObjectSpawner>();
             gameObject.AddComponent<ReferencesLoader>();
             gameObject.AddComponent<CustomRadioController>();
+            gameObject.AddComponent<ExtrasManager>();
 
             helperObj.AddComponent<ModHelper>();
             helperObj.AddComponent<UncleHelper>();
@@ -149,7 +152,7 @@ namespace JaLoader
             if (modsNumber == 0)
                 return;
 
-            if (finishedLoadingMods)
+            if (finishedInitializingPartOneMods)
             {
                 if (!LoadedDisabledMods && settingsManager.DisabledMods.Count != 0)
                 {
@@ -184,10 +187,12 @@ namespace JaLoader
 
                 if (!InitializedInMenuMods)
                 {
-                    Console.Instance.Log("JaLoader", $"{modsNumber} mods found! ({disabledMods.Count} disabled)");
+                    Console.Instance.Log("JaLoader", $"{modsNumber} mods found! ({disabledMods.Count} disabled, {modsNeedUpdate} updates available)");
 
                     foreach (Mod mod in modsInitInMenu)
                     {
+                        CheckForDependencies(mod);
+                        
                         mod.EventsDeclaration();
 
                         mod.SettingsDeclaration();
@@ -196,8 +201,6 @@ namespace JaLoader
 
                         if (mod.settingsIDS.Count > 0)
                             mod.LoadModSettings();
-
-                        CheckForDependencies(mod);
 
                         Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
 
@@ -209,13 +212,13 @@ namespace JaLoader
 
                     foreach (Mod mod in modsInitInGame)
                     {
+                        CheckForDependencies(mod);
+                        
                         mod.EventsDeclaration();
 
                         mod.SettingsDeclaration();
 
                         mod.CustomObjectsRegistration();
-
-                        CheckForDependencies(mod);
 
                         if (mod.settingsIDS.Count > 0)
                             mod.LoadModSettings();
@@ -226,6 +229,7 @@ namespace JaLoader
                     stopWatch.StopCounting();
                     Debug.Log($"Loaded JaLoader mods! ({stopWatch.timePassed}s)");
                     Debug.Log($"JaLoader successfully loaded! ({stopWatch.totalTimePassed}s)");
+                    finishedInitializingPartTwoMods = true;
                     Destroy(stopWatch);
 
                     InitializedInMenuMods = true;
@@ -263,15 +267,26 @@ namespace JaLoader
                     }
                     else
                     {
-                        if (!FindMod(dependency.Item2, dependency.Item1))
+                        Mod dependentMod = FindMod(dependency.Item2, dependency.Item1);
+
+                        if (dependentMod == null)
                         {
                             uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be installed. The mod may still load, but not function correctly.");    
                         }
                         else
                         {
-                            if (FindMod(dependency.Item2, dependency.Item1).ModVersion != dependency.Item3)
+                            if (dependentMod.ModVersion != dependency.Item3)
                             {
                                 uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be version {dependency.Item3} or higher. You are currently using version {FindMod(dependency.Item2, dependency.Item1).ModVersion}. The mod may still load, but not function correctly.");
+                            }
+
+                            if (modsInitInMenu.IndexOf(dependentMod) > modsInitInMenu.IndexOf(mod))
+                            {
+                                uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be loaded before it. Adjust its load order in the mods list.");
+                            }
+                            else if(modsInitInGame.IndexOf(dependentMod) > modsInitInGame.IndexOf(mod))
+                            {
+                                uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be loaded before it. Adjust its load order in the mods list.");
                             }
                         }
                     }
@@ -328,7 +343,7 @@ namespace JaLoader
                     }
 
                     string modVersionText = mod.ModVersion;
-                    string modName = mod.ModName;
+                    string modName = settingsManager.DebugMode ? mod.ModID : mod.ModName;
 
                     if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
                     {
@@ -343,16 +358,13 @@ namespace JaLoader
 
                         if(versionInt > currentVersion)
                         {
-                            modVersionText = $"{mod.ModVersion} (Latest version: {version})";
-                            modName = $"(Update Available!) {mod.ModName}";
+                            modsNeedUpdate++;
+                            modVersionText = $"{mod.ModVersion} <color=green>(Latest version: {version})</color>";
+                            modName = $"<color=green>(Update Available!)</color> {modName}";
                         }
                     }
 
-                    if(!settingsManager.DebugMode)
-                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modName;
-                    else
-                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = mod.ModID;
-
+                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modName;
                     uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
 
                     uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, modVersionText, mod.ModDescription); });
@@ -434,7 +446,7 @@ namespace JaLoader
             {
                 LoadModOrder();
 
-                finishedLoadingMods = true;
+                finishedInitializingPartOneMods = true;
             }
 
             if (modsNumber == 0)
