@@ -162,6 +162,7 @@
     <Compile Include="EventsManager.cs" />
     <Compile Include="EnhancedMovement.cs" />
     <Compile Include="Console.cs" />
+    <Compile Include="HarmonyManager.cs" />
     <Compile Include="DragRigidbodyC_ModExtension.cs" />
     <Compile Include="CustomObjectInfo.cs" />
     <Compile Include="ExtrasManager.cs" />
@@ -192,6 +193,9 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Lib.Harmony">
+      <Version>2.2.2</Version>
+    </PackageReference>
     <PackageReference Include="NAudio">
       <Version>1.10.0</Version>
     </PackageReference>

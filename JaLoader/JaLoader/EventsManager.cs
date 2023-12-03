@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -44,7 +45,10 @@ namespace JaLoader
         public event GameEvents OnGameUnload;
 
         public event GameEvents OnSave;
+        public event GameEvents OnLoadSave;
         public event GameEvents OnNewGame;
+        public event GameEvents OnPause;
+        public event GameEvents OnUnpause;
         public event LogEvents OnException;
         
         //public event GameEvents OnStoreTransaction;
@@ -68,7 +72,7 @@ namespace JaLoader
         {
             //CatalogueBuyButtonC
 
-            //ShopC
+            //ShopC      
         }
 
         public void OnUILoadFinish()
@@ -76,23 +80,39 @@ namespace JaLoader
             OnUILoadFinished?.Invoke();
         }
 
+        public void OnPauseGame()
+        {
+            Console.Instance.LogOnlyToFile("Paused game!");
+            OnPause?.Invoke();
+        }
+
+        public void OnUnPauseGame()
+        {
+            Console.Instance.LogOnlyToFile("Unpaused game!");
+            OnUnpause?.Invoke();
+        }
+
         public void OnSettingsLoad()
         {
+            //Console.Instance.LogOnlyToFile("Loaded JaLoader settings!");
             OnSettingsLoaded?.Invoke();
         }
 
         public void OnSettingsSave()
         {
+            Console.Instance.LogOnlyToFile("Saved JaLoader settings!");
             OnSettingsSaved?.Invoke();
         }
 
         public void OnNewGameStart()
         {
+            Console.Instance.LogOnlyToFile("New game started!");
             OnNewGame?.Invoke();
         }
 
         public void OnCustomObjectsRegisterFinish()
         {
+            Console.Instance.LogOnlyToFile("Finished registering custom objects!");
             OnCustomObjectsRegisterFinished?.Invoke();
         }
 
@@ -123,6 +143,8 @@ namespace JaLoader
                 OnGameLoad();
                 FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
                 FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
+                Camera.main.gameObject.AddComponent<MainMenuCReceiver>();
+                Camera.main.gameObject.AddComponent<HarmonyManager>();
                 return;
             }
 
@@ -134,11 +156,23 @@ namespace JaLoader
 
         public void OnLog(string message, string stack, LogType type)
         {
-            if (OnSave != null && message == "Saved" && type == LogType.Log)
-                OnSave();
+            /*if (OnSave != null && message == "Saved" && type == LogType.Log)
+                OnSave();*/ // Called with Harmony now
 
             if (OnException != null && type == LogType.Exception)
                 OnException(message, stack);
+        }
+
+        public void OnLoad()
+        {
+            Console.Instance.LogOnlyToFile("Loaded save!");
+            OnLoadSave?.Invoke();
+        }
+
+        public void OnSaved()
+        {
+            Console.Instance.LogOnlyToFile("Saved game!");
+            OnSave?.Invoke();
         }
 
         public void CallRoute(string start, string destination, int distance)
@@ -260,6 +294,38 @@ namespace JaLoader
         }
     }
 
+    public class MainMenuCReceiver : MonoBehaviour
+    {
+        public void LoadedGame()
+        {
+            EventsManager.Instance.OnLoad();
+        }
+
+        public void SavedGame()
+        {
+            EventsManager.Instance.OnSaved();
+        }
+
+        public void PausedGame()
+        {
+            EventsManager.Instance.OnPauseGame();
+        }
+
+        public void UnPausedGame()
+        {
+            EventsManager.Instance.OnUnPauseGame();
+        }
+
+        public void SavedStolenGoods()
+        {
+            if (ES3.Exists("savedStolenGoods"))
+            {
+                if (ES3.LoadBool("savedStolenGoods") == true)
+                    ES3.Save(false, "savedStolenGoods");
+            }
+        }
+    }
+
     public class RouteReceiver : MonoBehaviour
     {
         private RouteGeneratorC routeGenerator;
@@ -304,7 +370,15 @@ namespace JaLoader
                 {
                     string destination = info[2];
                     string start = info[0];
-                    if (destination == "M.") destination = "Malko Tarnovo";
+                    if (destination == "M.")
+                    {
+                        destination = "Malko Tarnovo";
+                    }
+                    else if(start == "M.")
+                    {
+                        start = "Malko Tarnovo";
+                        destination = info[3];
+                    }
                     EventsManager.Instance.CallRoute(start, destination, routeGenerator.routeChosenLength * 70);
                 }
                 else

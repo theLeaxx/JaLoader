@@ -73,6 +73,8 @@ namespace JaLoader
 
         private void OnSave()
         {
+            data = new CustomObjectSave();
+
             SaveData();
         }
 
@@ -109,8 +111,23 @@ namespace JaLoader
             StartCoroutine(LoadDelay(1f, true));
         }
 
+        /// <summary>
+        /// Register a custom object to the database.
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="registryName">Internal object name</param>
         public void RegisterObject(GameObject obj, string registryName)
         {
+            if (obj == null)
+            {
+                if (!ignoreAlreadyExists)
+                {
+                    Console.Instance.LogError("CustomObjectsManager", "The object you're trying to register is null!");
+                }
+                
+                return;
+            }
+
             if (database.ContainsKey(registryName))
             {
                 if (!ignoreAlreadyExists)
@@ -127,6 +144,11 @@ namespace JaLoader
             DontDestroyOnLoad(obj);
         }
 
+        /// <summary>
+        /// Get the object from the database.
+        /// </summary>
+        /// <param name="registryName">Internal object name</param>
+        /// <returns></returns>
         public GameObject GetObject(string registryName)
         {
             if (database.ContainsKey(registryName))
@@ -135,6 +157,11 @@ namespace JaLoader
             return null;
         }
 
+        /// <summary>
+        /// Get the registry name from an object.
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <returns></returns>
         public string GetRegistryNameByObject(GameObject obj)
         {
             foreach (var entry in database)
@@ -146,6 +173,11 @@ namespace JaLoader
             return null;
         }
 
+        /// <summary>
+        /// Spawn an object from the database.
+        /// </summary>
+        /// <param name="registryName">Internal object name</param>
+        /// <returns></returns>
         public GameObject SpawnObject(string registryName)
         {
             GameObject objToSpawn = GetObject(registryName);
@@ -189,6 +221,12 @@ namespace JaLoader
             spawnedDatabase.Add((name, currentFreeID), obj);
         }
 
+        /// <summary>
+        /// Spawn an object from the database at a specific position.
+        /// </summary>
+        /// <param name="registryName">Internal object name</param>
+        /// <param name="position">The position you'd like to spawn it at</param>
+        /// <returns></returns>
         public GameObject SpawnObject(string registryName, Vector3 position)
         {
             GameObject objToSpawn = GetObject(registryName);
@@ -198,6 +236,7 @@ namespace JaLoader
             GameObject spawnedObj = Instantiate(objToSpawn);
             SceneManager.MoveGameObjectToScene(spawnedObj, SceneManager.GetActiveScene());
             spawnedObj.transform.position = position;
+            spawnedObj.GetComponent<CustomObjectInfo>().SpawnNoRegister = true;
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
@@ -205,6 +244,10 @@ namespace JaLoader
             return spawnedObj;
         }
 
+        /// <summary>
+        /// Remove an object from the database.
+        /// </summary>
+        /// <param name="registryName">Internal object name</param>
         public void DeleteObject(string registryName)
         {
             DestroyImmediate(spawnedDatabase[(registryName, currentFreeID)]);
@@ -228,6 +271,13 @@ namespace JaLoader
             return spawnedObj;
         }
 
+        /// <summary>
+        /// Spawn an object from the database at a specific position and rotation.
+        /// </summary>
+        /// <param name="registryName">Internal object name</param>
+        /// <param name="position">The position you'd like to spawn it at</param>
+        /// <param name="rotation">The rotation you'd like to spawn it at</param>
+        /// <returns></returns>
         public GameObject SpawnObject(string registryName, Vector3 position, Quaternion rotation)
         {
             GameObject objToSpawn = GetObject(registryName);
@@ -238,6 +288,7 @@ namespace JaLoader
             SceneManager.MoveGameObjectToScene(spawnedObj, SceneManager.GetActiveScene());
             spawnedObj.transform.position = position;
             spawnedObj.transform.rotation = rotation;
+            spawnedObj.GetComponent<CustomObjectInfo>().SpawnNoRegister = true;
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
@@ -253,18 +304,15 @@ namespace JaLoader
 
         public void SaveData()
         {
-            if (data != null)
-                data.Clear();
-            else
-                data = new CustomObjectSave();
+            data.Clear();
 
             foreach (var entry in spawnedDatabase.Keys)
             {
-                if (!spawnedDatabase[entry].GetComponent<ObjectPickupC>() || spawnedDatabase[entry].GetComponent<ExtraComponentC_ModExtension>())
+                if (spawnedDatabase[entry] == null || !spawnedDatabase[entry].GetComponent<ObjectPickupC>() || spawnedDatabase[entry].GetComponent<ExtraComponentC_ModExtension>())
                     continue;
                 List<float> parameters = new List<float>();
                 PartTypes type = PartTypes.Default;
-                bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine; Console.Instance.Log($"test2 -- {spawnedDatabase[entry].name} && {entry}");
+                bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine;
                 string json = "";
                 Vector3 trunkPos = Vector3.zero;
                 if (!inEngine && spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt == null)
@@ -328,10 +376,7 @@ namespace JaLoader
             if (database.Count == 0 || database == null)
                 return;
 
-            if (spawnedDatabase != null)
-                spawnedDatabase.Clear();
-            else
-                spawnedDatabase = new Dictionary<(string, int), GameObject>();
+            spawnedDatabase.Clear();
 
             currentFreeID = 0;
 
@@ -346,7 +391,7 @@ namespace JaLoader
                     string id = entry.Split('_')[1];
 
                     if (!database.ContainsKey(name))
-                        return;
+                        continue;
 
                     (bool, PartTypes, float[], Vector3) tuple = StringToTuple(data[entry]);
                     GameObject obj = SpawnObject(name, Vector3.zero, Quaternion.identity);
@@ -513,7 +558,7 @@ namespace JaLoader
 
             LoadData(fullLoad);
             if(fullLoad)
-                LaikaCatalogueExtension.Instance.AddModsPages("", "", 0);
+                LaikaCatalogueExtension.Instance.AddPages("", "", 0);
         }
     }
 

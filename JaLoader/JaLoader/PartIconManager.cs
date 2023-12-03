@@ -38,6 +38,8 @@ namespace JaLoader
 
         public Dictionary<string, GameObject> extraParts = new Dictionary<string, GameObject>();
 
+        private bool cachedItems = false;
+
         private void Start()
         {
             var go = Instantiate(new GameObject());
@@ -72,6 +74,9 @@ namespace JaLoader
 
             //camera.enabled = true;
 
+            if(cachedItems)
+                return;
+
             if (!Directory.Exists($@"{settingsManager.ModFolderLocation}\CachedImages"))
                 Directory.CreateDirectory($@"{settingsManager.ModFolderLocation}\CachedImages");
 
@@ -79,20 +84,20 @@ namespace JaLoader
 
             foreach (var entry in objectsManager.database.Keys)
             {
-                //Console.Instance.Log(entry);
-
                 if (!objectsManager.GetObject(entry).GetComponent<EngineComponentC>() || objectsManager.GetObject(entry).GetComponent<ExtraComponentC_ModExtension>())
                     continue;
 
                 var obj = objectsManager.SpawnObjectWithoutRegistering(entry, new Vector3(1000, 1000, 1000), Vector3.zero, false);
-                ModHelper.RemoveAllComponents(obj, typeof(MeshFilter), typeof(MeshRenderer), typeof(ObjectPickupC));
+                ModHelper.RemoveAllComponents(obj, typeof(MeshFilter), typeof(MeshRenderer), /*typeof(ObjectPickupC),*/ typeof(ObjectIdentification));
+
+                var comp = obj.GetComponent<ObjectIdentification>();
 
                 obj.layer = 21;
 
-                switch (obj.GetComponent<ObjectPickupC>().engineString)
+                /*switch (obj.GetComponent<ObjectPickupC>().engineString)
                 {
                     case "EngineBlock":
-                        obj.transform.eulerAngles = new Vector3(-40, -190, 0);
+                        obj.transform.eulerAngles = //new Vector3(-40, -190, 0);
                         break;
 
                     case "FuelTank":
@@ -123,7 +128,11 @@ namespace JaLoader
                     case "WaterContainer":
                         break;
                 }
-                DestroyImmediate(obj.GetComponent<ObjectPickupC>());
+                DestroyImmediate(obj.GetComponent<ObjectPickupC>());*/
+
+                obj.transform.position += comp.PartIconPositionAdjustment;
+                obj.transform.eulerAngles = comp.PartIconRotationAdjustment;
+                obj.transform.localScale = comp.PartIconScaleAdjustment;
 
                 obj.SetActive(true);
 
@@ -137,10 +146,16 @@ namespace JaLoader
             {
                 var objToSpawn = Instantiate(extraParts[entry]);
                 SceneManager.MoveGameObjectToScene(objToSpawn, SceneManager.GetActiveScene());
-                ModHelper.RemoveAllComponents(objToSpawn, typeof(MeshFilter), typeof(MeshRenderer));
+                ModHelper.RemoveAllComponents(objToSpawn, typeof(MeshFilter), typeof(MeshRenderer), typeof(ObjectIdentification));
                 objToSpawn.transform.position = new Vector3(1000, 1000, 1000);
-                objToSpawn.transform.eulerAngles = new Vector3(90, 0, -90);
+                //objToSpawn.transform.eulerAngles = new Vector3(90, 0, -90);
                 objToSpawn.layer = 21;
+
+                var comp = objToSpawn.GetComponent<ObjectIdentification>();
+                objToSpawn.transform.position += comp.PartIconPositionAdjustment;
+                objToSpawn.transform.eulerAngles = comp.PartIconRotationAdjustment;
+                objToSpawn.transform.localScale = comp.PartIconScaleAdjustment;
+
                 objToSpawn.SetActive(true);
                 SaveScreenshot(entry);
                 objToSpawn.SetActive(false);
@@ -150,6 +165,8 @@ namespace JaLoader
             }
 
             extraParts.Clear();
+
+            cachedItems = true;
         }
 
         private void OnGameLoad()
@@ -159,6 +176,17 @@ namespace JaLoader
 
         public Texture2D GetTexture(string name)
         {
+            if (File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png") == false)
+            {
+                Console.Instance.LogError($"Texture {name} does not exist!");
+
+                Texture2D defaulTexture = new Texture2D(1, 1);
+                defaulTexture.SetPixel(0, 0, Color.white);
+                defaulTexture.Apply();
+
+                return defaulTexture;
+            }
+
             byte[] bytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png");
 
             Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);

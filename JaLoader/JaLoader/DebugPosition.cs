@@ -20,8 +20,10 @@ namespace JaLoader
 
             if (SceneManager.GetActiveScene().buildIndex == 3)
             {
-                text.text = ModHelper.Instance.player.transform.position.ToString();
+                text.text = $"Pos: {ModHelper.Instance.player.transform.position} | Rot: {ModHelper.Instance.player.transform.eulerAngles}";
             }
+            else
+                text.text = "";
         }
     }//129 47 -551
 }// 168.9, 1.2, -482.6

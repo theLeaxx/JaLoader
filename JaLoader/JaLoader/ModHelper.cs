@@ -144,6 +144,8 @@ namespace JaLoader
             if (SettingsManager.Instance.DebugMode)
                 Camera.main.gameObject.AddComponent<DebugCamera>();
 
+            RefreshPartHolders();
+
             if (!addedExtensions)
             {
                 Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
@@ -364,37 +366,51 @@ namespace JaLoader
             ec.weight = ob.rigidMass;
             ec.durability = durability;
 
+            var identif = obj.GetComponent<ObjectIdentification>();
+            identif.PartIconScaleAdjustment = obj.transform.localScale;
+
             switch (type)
             {
                 case PartTypes.Engine:
                     ob.engineString = "EngineBlock";
                     obj.name = "EngineBlock";
+                    identif.PartIconRotationAdjustment = new Vector3(-40, -190, 0);
                     break;
 
                 case PartTypes.FuelTank:
                     ob.engineString = "FuelTank";
                     obj.name = "FuelTank";
+                    identif.PartIconPositionAdjustment = new Vector3(0.5f, -0.05f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-140, -4, -210);
                     break;
 
                 case PartTypes.Carburettor:
                     ob.engineString = "Carburettor";
                     obj.name = "Carburettor";
+                    identif.PartIconPositionAdjustment = new Vector3(-0.5f, 1f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-40, 170, 25);
                     break;
 
                 case PartTypes.AirFilter:
                     ob.engineString = "AirFilter";
                     obj.name = "AirFilter";
+                    identif.PartIconPositionAdjustment = new Vector3(-0.35f, 0f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(240, 12, 210);
                     break;
 
                 case PartTypes.IgnitionCoil:
                     ob.engineString = "IgnitionCoil";
                     obj.name = "IgnitionCoil";
+                    identif.PartIconPositionAdjustment = new Vector3(-1.1f, -0.8f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-145, -3, -48);
                     break;
 
                 case PartTypes.Battery:
                     ob.engineString = "Battery";
                     ec.isBattery = true;
                     obj.name = "Battery";
+                    identif.PartIconPositionAdjustment = new Vector3(0, 0.1f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-75, -190, 330);
                     break;
 
                 case PartTypes.WaterTank:
@@ -416,6 +432,8 @@ namespace JaLoader
                     break;
 
                 case PartTypes.Custom:
+                    ob.engineString = "";
+                    ob.isEngineComponent = false;
                     Console.Instance.LogError("Custom components are not supported yet!");
                     break;
             }
@@ -423,20 +441,62 @@ namespace JaLoader
             obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic = true;
         }
 
+        /// <summary>
+        /// Create a part icon for an extra part
+        /// </summary>
+        /// <param name="objOnCar">The object that will appear on the car, this should have the desired positions set already</param>
+        /// <param name="position">The position differences</param>
+        /// <param name="scale">The scale differences</param>
+        /// <param name="rotation">The rotation differences</param>
+        /// <param name="registryName">Internal extra name</param>
+        public void CreateIconForExtra(GameObject objOnCar, Vector3 position, Vector3 scale, Vector3 rotation, string registryName)
+        {
+            var duplicate = Instantiate(objOnCar);
+            duplicate.name = $"{duplicate.name}_DUPLICATE";
+            duplicate.SetActive(false);
+            duplicate.transform.position = Vector3.zero;
+
+            ObjectIdentification identif = duplicate.GetComponent<ObjectIdentification>();
+            identif.PartIconPositionAdjustment = position;
+            identif.PartIconRotationAdjustment = rotation;
+            identif.PartIconScaleAdjustment = scale;
+
+            DontDestroyOnLoad(duplicate);
+            PartIconManager.Instance.extraParts.Add(registryName, duplicate);
+        }
+
+        /// <summary>
+        /// Create a custom extra object, that can be attached to the car
+        /// </summary>
+        /// <param name="objOnCar">The object that will appear on the car, this should have the desired positions set already</param>
+        /// <param name="size">The size of the box</param>
+        /// <param name="name">The name of the extra</param>
+        /// <param name="description">The description of the extra</param>
+        /// <param name="price">The price of the extra</param>
+        /// <param name="weight">How much weight does this add to the car</param>
+        /// <param name="registryName">Internal extra name</param>
+        /// <param name="attachTo">What should the object attach to?</param>
+        /// <returns></returns>
         public GameObject CreateExtraObject(GameObject objOnCar, BoxSizes size, string name, string description, int price, int weight, string registryName, AttachExtraTo attachTo)
         {
+            if(ExtrasManager.Instance.ExtraExists(registryName))
+            {
+                if (!CustomObjectsManager.Instance.ignoreAlreadyExists)
+                {
+                    Console.Instance.LogError($"An extra with the registry name {registryName} already exists!");
+                }
+                else
+                {
+                    objOnCar.SetActive(false);
+                }
+                return null;
+            }
+
             var identif = objOnCar.GetComponent<ObjectIdentification>();
             var modID = identif.ModID;
             var author = identif.Author;
             var modName = identif.ModName;
             var version = identif.Version;
-
-            var duplicate = Instantiate(objOnCar);
-            duplicate.name = $"{duplicate.name}_DUPLICATE";
-            duplicate.SetActive(false);
-            duplicate.transform.position = Vector3.zero;
-            DontDestroyOnLoad(duplicate);
-            PartIconManager.Instance.extraParts.Add(registryName, duplicate);
 
             var extraHolder = Instantiate(new GameObject());
             extraHolder.name = $"Extra_{objOnCar.name.Substring(0, objOnCar.name.Length - 7)}_{identif.ModID}_{identif.Author}";
@@ -533,6 +593,34 @@ namespace JaLoader
             return boxObject;
         }
 
+        /// <summary>
+        /// Adjust a custom part's location, rotation and scale for the part icon
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="position">The position differences</param>
+        /// <param name="rotation">The rotation differences</param>
+        public void AdjustPartIconLocation(GameObject obj, Vector3 position, Vector3 rotation)
+        {
+            ObjectIdentification identif = obj.GetComponent<ObjectIdentification>();
+            identif.PartIconPositionAdjustment = position;
+            identif.PartIconRotationAdjustment = rotation;
+        }
+
+        /// <summary>
+        /// Adjust a custom part's location, rotation and scale for the part icon
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="position">The position differences</param>
+        /// <param name="rotation">The rotation differences</param>
+        /// <param name="scale">The scale differences</param>
+        public void AdjustPartIconLocation(GameObject obj, Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            ObjectIdentification identif = obj.GetComponent<ObjectIdentification>();
+            identif.PartIconPositionAdjustment = position;
+            identif.PartIconRotationAdjustment = rotation;
+            identif.PartIconScaleAdjustment = scale;
+        }
+
         private void OverwriteBoxObjects()
         {
             foreach (var pair in boxesToCreateInGame)
@@ -614,6 +702,11 @@ namespace JaLoader
             }
         }
 
+        /// <summary>
+        /// Remove all the components from a gameobject, except the specified componentTypes
+        /// </summary>
+        /// <param name="go">The object in question</param>
+        /// <param name="componentTypes">The component types that shouldn't be removed</param>
         public static void RemoveAllComponents(GameObject go, params Type[] componentTypes)
         {
             Component[] components = go.GetComponents<Component>();
@@ -648,6 +741,11 @@ namespace JaLoader
             ob.inventoryAdjustRotation = rotation;
         }
 
+        /// <summary>
+        /// Adjust the scale of the object
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="scale">The desired scale</param>
         public void AdjustCustomObjectSize(GameObject obj, Vector3 scale)
         {
             obj.transform.localScale = scale;

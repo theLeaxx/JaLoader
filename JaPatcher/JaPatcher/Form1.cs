@@ -95,6 +95,7 @@ namespace JalopyModLoader
         private readonly string theraotDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\Theraot.Core.dll");
         private readonly string naudioDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\NAudio.dll");
         private readonly string discordDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\discord_game_sdk.dll");
+        private readonly string harmonyDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\0Harmony.dll");
 
         private readonly string jsonDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\Newtonsoft.Json.dll");
         private readonly string jaDownloader = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\JaDownloader.exe");
@@ -103,7 +104,7 @@ namespace JalopyModLoader
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
-        private readonly string version = "1.2.1";
+        private readonly string version = "2.0.0";
 
         private bool canClickCustom = false;
 
@@ -116,7 +117,7 @@ namespace JalopyModLoader
                 SetDarkMode();
             }
 
-            if (!File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(jaLoaderXML) || !File.Exists(assetBundle) || !File.Exists(theraotDLL) || !File.Exists(naudioDLL) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
+            if (!File.Exists(winhttpDLL) || !File.Exists(harmonyDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(jaLoaderXML) || !File.Exists(assetBundle) || !File.Exists(theraotDLL) || !File.Exists(naudioDLL) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
             {
                 MessageBox.Show("Please extract all of the contents from the archive!", "DLLs not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Close();
@@ -270,6 +271,7 @@ namespace JalopyModLoader
             File.Copy(jsonDLL, Path.Combine(gamePath, @"Newtonsoft.Json.dll"), true);
             File.Copy(jaDownloader, Path.Combine(gamePath, @"JaDownloader.exe"), true);
             File.Copy(jaDownloaderSetup, Path.Combine(gamePath, @"JaDownloaderSetup.exe"), true);
+            File.Copy(harmonyDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\0Harmony.dll"), true);
 
             File.Copy(updater, Path.Combine(gamePath, @"JaUpdater.exe"), true);
 
@@ -311,6 +313,7 @@ namespace JalopyModLoader
             File.Delete(Path.Combine(gamePath, @"Newtonsoft.Json.dll"));
             File.Delete(Path.Combine(gamePath, @"JaDownloader.exe"));
             File.Delete(Path.Combine(gamePath, @"JaDownloaderSetup.exe"));
+            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\0Harmony.dll"));
 
             if (MessageBox.Show("Would you like to delete the configuration files too?", "JaPatcher", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {

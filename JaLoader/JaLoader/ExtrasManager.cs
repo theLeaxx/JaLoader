@@ -102,31 +102,63 @@ namespace JaLoader
             }
         }
 
+        /// <summary>
+        /// Get the extra holder of an extra by its name
+        /// </summary>
+        /// <param name="name">The name of the holder</param>
+        /// <returns></returns>
         public GameObject GetHolder(string name)
         {
             return SpawnedExtras[GetExtraID(name)];
         }
 
+        /// <summary>
+        /// Get the extra holder of an extra by its ID
+        /// </summary>
+        /// <param name="ID">The ID of the holder</param>
+        /// <returns></returns>
         public GameObject GetHolder(int ID)
         {
             return SpawnedExtras[ID];
         }
 
+        /// <summary>
+        /// Get the ID of an extra by its name
+        /// </summary>
+        /// <param name="name">The name of the extra</param>
+        /// <returns></returns>
         public int GetExtraID(string name)
         {
             return Extras.First(x => x.Value.Item1.name == name).Key.Item2;
         }
 
+        /// <summary>
+        /// Get the ID of an extra by its registry name
+        /// </summary>
+        /// <param name="registryName">The registry name of the extra</param>
+        /// <returns></returns>
         public int GetExtraIDByRegistryName(string registryName)
         {
             return Extras.First(x => x.Key.Item1 == registryName).Key.Item2;
         }
 
+        /// <summary>
+        /// Get the registry name of an extra by its ID
+        /// </summary>
+        /// <param name="ID">The ID of the extra</param>
+        /// <returns></returns>
         public string GetExtraRegistryName(int ID)
         {
             return Extras.First(x => x.Key.Item2 == ID).Key.Item1;
         }
 
+        /// <summary>
+        /// Add an extra to the game
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="pos">The position of the object</param>
+        /// <param name="registryName">The registry name of the extra</param>
+        /// <param name="attachTo">What should it attach to?</param>
         public void AddExtraObject(GameObject obj, Vector3 pos, string registryName, AttachExtraTo attachTo)
         {
             foreach(var pair in Extras)
@@ -140,6 +172,24 @@ namespace JaLoader
 
             currentFreeID++;
             Extras.Add((registryName, currentFreeID), (obj, attachTo));
+        }
+
+        /// <summary>
+        /// Does an extra exist already?
+        /// </summary>
+        /// <param name="registryName">The registry name of the extra</param>
+        /// <returns></returns>
+        public bool ExtraExists(string registryName)
+        {
+            foreach (var pair in Extras)
+            {
+                if (pair.Key.Item1 == registryName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void StartGlow(int ID)
