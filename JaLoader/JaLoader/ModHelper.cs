@@ -536,8 +536,7 @@ namespace JaLoader
             Flatten(meshes.transform, meshesHolder.transform);
 
             meshes.SetActive(true);
-            if (meshes.GetComponent<ObjectIdentification>())
-                DestroyImmediate(meshes.GetComponent<ObjectIdentification>());
+            RemoveAllComponents(meshes, typeof(MeshRenderer), typeof(MeshFilter));
 
             if (!meshes.GetComponent<MeshRenderer>())
             {
