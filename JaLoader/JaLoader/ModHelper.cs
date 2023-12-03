@@ -5,6 +5,10 @@ using System.Reflection;
 using UnityEngine.SceneManagement;
 using UnityEngine.Networking;
 using System;
+using System.Diagnostics;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+using System.Xml.Linq;
+using System.Data.SqlTypes;
 
 namespace JaLoader
 {
@@ -45,11 +49,27 @@ namespace JaLoader
         private bool createdDebugCamera;
         public GameObject debugCam;
 
+        public GameObject CardboardBoxBig;
+        public GameObject CardboardBoxMed;
+        public GameObject CardboardBoxSmall;
+
+        public GameObject CrateBig;
+        public GameObject CrateMed;
+        public GameObject CrateSmall;
+
+        private Material defaultGlowMaterial = new Material(Shader.Find("Legacy Shaders/Transparent/Specular"))
+        {
+            color = new Color(1, 1, 1, 0.17f)
+        };
+
+        private readonly List<(GameObject, string, string, int, int)> boxesToCreateInGame = new List<(GameObject, string, string, int, int)>();
+
         private void OnMenuLoad()
         {
             RefreshPartHolders();
 
-            GameObject.Find("FrameHolder").AddComponent<LicensePlateCustomizer>();
+            laika = GameObject.Find("FrameHolder");
+            laika.AddComponent<LicensePlateCustomizer>();
 
             if (defaultEngineMaterial == null)
             {
@@ -124,16 +144,29 @@ namespace JaLoader
             if (SettingsManager.Instance.DebugMode)
                 Camera.main.gameObject.AddComponent<DebugCamera>();
 
+            RefreshPartHolders();
+
             if (!addedExtensions)
             {
                 Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
-                Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
                 player = Camera.main.transform.parent.gameObject;
                 laika = GameObject.Find("FrameHolder");
                 wallet = FindObjectOfType<WalletC>();
                 director = FindObjectOfType<DirectorC>();
                 laika.AddComponent<LicensePlateCustomizer>();
                 addedExtensions = true;
+
+                RouteGeneratorC route = FindObjectOfType<RouteGeneratorC>();
+                CardboardBoxBig = route.cratePrefabs[0];
+                CardboardBoxMed = route.cratePrefabs[1];
+                CardboardBoxSmall = route.cratePrefabs[2];
+                CrateBig = route.cratePrefabs[3];
+                CrateMed = route.cratePrefabs[4];
+                CrateSmall = route.cratePrefabs[5];
+
+                OverwriteBoxObjects();
+
+                Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
 
                 if (SettingsManager.IsPreReleaseVersion)
                 {
@@ -188,6 +221,8 @@ namespace JaLoader
                 return;
             }
 
+            obj.SetActive(false);
+
             if (obj.GetComponent<ObjectIdentification>() && obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic)
                 return;
 
@@ -232,7 +267,69 @@ namespace JaLoader
             fix.objDescription = objDescription;
             fix.objName = objName;
             obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic = true;
-            obj.SetActive(true);
+        }
+
+        private void AddBoxLogic(GameObject obj, string objName, string objDescription, int price, int weight)
+        {
+            if (obj == null)
+            {
+                Console.Instance.LogError("The object you're trying to add logic to is null!");
+                return;
+            }
+
+            obj.SetActive(false);
+
+            if (obj.GetComponent<ObjectIdentification>() && obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic)
+                return;
+
+            if (!obj.GetComponent<Collider>())
+            {
+                obj.AddComponent<BoxCollider>();
+            }
+
+            obj.AddComponent<AudioSource>();
+            //obj.transform.localScale = new Vector3(2.2f, 2.2f, 2.2f);
+
+            obj.tag = "Pickup";
+            obj.layer = 0;
+            Rigidbody rb = obj.AddComponent<Rigidbody>();
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            rb.mass = weight;
+            ObjectPickupC ob = obj.AddComponent<ObjectPickupC>();
+            ob.objectID = 24;
+            ob._audio = defaultClips;
+
+            ob.buyValue = price;
+            ob.sellValue = price;
+            ob.flavourText = string.Empty;
+            ob.componentHeader = string.Empty;
+            ob.rigidMass = weight;
+
+            CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
+            fix.objDescription = objDescription;
+            fix.objName = objName;
+            obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic = true;
+        }
+
+        private void ConvertToBox(GameObject obj, BoxSizes size, GameObject box)
+        {
+            ObjectPickupC ob = obj.GetComponent<ObjectPickupC>();
+            ob.objectID = 0;
+
+            ob.renderTargets = box.GetComponent<ObjectPickupC>().renderTargets;
+            
+            ob.glowMat = ob.renderTargets[0].GetComponent<Renderer>().materials;
+            ob.glowMaterial = GetGlowMaterial(ob.renderTargets[0].GetComponent<Renderer>().material);
+            ob._audio = defaultClips;
+
+            ob.adjustScale = box.GetComponent<ObjectPickupC>().adjustScale;
+            ob.positionAdjust = box.GetComponent<ObjectPickupC>().positionAdjust;
+            ob.setRotation = box.GetComponent<ObjectPickupC>().setRotation;
+            ob.inventoryAdjustPosition = box.GetComponent<ObjectPickupC>().inventoryAdjustPosition;
+            ob.inventoryAdjustRotation = box.GetComponent<ObjectPickupC>().inventoryAdjustRotation;
+            ob.dimensionX = box.GetComponent<ObjectPickupC>().dimensionX;
+            ob.dimensionY = box.GetComponent<ObjectPickupC>().dimensionY;
+            ob.dimensionZ = box.GetComponent<ObjectPickupC>().dimensionZ;
         }
 
         /// <summary>
@@ -269,37 +366,51 @@ namespace JaLoader
             ec.weight = ob.rigidMass;
             ec.durability = durability;
 
+            var identif = obj.GetComponent<ObjectIdentification>();
+            identif.PartIconScaleAdjustment = obj.transform.localScale;
+
             switch (type)
             {
                 case PartTypes.Engine:
                     ob.engineString = "EngineBlock";
                     obj.name = "EngineBlock";
+                    identif.PartIconRotationAdjustment = new Vector3(-40, -190, 0);
                     break;
 
                 case PartTypes.FuelTank:
                     ob.engineString = "FuelTank";
                     obj.name = "FuelTank";
+                    identif.PartIconPositionAdjustment = new Vector3(0.5f, -0.05f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-140, -4, -210);
                     break;
 
                 case PartTypes.Carburettor:
                     ob.engineString = "Carburettor";
                     obj.name = "Carburettor";
+                    identif.PartIconPositionAdjustment = new Vector3(-0.5f, 1f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-40, 170, 25);
                     break;
 
                 case PartTypes.AirFilter:
                     ob.engineString = "AirFilter";
                     obj.name = "AirFilter";
+                    identif.PartIconPositionAdjustment = new Vector3(-0.35f, 0f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(240, 12, 210);
                     break;
 
                 case PartTypes.IgnitionCoil:
                     ob.engineString = "IgnitionCoil";
                     obj.name = "IgnitionCoil";
+                    identif.PartIconPositionAdjustment = new Vector3(-1.1f, -0.8f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-145, -3, -48);
                     break;
 
                 case PartTypes.Battery:
                     ob.engineString = "Battery";
                     ec.isBattery = true;
                     obj.name = "Battery";
+                    identif.PartIconPositionAdjustment = new Vector3(0, 0.1f, 0);
+                    identif.PartIconRotationAdjustment = new Vector3(-75, -190, 330);
                     break;
 
                 case PartTypes.WaterTank:
@@ -312,18 +423,303 @@ namespace JaLoader
                     break;
 
                 case PartTypes.Extra:
-                    Console.Instance.LogError("Extra components are not supported yet!");
-                    //ob.engineString = "";
-                    //obj.name = "";
+                    ob.engineString = "";
+                    ob.isEngineComponent = false;
+                    var interactions = obj.AddComponent<ObjectInteractionsC>();
+                    interactions.handInteractive = true;
+                    interactions.targetObjectStringName = obj.name;
+                    obj.AddComponent<ExtraComponentC_ModExtension>();
                     break;
 
                 case PartTypes.Custom:
+                    ob.engineString = "";
+                    ob.isEngineComponent = false;
                     Console.Instance.LogError("Custom components are not supported yet!");
                     break;
             }
 
             obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic = true;
+        }
 
+        /// <summary>
+        /// Create a part icon for an extra part
+        /// </summary>
+        /// <param name="objOnCar">The object that will appear on the car, this should have the desired positions set already</param>
+        /// <param name="position">The position differences</param>
+        /// <param name="scale">The scale differences</param>
+        /// <param name="rotation">The rotation differences</param>
+        /// <param name="registryName">Internal extra name</param>
+        public void CreateIconForExtra(GameObject objOnCar, Vector3 position, Vector3 scale, Vector3 rotation, string registryName)
+        {
+            var duplicate = Instantiate(objOnCar);
+            duplicate.name = $"{duplicate.name}_DUPLICATE";
+            duplicate.SetActive(false);
+            duplicate.transform.position = Vector3.zero;
+
+            ObjectIdentification identif = duplicate.GetComponent<ObjectIdentification>();
+            identif.PartIconPositionAdjustment = position;
+            identif.PartIconRotationAdjustment = rotation;
+            identif.PartIconScaleAdjustment = scale;
+
+            DontDestroyOnLoad(duplicate);
+            PartIconManager.Instance.extraParts.Add(registryName, duplicate);
+        }
+
+        /// <summary>
+        /// Create a custom extra object, that can be attached to the car
+        /// </summary>
+        /// <param name="objOnCar">The object that will appear on the car, this should have the desired positions set already</param>
+        /// <param name="size">The size of the box</param>
+        /// <param name="name">The name of the extra</param>
+        /// <param name="description">The description of the extra</param>
+        /// <param name="price">The price of the extra</param>
+        /// <param name="weight">How much weight does this add to the car</param>
+        /// <param name="registryName">Internal extra name</param>
+        /// <param name="attachTo">What should the object attach to?</param>
+        /// <returns></returns>
+        public GameObject CreateExtraObject(GameObject objOnCar, BoxSizes size, string name, string description, int price, int weight, string registryName, AttachExtraTo attachTo)
+        {
+            if(ExtrasManager.Instance.ExtraExists(registryName))
+            {
+                if (!CustomObjectsManager.Instance.ignoreAlreadyExists)
+                {
+                    Console.Instance.LogError($"An extra with the registry name {registryName} already exists!");
+                }
+                else
+                {
+                    objOnCar.SetActive(false);
+                }
+                return null;
+            }
+
+            var identif = objOnCar.GetComponent<ObjectIdentification>();
+            var modID = identif.ModID;
+            var author = identif.Author;
+            var modName = identif.ModName;
+            var version = identif.Version;
+
+            var extraHolder = Instantiate(new GameObject());
+            extraHolder.name = $"Extra_{objOnCar.name.Substring(0, objOnCar.name.Length - 7)}_{identif.ModID}_{identif.Author}";
+            extraHolder.SetActive(false);
+            extraHolder.tag = "Interactor";
+            //extraHolder.transform.parent = ExtrasManager.Instance.ExtrasHolder.transform;
+            extraHolder.transform.position = new Vector3(0, -3, 0);
+            extraHolder.AddComponent<BoxCollider>();
+            extraHolder.GetComponent<BoxCollider>().isTrigger = true;
+            extraHolder.AddComponent<BoxCollider>().enabled = false;
+            var receiver = extraHolder.AddComponent<ExtraReceiverC>();
+            var info = extraHolder.AddComponent<HolderInformation>();
+            info.Weight = weight;
+
+            objOnCar.transform.SetParent(extraHolder.transform, false);
+            objOnCar.name = "Mesh";
+            objOnCar.SetActive(false);
+
+            var meshesHolder = Instantiate(new GameObject());
+            meshesHolder.name = "MeshReceiver";
+            meshesHolder.transform.SetParent(extraHolder.transform, true);
+            meshesHolder.transform.localPosition = Vector3.zero;
+
+            GameObject meshes = Instantiate(objOnCar);
+            meshes.transform.SetParent(meshesHolder.transform, true);
+            var renderer = meshes.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                Material[] mats = renderer.materials;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    mats[i] = defaultGlowMaterial;
+                }
+                renderer.materials = mats;
+                renderer.enabled = false;
+            }
+            Flatten(meshes.transform, meshesHolder.transform);
+
+            meshes.SetActive(true);
+            if (meshes.GetComponent<ObjectIdentification>())
+                DestroyImmediate(meshes.GetComponent<ObjectIdentification>());
+
+            if (!meshes.GetComponent<MeshRenderer>())
+            {
+                DestroyImmediate(meshes);
+            }
+
+            List<GameObject> children = new List<GameObject>();
+
+            foreach (Transform child in meshesHolder.transform)
+            {
+                children.Add(child.gameObject);
+                child.transform.position = new Vector3(child.transform.position.x, child.transform.position.y - 3f, child.transform.position.z);
+            }
+
+            receiver.glowMesh = children.ToArray();
+            receiver.extraComponent = objOnCar;
+
+            var colliderObj = new GameObject();
+            colliderObj.name = extraHolder.name;
+            colliderObj.transform.SetParent(extraHolder.transform, false);
+            colliderObj.transform.localPosition = Vector3.zero;
+            var collider = colliderObj.AddComponent<BoxCollider>();
+            collider.isTrigger = true;
+            collider.center = new Vector3(1, 0, 0);
+            collider.size = new Vector3(15, 5, 7);
+            collider.tag = "Interactor";
+            var interactions = colliderObj.AddComponent<ObjectInteractionsC>();
+            interactions.targetObjectStringName = extraHolder.name;
+            interactions.handInteractive = false;
+            colliderObj.SetActive(false);
+
+            DontDestroyOnLoad(extraHolder);
+            ExtrasManager.Instance.AddExtraObject(extraHolder, extraHolder.transform.localPosition, registryName, attachTo);
+
+            var boxObject = Instantiate(new GameObject());
+            boxObject.name = extraHolder.name;
+            boxObject.SetActive(false);
+            var boxIdentif = boxObject.AddComponent<ObjectIdentification>();
+            boxIdentif.ModID = modID;
+            boxIdentif.Author = author;
+            boxIdentif.ModName = modName;
+            boxIdentif.Version = version;
+            boxIdentif.IsExtra = true;
+            boxIdentif.BoxSize = size;
+            boxIdentif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
+
+            AddBoxLogic(boxObject, name, description, price, weight);
+            AddEnginePartLogic(boxObject, PartTypes.Extra, 3, true, false);
+
+            DontDestroyOnLoad(boxObject);
+            boxesToCreateInGame.Add((boxObject, name, description, price, weight));
+ 
+            return boxObject;
+        }
+
+        /// <summary>
+        /// Adjust a custom part's location, rotation and scale for the part icon
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="position">The position differences</param>
+        /// <param name="rotation">The rotation differences</param>
+        public void AdjustPartIconLocation(GameObject obj, Vector3 position, Vector3 rotation)
+        {
+            ObjectIdentification identif = obj.GetComponent<ObjectIdentification>();
+            identif.PartIconPositionAdjustment = position;
+            identif.PartIconRotationAdjustment = rotation;
+        }
+
+        /// <summary>
+        /// Adjust a custom part's location, rotation and scale for the part icon
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="position">The position differences</param>
+        /// <param name="rotation">The rotation differences</param>
+        /// <param name="scale">The scale differences</param>
+        public void AdjustPartIconLocation(GameObject obj, Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            ObjectIdentification identif = obj.GetComponent<ObjectIdentification>();
+            identif.PartIconPositionAdjustment = position;
+            identif.PartIconRotationAdjustment = rotation;
+            identif.PartIconScaleAdjustment = scale;
+        }
+
+        private void OverwriteBoxObjects()
+        {
+            foreach (var pair in boxesToCreateInGame)
+            {
+                var originalObject = pair.Item1;
+
+                var obj = pair.Item1;
+
+                var size = obj.GetComponent<ObjectIdentification>().BoxSize;
+
+                GameObject box = null;
+
+                switch (size)
+                {
+                    case BoxSizes.Small:
+                        box = Instantiate(CardboardBoxSmall);
+                        break;
+
+                    case BoxSizes.Medium:
+                        box = Instantiate(CardboardBoxMed);
+                        break;
+
+                    case BoxSizes.Big:
+                        box = Instantiate(CardboardBoxBig);
+                        break;
+                }
+
+                var boxCol = obj.GetComponent<BoxCollider>();
+                box.transform.SetParent(obj.transform, false);
+                box.transform.position = Vector3.zero;
+                box.transform.eulerAngles = Vector3.zero;
+                boxCol.center = box.GetComponent<BoxCollider>().center;//new Vector3(-0.003056686f, 0.2523057f, 00381637f);
+                boxCol.size = box.GetComponent<BoxCollider>().size;//new Vector3(0.8438829f, 0.3813403f, 0.4849125f);
+                DestroyImmediate(box.GetComponent<BoxCollider>());
+                DestroyImmediate(box.GetComponent<Rigidbody>());
+                DestroyImmediate(box.GetComponent<BoxContentsC>());
+
+                ConvertToBox(obj, size, box);
+                DestroyImmediate(box.GetComponent<ObjectPickupC>());
+                obj.GetComponent<ExtraComponentC_ModExtension>().componentID = ExtrasManager.Instance.GetExtraID(obj.name);
+
+                CustomObjectsManager.Instance.OverwriteObject(CustomObjectsManager.Instance.GetRegistryNameByObject(originalObject), obj);
+            }
+
+            boxesToCreateInGame.Clear();
+        }
+
+        private void Flatten(Transform parent, Transform parentTo)
+        {
+            List<Transform> children = new List<Transform>();
+
+            foreach (Transform child in parent)
+            {
+                children.Add(child);
+            }
+
+            foreach (Transform child in children)
+            {
+                Flatten(child, parentTo);
+                RemoveAllComponents(child.gameObject, typeof(MeshFilter), typeof(MeshRenderer));
+                if (child.gameObject.GetComponents<Component>().Length == 1 || !child.gameObject.GetComponent<MeshRenderer>())
+                {
+                    DestroyImmediate(child.gameObject);
+                    continue;
+                }
+                var renderer = child.GetComponent<MeshRenderer>();
+                if (renderer != null)
+                {
+                    Material[] mats = renderer.materials;
+                    for (int i = 0; i < mats.Length; i++)
+                    {
+                        mats[i] = defaultGlowMaterial;
+                    }
+                    renderer.materials = mats;
+                    renderer.enabled = false;
+                }
+
+                child.parent = parentTo;
+            }
+        }
+
+        /// <summary>
+        /// Remove all the components from a gameobject, except the specified componentTypes
+        /// </summary>
+        /// <param name="go">The object in question</param>
+        /// <param name="componentTypes">The component types that shouldn't be removed</param>
+        public static void RemoveAllComponents(GameObject go, params Type[] componentTypes)
+        {
+            Component[] components = go.GetComponents<Component>();
+            foreach (Component component in components)
+            {
+                if (component.GetType() == typeof(Transform))
+                    continue;
+
+                if (componentTypes != null && Array.IndexOf(componentTypes, component.GetType()) == -1)
+                {
+                    DestroyImmediate(component);
+                }
+            }
         }
 
         /// <summary>
@@ -343,6 +739,16 @@ namespace JaLoader
 
             ob.inventoryAdjustPosition = position;
             ob.inventoryAdjustRotation = rotation;
+        }
+
+        /// <summary>
+        /// Adjust the scale of the object
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="scale">The desired scale</param>
+        public void AdjustCustomObjectSize(GameObject obj, Vector3 scale)
+        {
+            obj.transform.localScale = scale;
         }
 
         /// <summary>
@@ -407,7 +813,7 @@ namespace JaLoader
         /// <param name="rarity"></param>
         public void ConfigureCustomExtra(GameObject obj, int rarity)
         {
-
+            //ExtraComponentC
         }
 
         /// <summary>
@@ -575,6 +981,22 @@ namespace JaLoader
         Extra,
         Custom,
         Default
+    }
+
+    public enum BoxSizes
+    {
+        Small,
+        Medium,
+        Big
+    }
+
+    public enum AttachExtraTo
+    {
+        Trunk,
+        Hood,
+        Body,
+        LeftDoor,
+        RightDoor
     }
 
     public enum WheelTypes

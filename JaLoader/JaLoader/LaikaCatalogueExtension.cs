@@ -31,13 +31,27 @@ namespace JaLoader
             {
                 Instance = this;
             }
-            EventsManager.Instance.OnRouteGenerated += AddModsPages;
+
+            EventsManager.Instance.OnRouteGenerated += AddPages;
         }
         #endregion
 
-        public void AddModsPages(string start, string destination, int distance)
+        public void AddPages(string start, string destination, int distance)
+        {
+            StartCoroutine(DelayThenAddPages());
+        }
+
+        private IEnumerator DelayThenAddPages()
+        {
+            yield return new WaitForSeconds(2f);
+            AddModsPages();
+        }
+
+        private void AddModsPages()
         {
             var magazines = FindObjectsOfType<MagazineLogicC>();
+            scrollViews.Clear();
+            buttons.Clear();
 
             foreach (var magazine in magazines)
             {
@@ -215,6 +229,8 @@ namespace JaLoader
                 }
             }
 
+            createdScrollViews = false;
+
             yield return null;
         }
 
@@ -272,6 +288,11 @@ namespace JaLoader
                         case "WaterContainer":
                             type = PartTypes.WaterTank;
                             break;
+                    }
+
+                    if (obj.GetComponent<ExtraComponentC_ModExtension>())
+                    {
+                        type = PartTypes.Extra;
                     }
 
                     //var comp = obj.GetComponent<ObjectIdentification>();

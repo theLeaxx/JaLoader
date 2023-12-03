@@ -276,6 +276,13 @@ namespace JaLoader
             Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], ModHelper.Instance.player.transform.position, ModHelper.Instance.player.transform.rotation);
         }
 
+        public GameObject GetDuplicateVanillaObject(int ID, Transform parent)
+        {
+            if (ID < 0 || ID > 233) return null;
+
+            return Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], parent);
+        }
+
         public void SpawnVanillaObject(int ID, Transform parent)
         {
             if (ID < 0 || ID > 233) return;
@@ -326,7 +333,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (SettingsManager.Instance.DebugMode && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.S))
+            if (SettingsManager.Instance.DebugMode && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.LeftAlt) && Input.GetKeyDown(KeyCode.S))
             {
                 uiManager.objectsList.transform.parent.gameObject.SetActive(!uiManager.objectsList.transform.parent.gameObject.activeSelf);
             }

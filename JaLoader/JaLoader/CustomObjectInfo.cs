@@ -10,5 +10,16 @@ namespace JaLoader
     {
         public string objName;
         public string objDescription;
+        public string objRegistryName;
+
+        public bool SpawnNoRegister = false;
+
+        private void Awake()
+        {
+            if (SpawnNoRegister)
+                return;
+
+            CustomObjectsManager.Instance.AddObjectToSpawned(gameObject, objRegistryName);
+        }
     }
 }

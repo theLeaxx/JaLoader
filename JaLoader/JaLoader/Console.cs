@@ -332,6 +332,16 @@ namespace JaLoader
             WriteLog();
         }
 
+        /// <summary>
+        /// Logs a normal message to the JaLoader_log.log file, does not show in-game.
+        /// </summary>
+        /// <param name="message"></param>
+        public void LogOnlyToFile(object message)
+        {
+            log.Add($"{DateTime.Now} - {message}");
+            WriteLog();
+        }
+
         private void LogMessage(object sender, object message, string color)
         {
             ToggleVisibility(true);
@@ -439,6 +449,12 @@ namespace JaLoader
             LogMessage("/", message, "grey");
         }
 
+        private void OnApplicationQuit()
+        {
+            LogOnlyToFile("Game closed!");
+            WriteLog();
+        }
+
         private void WriteLog()
         {
             File.WriteAllLines(Path.Combine(Application.dataPath, @"..\JaLoader_log.log"), log.ToArray());
@@ -511,14 +527,23 @@ namespace JaLoader
                         RepairAll();
                         break;
 
-                    /*case "laika":
+                    case "laika":
                         if (SceneManager.GetActiveScene().buildIndex != 3)
                         {
                             LogError("/", "This command only works in-game!");
                             break;
                         }
                         TeleportLaika();
-                        break;*/
+                        break;
+
+                    case "tolaika":
+                        if (SceneManager.GetActiveScene().buildIndex != 3)
+                        {
+                            LogError("/", "This command only works in-game!");
+                            break;
+                        }
+                        TeleportToLaika();
+                        break;
 
                     case "money":
                         if (SceneManager.GetActiveScene().buildIndex != 3)
@@ -630,10 +655,32 @@ namespace JaLoader
                         break;
                     default:
                         LogError("/", "Invalid command; type 'help' for a list of commands");
-                        Log(FindObjectOfType<MainMenuC>().name); //223 objects
+                        //Log(FindObjectOfType<MainMenuC>().name); //223 objects
                         break;
                 }
             }
+        }
+
+        private void TeleportLaika()
+        {
+            var car = ModHelper.Instance.laika;
+            var player = ModHelper.Instance.player;
+            var script = Camera.main.GetComponent<MainMenuC>();
+            car.transform.position = player.transform.position + player.transform.forward * 8 + new Vector3(0, 2, 0);
+            car.transform.rotation = player.transform.rotation;
+            script.SendMessage("SavePause");
+
+            Log("/", "Teleported laika to player!");
+        }
+
+        private void TeleportToLaika()
+        {
+            var car = ModHelper.Instance.laika;
+            var player = ModHelper.Instance.player;
+            player.transform.position = car.transform.position + car.transform.right * -5;
+            player.transform.rotation = car.transform.rotation;
+
+            Log("/", "Teleported player to laika!");
         }
 
         private void ShowHelp()
@@ -650,7 +697,8 @@ namespace JaLoader
             LogMessage("'repairkit' - Spawns a repair kit near you");
             LogMessage("'gascan' - Spawns a filled gas can near you");
             LogMessage("'repairall' - Restores every installed part to full condition");
-            //LogMessage("/", "'laika' - Teleports the Laika near you");
+            LogMessage("/", "'laika' - Teleports the Laika in front of you");
+            LogMessage("/", "'tolaika' - Teleports you to the Laika");
 
             LogMessage("Mods commands", "");
             foreach ((string, string, string) pair in customCommands.Keys)

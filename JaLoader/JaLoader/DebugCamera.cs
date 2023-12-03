@@ -83,20 +83,20 @@ namespace JaLoader
 
         private GameObject mainCameraObj;
         private bool createdInGamePPCamera;
+        private GameObject cursors;
 
         void OnEnable()
         {
             cameraObj = ModHelper.Instance.debugCam;
             mainCameraObj = Camera.main.gameObject;
 
-            cameraObj.transform.position = mainCameraObj.transform.position;
-            cameraObj.transform.rotation = mainCameraObj.transform.rotation;
-            
-            m_TargetCameraState.SetFromTransform(cameraObj.transform);
-            m_InterpolatingCameraState.SetFromTransform(cameraObj.transform);
+            ResetCameraPos();
             
             EventsManager.Instance.OnGameLoad += OnGameLoad;
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
+
+            if (SceneManager.GetActiveScene().buildIndex == 3)
+                cursors = GameObject.Find("Cursors");
         }
 
         private void ResetCameraPos()
@@ -119,6 +119,8 @@ namespace JaLoader
             cameraObj.transform.GetChild(2).gameObject.SetActive(false);
 
             mainCameraObj = Camera.main.gameObject;
+
+            createdInGamePPCamera = cameraObj.transform.GetChild(0).gameObject.GetComponent<FlareLayer>();
 
             if (!createdInGamePPCamera)
             {
@@ -240,11 +242,21 @@ namespace JaLoader
                 Toggle();
             }
 
-            if (Input.GetKeyDown(KeyCode.F12))
+            if (Input.GetKeyDown(KeyCode.F2))
             {
                 lockedCursor = !lockedCursor;
                 Cursor.lockState = lockedCursor ? CursorLockMode.Locked : CursorLockMode.None;
                 Cursor.visible = !lockedCursor;
+            }
+
+            if (Input.GetKeyDown(KeyCode.F1))
+            {
+                if (SceneManager.GetActiveScene().buildIndex == 3)
+                {
+                    cursors.SetActive(!cursors.activeSelf);
+                    Cursor.lockState = cursors.activeSelf ? CursorLockMode.None : CursorLockMode.Locked;
+                    Cursor.visible = cursors.activeSelf;
+                }
             }
 
             if (!isCameraEnabled || !lockedCursor)
@@ -252,11 +264,7 @@ namespace JaLoader
 
             if (Input.GetKeyDown(KeyCode.Backspace))
             {
-                cameraObj.transform.position = mainCameraObj.transform.position;
-                cameraObj.transform.rotation = mainCameraObj.transform.rotation;
-
-                m_InterpolatingCameraState.SetFromTransform(cameraObj.transform);
-                m_TargetCameraState.SetFromTransform(cameraObj.transform);
+                ResetCameraPos();
                 return;
             }
 

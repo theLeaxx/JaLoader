@@ -12,6 +12,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static UIKeyBinding;
 using Debug = UnityEngine.Debug;
 
 namespace JaLoader
@@ -37,6 +38,7 @@ namespace JaLoader
 
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
             EventsManager.Instance.OnLoadStart += OnLoadStart;
+            EventsManager.Instance.OnGameLoad += OnGameLoad;
 
             values = (int[])Enum.GetValues(typeof(KeyCode));
             keys = new bool[values.Length];
@@ -78,6 +80,7 @@ namespace JaLoader
         public GameObject modLoaderText { get; private set; }
         public GameObject modFolderText { get; private set; }
         public GameObject fpsText { get; private set; }
+        public GameObject positionText { get; private set; }
 
         private MainMenuBookC book;
         private GameObject exitConfirmButton;
@@ -115,7 +118,7 @@ namespace JaLoader
 
         private bool IsBookClosed()
         {
-            if (book == null)
+            if (book == null || SceneManager.GetActiveScene().buildIndex != 1)
                 return true;
 
             return (bool)book.GetType().GetField("bookClosed", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetValue(book);
@@ -188,15 +191,15 @@ namespace JaLoader
             newGameConfirmButton = GameObject.Find("New Game").transform.GetChild(1).gameObject;
             var skipConfirmButton = GameObject.Find("New Game").transform.GetChild(4).gameObject;
 
-            newGameConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(CustomObjectsManager.Instance, "DeleteData"));
-            skipConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(CustomObjectsManager.Instance, "DeleteData"));
+            newGameConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(EventsManager.Instance, "OnNewGameStart"));
+            skipConfirmButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(EventsManager.Instance, "OnNewGameStart"));
 
             ToggleUIVisibility(true);
 
             var go = new GameObject();
             go.AddComponent<MenuCarRotate>();
 
-            AddWrench();
+            AddObjectShortcuts();
         }
 
         private void OnLoadStart()
@@ -212,6 +215,30 @@ namespace JaLoader
                 UICanvas.transform.GetChild(2).transform.GetChild(2).gameObject.SetActive(false);
                 UICanvas.transform.GetChild(2).transform.GetChild(3).gameObject.SetActive(false);
             }
+        }
+
+        private void OnGameLoad()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+            var optionsButton = uiRoot.transform.Find("Options").gameObject;
+
+            var modsButton = Instantiate(optionsButton, uiRoot.transform, true);
+            modsButton.SetActive(false);
+            modsButton.name = "Mods";
+            modsButton.transform.localPosition += new Vector3(0, 50, 0);
+            modsButton.GetComponent<UIButton>().onClick.Clear();
+            modsButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(ToggleModMenu));
+            modsButton.GetComponent<UILabel>().text = "Mods";
+            modsButton.GetComponent<UILabel>().ProcessText();
+
+            var settingsButton = Instantiate(optionsButton, uiRoot.transform, true);
+            settingsButton.SetActive(false);
+            settingsButton.name = "ModLoader Settings";
+            settingsButton.transform.localPosition += new Vector3(0, 25, 0);
+            settingsButton.GetComponent<UIButton>().onClick.Clear();
+            settingsButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(ToggleModLoaderSettings_Main));
+            settingsButton.GetComponent<UILabel>().text = "ModLoader Options";
+            settingsButton.GetComponent<UILabel>().ProcessText();
         }
 
         public void ToggleUIVisibility(bool show)
@@ -362,6 +389,9 @@ namespace JaLoader
             fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
             fpsText.AddComponent<FPSCounter>();
 
+            positionText = UICanvas.transform.Find("DebugPosition").gameObject;
+            positionText.AddComponent<DebugPosition>();
+
             SetOptionsValues();
 
             Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
@@ -381,10 +411,11 @@ namespace JaLoader
             ab.Unload(false);
         }
 
-        private void AddWrench()
+        private void AddObjectShortcuts()
         {
             var toolBox = GameObject.Find("ToolBox");
             var wrench = toolBox.transform.Find("Cylinder_254");
+            var nut = toolBox.transform.GetChild(toolBox.transform.childCount - 1);
             MainMenuToolboxC orgComp = toolBox.GetComponent<MainMenuToolboxC>();
 
             wrench.localPosition = new Vector3(24.21f, -3.55f, 8.96f); // The wrench in the original toolbox clips through the casing
@@ -419,6 +450,26 @@ namespace JaLoader
 
             comp.startMaterial = mat;
             comp.glowMaterial = glowMat;
+
+            var JLNut = Instantiate(nut.gameObject);
+            JLNut.name = "JLNut";
+            JLNut.transform.position = new Vector3(-47.894f, 39.164f, -70.268f);
+            JLNut.transform.eulerAngles = new Vector3(17.309f, 8.457f -9.101f);
+            JLNut.transform.localScale = new Vector3(10, 10, 10);
+
+            JLNut.layer = 11;
+            JLNut.tag = "Pickup";
+
+            BoxCollider nutCol = JLNut.AddComponent<BoxCollider>();
+            nutCol.isTrigger = true;
+            MenuNut nutComp = JLNut.AddComponent<MenuNut>();
+            nutComp.book = orgComp.book;
+            nutComp.renderTarget = JLNut;
+
+            JLNut.GetComponent<MeshRenderer>().material = mat;
+
+            nutComp.startMaterial = mat;
+            nutComp.glowMaterial = glowMat;
         }
 
         private void SetNewspaperText()
@@ -477,6 +528,7 @@ namespace JaLoader
             enableJaDownloaderDropdown.value = settingsManager.EnableJaDownloader ? 0 : 1;
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
+            positionText.SetActive(settingsManager.DebugMode);
         }
 
         public void UpdateMenuMusic(bool enabled, float volume)
@@ -490,6 +542,10 @@ namespace JaLoader
             settingsManager.selectedLanguage = false;
 
             SaveValues();
+
+            ToggleModLoaderSettings_Accessibility();
+            ToggleModLoaderSettings_Main();
+            Console.Instance.ToggleVisibility(false);
 
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
             isObstructing = false;
@@ -533,7 +589,6 @@ namespace JaLoader
 
         public void ToggleSettings(string objName)
         {
-            Console.Instance.Log("Toggled settings");
             modSettingsScrollView.SetActive(true);
             inModsOptions = true;
 
@@ -561,6 +616,10 @@ namespace JaLoader
                 book.CloseBook();
 
             UICanvas.transform.GetChild(1).gameObject.SetActive(!UICanvas.transform.GetChild(1).gameObject.activeSelf);
+
+            if (SceneManager.GetActiveScene().buildIndex == 3)
+                TogglePauseMenu(UICanvas.transform.GetChild(1).gameObject.activeSelf);
+
             ToggleObstructRay();
         }
 
@@ -571,6 +630,10 @@ namespace JaLoader
 
             inOptions = !inOptions;
             UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
+
+            if (SceneManager.GetActiveScene().buildIndex == 3)
+                TogglePauseMenu(UICanvas.transform.GetChild(2).transform.GetChild(0).gameObject.activeSelf);
+
             ToggleObstructRay();
         }
 
@@ -592,14 +655,77 @@ namespace JaLoader
             UICanvas.transform.GetChild(2).transform.GetChild(3).gameObject.SetActive(!UICanvas.transform.GetChild(2).transform.GetChild(3).gameObject.activeSelf);
         }
 
+        private void TogglePauseMenu(bool value)
+        {
+            var script = MainMenuC.Global;
+            var pauseUI = script.pauseUI;
+            if (value)
+            {
+                TweenAlpha.Begin(pauseUI[0], 0.8f, 0f);
+                TweenAlpha.Begin(pauseUI[1], 0.8f, 0f);
+                TweenAlpha.Begin(pauseUI[16], 0.8f, 0f);
+                TweenAlpha.Begin(pauseUI[2], 0.8f, 0f);
+                TweenAlpha.Begin(pauseUI[3], 0.8f, 0f);
+                TweenAlpha.Begin(pauseUI[8], 0.8f, 0f);
+                TweenAlpha.Begin(pauseUI[10], 0.8f, 0f);
+                pauseUI[1].GetComponent<Collider>().enabled = false;
+                pauseUI[2].GetComponent<Collider>().enabled = false;
+                pauseUI[3].GetComponent<Collider>().enabled = false;
+                pauseUI[8].GetComponent<Collider>().enabled = false;
+                pauseUI[10].GetComponent<Collider>().enabled = false;
+
+                var uiRoot = GameObject.Find("UI Root");
+
+                var modsButton = uiRoot.transform.Find("Mods").gameObject;
+                TweenAlpha.Begin(modsButton, 0.8f, 0f);
+                modsButton.GetComponent<Collider>().enabled = false;
+
+                var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+                TweenAlpha.Begin(optionsButton, 0.8f, 0f);
+                optionsButton.GetComponent<Collider>().enabled = false;
+            }
+            else
+            {
+                TweenAlpha.Begin(pauseUI[16], 0.8f, 1f);
+                TweenAlpha.Begin(pauseUI[0], 0.8f, 1f);
+                TweenAlpha.Begin(pauseUI[1], 0.8f, 1f);
+                TweenAlpha.Begin(pauseUI[2], 0.8f, 1f);
+                TweenAlpha.Begin(pauseUI[3], 0.8f, 1f);
+                TweenAlpha.Begin(pauseUI[8], 0.8f, 1f);
+                TweenAlpha.Begin(pauseUI[10], 0.8f, 1f);
+                pauseUI[1].GetComponent<Collider>().enabled = true;
+                pauseUI[2].GetComponent<Collider>().enabled = true;
+                pauseUI[3].GetComponent<Collider>().enabled = true;
+                pauseUI[8].GetComponent<Collider>().enabled = true;
+                pauseUI[10].GetComponent<Collider>().enabled = true;
+                pauseUI[16].GetComponent<Collider>().enabled = true;
+
+                var uiRoot = GameObject.Find("UI Root");
+
+                var modsButton = uiRoot.transform.Find("Mods").gameObject;
+                TweenAlpha.Begin(modsButton, 0.8f, 1f);
+                modsButton.GetComponent<Collider>().enabled = true;
+
+                var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+                TweenAlpha.Begin(optionsButton, 0.8f, 1f);
+                optionsButton.GetComponent<Collider>().enabled = true;
+            }
+        }
+
         private void ToggleObstructRay()
         {
+            if (SceneManager.GetActiveScene().buildIndex != 1)
+                return;
+
             isObstructing = !isObstructing;
             FindObjectOfType<MenuMouseInteractionsC>().restrictRay = isObstructing;
         }
 
         private void SetObstructRay(bool value)
         {
+            if (SceneManager.GetActiveScene().buildIndex != 1)
+                return;
+
             isObstructing = value;
             FindObjectOfType<MenuMouseInteractionsC>().restrictRay = value;
         }
@@ -640,6 +766,7 @@ namespace JaLoader
             settingsManager.EnableJaDownloader = !Convert.ToBoolean(enableJaDownloaderDropdown.value);
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
+            positionText.gameObject.SetActive(settingsManager.DebugMode);
 
             settingsManager.SaveSettings();
 
@@ -710,6 +837,46 @@ namespace JaLoader
                 noticePanel.transform.Find("Subtitle").GetComponent<Text>().text = noticesToShow[0].Item1;
                 noticePanel.transform.Find("Message").GetComponent<Text>().text = noticesToShow[0].Item2;
             }
+        }
+    }
+
+    public class MenuNut : MonoBehaviour
+    {
+        public bool isGlowing;
+
+        public Material startMaterial;
+
+        public Material glowMaterial;
+
+        public GameObject renderTarget;
+
+        public GameObject book;
+
+        public void Action()
+        {
+            book.SendMessage("CloseBookNoParticle");
+            UIManager.Instance.ToggleModMenu();
+        }
+
+        private void Update()
+        {
+            if (isGlowing)
+            {
+                float value = Mathf.PingPong(Time.time, 0.75f) + 1.25f;
+                renderTarget.GetComponent<Renderer>().material.SetFloat("_RimPower", value);
+            }
+        }
+
+        public void RaycastEnter()
+        {
+            isGlowing = true;
+            renderTarget.GetComponent<Renderer>().material = glowMaterial;
+        }
+
+        public void RaycastExit()
+        {
+            isGlowing = false;
+            renderTarget.GetComponent<Renderer>().material = startMaterial;
         }
     }
 
