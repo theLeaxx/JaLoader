@@ -55,7 +55,7 @@ namespace JaLoader
 
         public void DeleteLoadingScreen()
         {
-            if(!isFading)
+            if (!isFading)
             {
                 isFading = true;
                 StartCoroutine(FadeOut());

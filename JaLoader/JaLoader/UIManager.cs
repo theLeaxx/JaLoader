@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BepInEx;
+using System;
 using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
@@ -266,6 +267,7 @@ namespace JaLoader
 
             if (ab == null)
             {
+                Destroy(GameObject.Find("JaLoader Loading Screen Canvas"));
                 StopAllCoroutines();
 
                 modLoader.CreateImportantNotice("\n\nThe file 'JaLoader_UI.unity3d' was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the file from JaPatcher's directory/Assets/Required to Mods/Required");
@@ -306,10 +308,9 @@ namespace JaLoader
             if (settingsManager.HideModFolderLocation)
                 modFolderText.SetActive(false);
 
-            string version = ModHelper.Instance.GetLatestTagFromApiUrl("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest");
-            int versionInt = int.Parse(version.Replace(".", ""));
+            string latestVersion = settingsManager.GetLatestUpdateVersionString("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest", settingsManager.GetVersion());
 
-            if (version == "-1")
+            if (latestVersion == "-1")
             {
                 //couldn't check for updates
 
@@ -317,14 +318,17 @@ namespace JaLoader
 
                 modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
             }
-            else if (versionInt > settingsManager.GetVersion())
+            else if (int.Parse(latestVersion.Replace(".", "")) > settingsManager.GetVersion())
             {
-                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{version} available!</color>)";
+                SetObstructRay(true);
+
+                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
 
                 var dialog = UICanvas.transform.Find("JLUpdateDialog").gameObject;
                 dialog.transform.Find("YesButton").GetComponent<Button>().onClick.AddListener(() => modLoader.StartUpdate());
-                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {version}";
-                dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(() => dialog.SetActive(false));
+                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {latestVersion}";
+                dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(delegate { dialog.SetActive(false); SetObstructRay(false); });
+                dialog.transform.Find("OpenGitHubButton").GetComponent<Button>().onClick.AddListener(() => Application.OpenURL($"{SettingsManager.JaLoaderGitHubLink}/releases/latest"));
                 dialog.SetActive(true);
 
                 settingsManager.updateAvailable = true;
@@ -503,7 +507,18 @@ namespace JaLoader
                     string modID = m.Groups[1].Value;
                     string modName = Regex.Replace(Regex.Replace(nameWithSpaces, modID, @" "), modAuthor, @" ").TrimStart().TrimEnd();
 
-                    modLoader.FindMod(modAuthor, modID, modName).SaveModSettings();
+                    var mod = modLoader.FindMod(modAuthor, modID, modName);
+
+                    if(mod != null && mod is Mod)
+                    {
+                        var modClass = mod as Mod;
+                        modClass.SaveModSettings();
+                    }
+                    else if (mod != null && mod is BaseUnityPlugin)
+                    {
+                        var modClass = mod as BaseUnityPlugin;
+                        modClass.SaveBIXPluginSettings();
+                    }
                 }
             }
         }

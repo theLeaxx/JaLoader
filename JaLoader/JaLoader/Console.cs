@@ -223,6 +223,8 @@ namespace JaLoader
                         currentInList--;
                         inputField.text = enteredCommands[currentInList];
 
+                        inputField.Select();
+
                         inputField.caretPosition = inputField.text.Length;
                     }
                 }
@@ -232,6 +234,8 @@ namespace JaLoader
                     {
                         currentInList++;
                         inputField.text = enteredCommands[currentInList];
+
+                        inputField.Select();
 
                         inputField.caretPosition = inputField.text.Length;
                     }

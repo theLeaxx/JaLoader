@@ -913,7 +913,7 @@ namespace JaLoader
                 // wait for the request to complete
             }
 
-            if (request.isHttpError)
+            if (request.isHttpError || request.error == "Generic/unknown HTTP error")
                 return "0";
 
             string tagName = null;
@@ -925,11 +925,19 @@ namespace JaLoader
                 tagName = release.tag_name;
             }
             else if (request.isNetworkError)
-                return "0";
+                return "-1";
             else
+            {
                 Console.Instance.LogError(modName, $"Error getting response for URL \"{URL}\": {request.error}");
+                return "-1";
+            }
 
             return tagName;
+        }
+
+        public void OpenURL(string URL)
+        {
+            Application.OpenURL(URL);
         }
 
         public string GetLatestTagFromApiUrl(string URL)
@@ -945,6 +953,10 @@ namespace JaLoader
                 // wait for the request to complete
             }
 
+            // probably rate limited by github
+            if (request.isHttpError || request.error == "Generic/unknown HTTP error")
+                return "0";
+
             string tagName = null;
 
             if (!request.isNetworkError && !request.isHttpError)
@@ -954,7 +966,7 @@ namespace JaLoader
                 tagName = release.tag_name;
             }
             else if (request.isNetworkError)
-                return "0";
+                return "-1";
             else
             {
                 Console.Instance.LogError($"Error getting response for URL \"{URL}\": {request.error}");
