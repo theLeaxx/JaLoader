@@ -10,6 +10,7 @@ A mod loader & manager for Jalopy.
 You can report any issues and/or ideas in the [issues](https://github.com/theLeaxx/JaLoader/issues) tab.
 
 ## [How to install?](https://github.com/theLeaxx/JaLoader/wiki/Installing-JaLoader-via-JaPatcher)
+* **JaLoader is only compatible with Jalopy v1.1+!**
 
 ## [For modders](https://github.com/theLeaxx/JaLoader/wiki)
 * **The wiki is mostly complete, if you have any specific questions join the [official MinskWorks Discord server](https://discord.gg/TqCwKdR)**
