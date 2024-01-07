@@ -3,6 +3,8 @@ using System.IO;
 using UnityEngine;
 using Microsoft.Win32;
 using System;
+using BepInEx;
+using JaLoader.BepInExWrapper;
 
 namespace JaLoader
 {
@@ -24,14 +26,16 @@ namespace JaLoader
 
             ReadSettings();
             SetVersionRegistryKey();
+            GetUpdateCheckRegistryKey();
         }
 
         #endregion
 
         [SerializeField] private Settings _settings = new Settings();
 
-        private static readonly string JaLoaderVersion = "2.0.0";
+        public static readonly string JaLoaderVersion = "3.0.0";
         public static readonly bool IsPreReleaseVersion = false;
+        public static readonly string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
         public string ModFolderLocation { get; private set; }
 
         public bool SkipLanguage;
@@ -49,6 +53,10 @@ namespace JaLoader
         public string LicensePlateText;
         public bool ShowFPSCounter;
         public bool EnableJaDownloader;
+        public UpdateCheckModes UpdateCheckMode;
+
+        public DateTime lastUpdateCheck;
+        private bool shouldCheckForUpdates = true;
 
         public bool updateAvailable;
 
@@ -58,6 +66,142 @@ namespace JaLoader
         public List<string> DisabledMods = new List<string>();
 
         private readonly ModLoader modLoaderReference = ModLoader.Instance;
+
+        public int GetLatestUpdateVersion(string URL, int version)
+        {
+            if(!shouldCheckForUpdates)
+            {
+                return 0;
+            }
+
+            bool shouldContinueChecking = false;
+
+            switch (UpdateCheckMode)
+            {
+                case UpdateCheckModes.Never:
+                    break;
+
+                case UpdateCheckModes.Hourly:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalHours >= 1)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+
+                case UpdateCheckModes.Daily:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 1)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+
+                case UpdateCheckModes.Every3Days:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 3)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+
+                case UpdateCheckModes.Weekly:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 7)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+            }
+
+            shouldCheckForUpdates = shouldContinueChecking;
+
+            if (!shouldContinueChecking)
+                return 0;
+            else
+            {
+                string latestVersion = ModHelper.Instance.GetLatestTagFromApiUrl(URL);
+                int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
+
+                if (latestVersion == "-1")
+                    return -1;
+                else if (latestVersionInt > version)
+                {
+                    return latestVersionInt;
+                }
+
+            }
+
+            return 0;
+        }
+
+        public string GetLatestUpdateVersionString(string URL, int version)
+        {
+            if (!shouldCheckForUpdates)
+            {
+                return "0";
+            }
+
+            bool shouldContinueChecking = false;
+
+            switch (UpdateCheckMode)
+            {
+                case UpdateCheckModes.Never:
+                    break;
+
+                case UpdateCheckModes.Hourly:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalHours >= 1)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+
+                case UpdateCheckModes.Daily:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 1)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+
+                case UpdateCheckModes.Every3Days:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 3)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+
+                case UpdateCheckModes.Weekly:
+                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 7)
+                    {
+                        SetUpdateCheckRegistryKey();
+                        shouldContinueChecking = true;
+                    }
+                    break;
+            }
+
+            shouldCheckForUpdates = shouldContinueChecking;
+
+            if (!shouldContinueChecking)
+                return "0";
+            else
+            {
+                string latestVersion = ModHelper.Instance.GetLatestTagFromApiUrl(URL);
+                int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
+
+                if (latestVersion == "-1")
+                    return "-1";
+                else if (latestVersionInt > version)
+                {
+                    return latestVersion;
+                }
+            }
+
+            return "0";
+        }
+
 
         public int GetVersion()
         {
@@ -90,6 +234,36 @@ namespace JaLoader
             RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
 
             jalopyKey?.SetValue("JaLoaderVersion", GetVersion().ToString(), RegistryValueKind.String);
+        }
+
+        private void SetUpdateCheckRegistryKey()
+        {
+            RegistryKey parentKey = Registry.CurrentUser;
+
+            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
+
+            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
+
+            jalopyKey?.SetValue("LastUpdateCheck", DateTime.Now.ToString(), RegistryValueKind.String);
+        }
+
+        private void GetUpdateCheckRegistryKey()
+        {
+            RegistryKey parentKey = Registry.CurrentUser;
+
+            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
+
+            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
+
+            if (jalopyKey != null && jalopyKey.GetValue("LastUpdateCheck") != null)
+            {
+                lastUpdateCheck = DateTime.Parse(jalopyKey.GetValue("LastUpdateCheck").ToString());
+            }
+            else
+            {
+                SetUpdateCheckRegistryKey();
+                lastUpdateCheck = DateTime.Now;
+            }
         }
 
         private void ReadSettings()
@@ -146,6 +320,7 @@ namespace JaLoader
             UseDiscordRichPresence = _settings.UseDiscordRichPresence;
             ShowFPSCounter = _settings.ShowFPSCounter;
             EnableJaDownloader = _settings.EnableJaDownloader;
+            UpdateCheckMode = _settings.UpdateCheckMode;
 
             EventsManager.Instance.OnSettingsLoad();
         }
@@ -171,10 +346,25 @@ namespace JaLoader
             _settings.UseDiscordRichPresence = UseDiscordRichPresence;
             _settings.ShowFPSCounter = ShowFPSCounter;
             _settings.EnableJaDownloader = EnableJaDownloader;
+            _settings.UpdateCheckMode = UpdateCheckMode;
 
             for (int i = 0; i < modLoaderReference.disabledMods.ToArray().Length; i++)
             {
-                DisabledMods.Add($"{modLoaderReference.disabledMods.ToArray()[i].ModAuthor}_{modLoaderReference.disabledMods.ToArray()[i].ModID}_{modLoaderReference.disabledMods.ToArray()[i].ModName}");
+                var mod = modLoaderReference.disabledMods.ToArray()[i];
+
+                if (mod is Mod)
+                {
+                    var modReference = mod as Mod;
+                    DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
+                }
+                else if (mod is BaseUnityPlugin)
+                {
+                    var modReference = mod as BaseUnityPlugin;
+
+                    ModInfo modInfo = modReference.gameObject.GetComponent<ModInfo>();
+
+                    DisabledMods.Add($"BepInEx_CompatLayer_{modInfo.GUID}");
+                }
             }
 
             _settings.DisabledMods = DisabledMods;
@@ -213,5 +403,15 @@ namespace JaLoader
         [SerializeField] public bool UseDiscordRichPresence = true;
         [SerializeField] public bool ShowFPSCounter = false;
         [SerializeField] public bool EnableJaDownloader = false;
+        [SerializeField] public UpdateCheckModes UpdateCheckMode = UpdateCheckModes.Daily;
+    }
+
+    public enum UpdateCheckModes
+    {
+        Never,
+        Hourly,
+        Daily,
+        Every3Days,
+        Weekly
     }
 }

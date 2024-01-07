@@ -177,6 +177,182 @@ namespace JaLoader
         }
     }
 
+    [HarmonyPatch(typeof(MainMenuC), "OpenOptions")]
+    public static class MainMenuC_OpenOptions_Patch
+    {
+        [HarmonyPostfix]
+        public static void PostFix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            TweenAlpha.Begin(modsButton, 0.2f, 0f);
+            modsButton.GetComponent<Collider>().enabled = false;
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            TweenAlpha.Begin(optionsButton, 0.2f, 0f);
+            optionsButton.GetComponent<Collider>().enabled = false;
+
+            CoroutineManager.StartStaticCoroutine(DisableButtons());
+        }
+
+        public static IEnumerator DisableButtons()
+        {
+            yield return new WaitForSeconds(0.2f);
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(false);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(false);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "CloseOptionsPart2")]
+    public static class MainMenuC_CloseOptionsPart2_Patch
+    {
+        [HarmonyPrefix]
+        public static void PreFix(MainMenuC __instance)
+        {
+            if (__instance.hasWokenUp)
+            {
+                GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("PausedGame", SendMessageOptions.DontRequireReceiver);
+                var uiRoot = GameObject.Find("UI Root");
+
+                var modsButton = uiRoot.transform.Find("Mods").gameObject;
+                modsButton.SetActive(true);
+                TweenAlpha.Begin(modsButton, 0.8f, 1f);
+
+                var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+                optionsButton.SetActive(true);
+                TweenAlpha.Begin(optionsButton, 0.8f, 1f);
+            }
+        }
+
+        [HarmonyPostfix]
+        public static void PostFix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.GetComponent<Collider>().enabled = true;
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.GetComponent<Collider>().enabled = true;
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "OpenRestart")]
+    public static class MainMenuC_OpenRestart_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(false);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(false);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "CloseRestartOptions")]
+    public static class MainMenuC_CloseRestart_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(true);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(true);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "OpenReturnHome")]
+    public static class MainMenuC_OpenReturnHome_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(false);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(false);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "CloseReturnHomeOptions")]
+    public static class MainMenuC_CloseReturnHomeOptions_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(true);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(true);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "OpenSaveQuit")]
+    public static class MainMenuC_OpenSaveQuit_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(false);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(false);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "OpenSaveQuitDesktop")]
+    public static class MainMenuC_OpenSaveQuitDesktop_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(false);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(false);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuC), "CloseSaveQuitOptions")]
+    public static class MainMenuC_CloseSaveQuitOptions_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            var uiRoot = GameObject.Find("UI Root");
+
+            var modsButton = uiRoot.transform.Find("Mods").gameObject;
+            modsButton.SetActive(true);
+
+            var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
+            optionsButton.SetActive(true);
+        }
+    }
 
     [HarmonyPatch(typeof(MainMenuC), "SavingStolenGoods")]
     public static class MainMenuC_SavingStolenGoods_Patch

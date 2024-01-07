@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BepInEx;
+using System;
 using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
@@ -80,7 +81,7 @@ namespace JaLoader
         public GameObject modLoaderText { get; private set; }
         public GameObject modFolderText { get; private set; }
         public GameObject fpsText { get; private set; }
-        public GameObject positionText { get; private set; }
+        public GameObject debugText { get; private set; }
 
         private MainMenuBookC book;
         private GameObject exitConfirmButton;
@@ -97,6 +98,7 @@ namespace JaLoader
         private Dropdown consolePositionDropdown;
         private Dropdown showModsFolderDropdown;
         private Dropdown enableJaDownloaderDropdown;
+        private Dropdown updateCheckFreqDropdown;
         private Dropdown skipLanguageSelectionDropdown;
         private Dropdown discordRichPresenceDropdown;
         private Dropdown debugModeDropdown;
@@ -159,7 +161,7 @@ namespace JaLoader
 
             //annoying fix for dropdowns only working once
             if (inOptions && Input.GetMouseButtonDown(0))
-                if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List"))
+                if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
                     RefreshUI();
 
             if (inModsOptions && Input.GetMouseButtonDown(0))
@@ -266,6 +268,7 @@ namespace JaLoader
 
             if (ab == null)
             {
+                Destroy(GameObject.Find("JaLoader Loading Screen Canvas"));
                 StopAllCoroutines();
 
                 modLoader.CreateImportantNotice("\n\nThe file 'JaLoader_UI.unity3d' was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the file from JaPatcher's directory/Assets/Required to Mods/Required");
@@ -306,10 +309,9 @@ namespace JaLoader
             if (settingsManager.HideModFolderLocation)
                 modFolderText.SetActive(false);
 
-            string version = ModHelper.Instance.GetLatestTagFromApiUrl("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest");
-            int versionInt = int.Parse(version.Replace(".", ""));
+            string latestVersion = settingsManager.GetLatestUpdateVersionString("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest", settingsManager.GetVersion());
 
-            if (version == "-1")
+            if (latestVersion == "-1")
             {
                 //couldn't check for updates
 
@@ -317,14 +319,17 @@ namespace JaLoader
 
                 modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
             }
-            else if (versionInt > settingsManager.GetVersion())
+            else if (int.Parse(latestVersion.Replace(".", "")) > settingsManager.GetVersion())
             {
-                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{version} available!</color>)";
+                SetObstructRay(true);
+
+                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
 
                 var dialog = UICanvas.transform.Find("JLUpdateDialog").gameObject;
                 dialog.transform.Find("YesButton").GetComponent<Button>().onClick.AddListener(() => modLoader.StartUpdate());
-                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {version}";
-                dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(() => dialog.SetActive(false));
+                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {latestVersion}";
+                dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(delegate { dialog.SetActive(false); SetObstructRay(false); });
+                dialog.transform.Find("OpenGitHubButton").GetComponent<Button>().onClick.AddListener(() => Application.OpenURL($"{SettingsManager.JaLoaderGitHubLink}/releases/latest"));
                 dialog.SetActive(true);
 
                 settingsManager.updateAvailable = true;
@@ -371,6 +376,7 @@ namespace JaLoader
             consolePositionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsolePosition").gameObject.GetComponent<Dropdown>();
             showModsFolderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
             enableJaDownloaderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/EnableJaDownloader").gameObject.GetComponent<Dropdown>();
+            updateCheckFreqDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/UpdateCheckFrequency").gameObject.GetComponent<Dropdown>();
             skipLanguageSelectionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/SkipLanguageSelectionScreen").gameObject.GetComponent<Dropdown>();
             discordRichPresenceDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/DiscordRichPresence").gameObject.GetComponent<Dropdown>();
             debugModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row3/DebugMode").gameObject.GetComponent<Dropdown>();
@@ -389,8 +395,8 @@ namespace JaLoader
             fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
             fpsText.AddComponent<FPSCounter>();
 
-            positionText = UICanvas.transform.Find("DebugPosition").gameObject;
-            positionText.AddComponent<DebugPosition>();
+            debugText = UICanvas.transform.Find("DebugInfo").gameObject;
+            debugText.AddComponent<DebugInfo>();
 
             SetOptionsValues();
 
@@ -503,7 +509,18 @@ namespace JaLoader
                     string modID = m.Groups[1].Value;
                     string modName = Regex.Replace(Regex.Replace(nameWithSpaces, modID, @" "), modAuthor, @" ").TrimStart().TrimEnd();
 
-                    modLoader.FindMod(modAuthor, modID, modName).SaveModSettings();
+                    var mod = modLoader.FindMod(modAuthor, modID, modName);
+
+                    if(mod != null && mod is Mod)
+                    {
+                        var modClass = mod as Mod;
+                        modClass.SaveModSettings();
+                    }
+                    else if (mod != null && mod is BaseUnityPlugin)
+                    {
+                        var modClass = mod as BaseUnityPlugin;
+                        modClass.SaveBIXPluginSettings();
+                    }
                 }
             }
         }
@@ -526,9 +543,10 @@ namespace JaLoader
             licensePlateTextField.text = settingsManager.LicensePlateText;
             showFPSDropdown.value = settingsManager.ShowFPSCounter ? 1 : 0;
             enableJaDownloaderDropdown.value = settingsManager.EnableJaDownloader ? 0 : 1;
+            updateCheckFreqDropdown.value = (int)settingsManager.UpdateCheckMode;
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
-            positionText.SetActive(settingsManager.DebugMode);
+            debugText.SetActive(settingsManager.DebugMode);
         }
 
         public void UpdateMenuMusic(bool enabled, float volume)
@@ -764,9 +782,10 @@ namespace JaLoader
             settingsManager.LicensePlateText = licensePlateTextField.text;
             settingsManager.ShowFPSCounter = Convert.ToBoolean(showFPSDropdown.value);
             settingsManager.EnableJaDownloader = !Convert.ToBoolean(enableJaDownloaderDropdown.value);
+            settingsManager.UpdateCheckMode = (UpdateCheckModes)updateCheckFreqDropdown.value;
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
-            positionText.gameObject.SetActive(settingsManager.DebugMode);
+            debugText.gameObject.SetActive(settingsManager.DebugMode);
 
             settingsManager.SaveSettings();
 

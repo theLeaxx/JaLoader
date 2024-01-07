@@ -48,6 +48,7 @@ namespace JaLoader
                 try
                 {
                     Assembly.LoadFrom(asmFile.FullName);
+                    Debug.Log($"Loaded assembly {asmFile.Name}!");
                     loadedAsm++;
                 }
                 catch (Exception ex)

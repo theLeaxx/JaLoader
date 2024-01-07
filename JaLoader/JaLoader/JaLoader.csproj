@@ -145,12 +145,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BepInExWrapper\BaseUnityPlugin.cs" />
+    <Compile Include="BepInExWrapper\BepInPluginAttribute.cs" />
+    <Compile Include="BepInExWrapper\ConfigRelated.cs" />
+    <Compile Include="BepInExWrapper\ManualLogSource.cs" />
+    <Compile Include="BepInExWrapper\PluginInfo.cs" />
     <Compile Include="CustomKeybind.cs" />
     <Compile Include="CustomObjectsManager.cs" />
     <Compile Include="CustomRadioController.cs" />
     <Compile Include="DebugCamera.cs" />
     <Compile Include="DebugObjectSpawner.cs" />
-    <Compile Include="DebugPosition.cs" />
+    <Compile Include="DebugInfo.cs" />
     <Compile Include="DiscordController.cs" />
     <Compile Include="Discord\ActivityManager.cs" />
     <Compile Include="Discord\Constants.cs" />
