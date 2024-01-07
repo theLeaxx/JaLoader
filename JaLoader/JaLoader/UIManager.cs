@@ -81,7 +81,7 @@ namespace JaLoader
         public GameObject modLoaderText { get; private set; }
         public GameObject modFolderText { get; private set; }
         public GameObject fpsText { get; private set; }
-        public GameObject positionText { get; private set; }
+        public GameObject debugText { get; private set; }
 
         private MainMenuBookC book;
         private GameObject exitConfirmButton;
@@ -98,6 +98,7 @@ namespace JaLoader
         private Dropdown consolePositionDropdown;
         private Dropdown showModsFolderDropdown;
         private Dropdown enableJaDownloaderDropdown;
+        private Dropdown updateCheckFreqDropdown;
         private Dropdown skipLanguageSelectionDropdown;
         private Dropdown discordRichPresenceDropdown;
         private Dropdown debugModeDropdown;
@@ -160,7 +161,7 @@ namespace JaLoader
 
             //annoying fix for dropdowns only working once
             if (inOptions && Input.GetMouseButtonDown(0))
-                if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List"))
+                if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
                     RefreshUI();
 
             if (inModsOptions && Input.GetMouseButtonDown(0))
@@ -375,6 +376,7 @@ namespace JaLoader
             consolePositionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsolePosition").gameObject.GetComponent<Dropdown>();
             showModsFolderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
             enableJaDownloaderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/EnableJaDownloader").gameObject.GetComponent<Dropdown>();
+            updateCheckFreqDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/UpdateCheckFrequency").gameObject.GetComponent<Dropdown>();
             skipLanguageSelectionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/SkipLanguageSelectionScreen").gameObject.GetComponent<Dropdown>();
             discordRichPresenceDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/DiscordRichPresence").gameObject.GetComponent<Dropdown>();
             debugModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row3/DebugMode").gameObject.GetComponent<Dropdown>();
@@ -393,8 +395,8 @@ namespace JaLoader
             fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
             fpsText.AddComponent<FPSCounter>();
 
-            positionText = UICanvas.transform.Find("DebugPosition").gameObject;
-            positionText.AddComponent<DebugPosition>();
+            debugText = UICanvas.transform.Find("DebugInfo").gameObject;
+            debugText.AddComponent<DebugInfo>();
 
             SetOptionsValues();
 
@@ -541,9 +543,10 @@ namespace JaLoader
             licensePlateTextField.text = settingsManager.LicensePlateText;
             showFPSDropdown.value = settingsManager.ShowFPSCounter ? 1 : 0;
             enableJaDownloaderDropdown.value = settingsManager.EnableJaDownloader ? 0 : 1;
+            updateCheckFreqDropdown.value = (int)settingsManager.UpdateCheckMode;
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
-            positionText.SetActive(settingsManager.DebugMode);
+            debugText.SetActive(settingsManager.DebugMode);
         }
 
         public void UpdateMenuMusic(bool enabled, float volume)
@@ -779,9 +782,10 @@ namespace JaLoader
             settingsManager.LicensePlateText = licensePlateTextField.text;
             settingsManager.ShowFPSCounter = Convert.ToBoolean(showFPSDropdown.value);
             settingsManager.EnableJaDownloader = !Convert.ToBoolean(enableJaDownloaderDropdown.value);
+            settingsManager.UpdateCheckMode = (UpdateCheckModes)updateCheckFreqDropdown.value;
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
-            positionText.gameObject.SetActive(settingsManager.DebugMode);
+            debugText.gameObject.SetActive(settingsManager.DebugMode);
 
             settingsManager.SaveSettings();
 

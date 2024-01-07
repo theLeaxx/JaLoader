@@ -44,7 +44,7 @@ namespace BepInEx.Logging
 
         public void LogInfo(object message)
         {
-            JaLoader.Console.Instance.LogDebug(message);
+            //JaLoader.Console.Instance.LogDebug(message);
         }
 
         public ManualLogSource(string name)

@@ -8,9 +8,7 @@ using UnityEngine;
 
 namespace BepInEx.Configuration
 {
-    // this whole file is a mess
-    // if it works, it works
-    // fix it when it breaks
+    // TODO: Make the code not shit
     public class ConfigFile
     {
         public BaseUnityPlugin Plugin { get; }
@@ -214,10 +212,13 @@ namespace BepInEx.Configuration
             this.keyCodes = keyCodes;
         }
 
+        // fucking fuck this portion i spent 3 days trying to get it to work but it kept returning random ass keycodes that did not exist
+        // burn it in flames.
         public bool IsDown()
         {
             return false;
 
+#pragma warning disable CS0162 // Unreachable code detected
             return Input.GetKeyDown(KeyCode.F1);
 
             string callingMethod = new System.Diagnostics.StackTrace().GetFrame(1).GetMethod().Name;

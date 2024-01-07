@@ -155,7 +155,7 @@
     <Compile Include="CustomRadioController.cs" />
     <Compile Include="DebugCamera.cs" />
     <Compile Include="DebugObjectSpawner.cs" />
-    <Compile Include="DebugPosition.cs" />
+    <Compile Include="DebugInfo.cs" />
     <Compile Include="DiscordController.cs" />
     <Compile Include="Discord\ActivityManager.cs" />
     <Compile Include="Discord\Constants.cs" />

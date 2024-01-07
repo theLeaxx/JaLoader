@@ -188,8 +188,6 @@ namespace JaLoader
                 return "0";
             else
             {
-                Console.Instance.Log("Checking");
-
                 string latestVersion = ModHelper.Instance.GetLatestTagFromApiUrl(URL);
                 int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
 
@@ -199,7 +197,6 @@ namespace JaLoader
                 {
                     return latestVersion;
                 }
-
             }
 
             return "0";

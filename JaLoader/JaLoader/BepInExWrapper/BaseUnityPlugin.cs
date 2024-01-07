@@ -15,6 +15,7 @@ using Console = JaLoader.Console;
 
 namespace BepInEx
 {
+    //TODO: Optimize this shit ass file
     public class BaseUnityPlugin : MonoBehaviour
     {
         protected ManualLogSource Logger { get; }
@@ -59,7 +60,7 @@ namespace BepInEx
 
         public void AddBIXPluginToggle(string ID, string name, bool defaultValue)
         {
-            Console.Instance.Log($"Adding toggle {ID} to {PluginAttribute.Name} settings");
+            //Console.Instance.Log($"Adding toggle {ID} to {PluginAttribute.Name} settings");
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsToggleTemplate);
             obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
@@ -80,7 +81,7 @@ namespace BepInEx
 
         public void AddBIXPluginKeybind(string ID, string name, KeyCode defaultPrimaryKey)
         {
-            Console.Instance.Log($"Adding keybind {ID} to {PluginAttribute.Name} settings");
+            //Console.Instance.Log($"Adding keybind {ID} to {PluginAttribute.Name} settings");
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsKeybindTemplate);
             obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
