@@ -34,6 +34,8 @@ namespace JaLoader
         private bool[] valueUsed = new bool[23];
         private float maxRayDistance;
 
+        public Transform lookingAt;
+
         private void Start()
         {
             _camera = Camera.main.gameObject;
@@ -108,8 +110,11 @@ namespace JaLoader
             if (!Physics.Raycast(ray, out raycastHit, maxRayDistance, myLayerMask, QueryTriggerInteraction.Collide) && uiIsOn)
             {
                 HideUI();
+                lookingAt = null;
                 return;
             }
+
+            lookingAt = raycastHit.transform;
 
             if (raycastHit.collider && raycastHit.collider.tag == "Pickup" && raycastHit.collider.GetComponent<ObjectPickupC>() && raycastHit.collider.GetComponent<CustomObjectInfo>())
             {

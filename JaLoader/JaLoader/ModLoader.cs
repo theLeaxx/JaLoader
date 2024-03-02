@@ -18,6 +18,7 @@ using JaLoader.BepInExWrapper;
 using System.Runtime.CompilerServices;
 using BepInEx.Configuration;
 using static UnityEngine.EventSystems.EventTrigger;
+using Mono.Cecil;
 
 namespace JaLoader
 {
@@ -297,7 +298,10 @@ namespace JaLoader
                             mod.CustomObjectsRegistration();
 
                             if (mod.settingsIDS.Count > 0)
+                            {
                                 mod.LoadModSettings();
+                                mod.SaveModSettings();
+                            }
 
                             Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
 
@@ -351,7 +355,10 @@ namespace JaLoader
                         mod.CustomObjectsRegistration();
 
                         if (mod.settingsIDS.Count > 0)
+                        {
                             mod.LoadModSettings();
+                            mod.SaveModSettings();
+                        }
 
                         Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
                     }
@@ -498,15 +505,24 @@ namespace JaLoader
                         string ModID = "";
                         string ModName = "";
                         string ModVersion = "";
+                        string ModDescription = "";
 
                         Type type = bix_mod.GetType();
-                        if (Attribute.IsDefined(type, typeof(BepInPlugin)))
+                        Type pluginInfoType = modType.Assembly.GetType($"{modType.Namespace}.PluginInfo, {modType.Assembly.GetName().Name}");
+                        if (pluginInfoType != null)
+                        {
+                            ModID = (string)pluginInfoType.GetField("PLUGIN_GUID").GetValue(null);
+                            ModName = (string)pluginInfoType.GetField("PLUGIN_NAME").GetValue(null);
+                            ModVersion = (string)pluginInfoType.GetField("PLUGIN_VERSION").GetValue(null);
+                        }
+                        else if (Attribute.IsDefined(type, typeof(BepInPlugin)))
                         {
                             BepInPlugin bepInPlugin = (BepInPlugin)Attribute.GetCustomAttribute(type, typeof(BepInPlugin));
 
                             ModID = bepInPlugin.GUID;
                             ModName = bepInPlugin.Name;
                             ModVersion = bepInPlugin.Version;
+                            ModDescription = modType.Assembly.GetCustomAttribute<AssemblyDescriptionAttribute>().Description;
                         }
                         else
                         {
@@ -526,10 +542,18 @@ namespace JaLoader
                         string bix_modVersionText = ModVersion;
                         string bix_modName = settingsManager.DebugMode ? $"{ModID} - BepInEx" : ModName;
 
-                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = bix_modName;
-                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = "BepInEx";
+                        string pattern = @"^[a-zA-Z]+(\.[a-zA-Z]+)+$";
+                        string authorName = "BepInEx";
 
-                        uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(ModID, "BepInEx", bix_modVersionText, "This mod was made using BepInEx. Some features might not work as intended."); });
+                        if(Regex.IsMatch(modInfo.GUID, pattern))
+                        {
+                            authorName = modInfo.GUID.Split('.')[1];
+                        }
+
+                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = bix_modName;
+                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = authorName;
+
+                        uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(ModID, authorName, bix_modVersionText, $"{ModDescription}\n\nThis mod was made using BepInEx. Some features might not work as intended."); });
                         uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"BepInEx_CompatLayer_{ModID}-SettingsHolder"); });
 
                         var bix_tempModObj = uiManager.modTemplateObject;
@@ -1009,6 +1033,16 @@ namespace JaLoader
 
             return null;
         }
+
+        public Type GetTypeFromMod(string author, string ID, string name, string typeName)
+        {
+            MonoBehaviour mod = FindMod(author, ID, name);
+
+            if (mod != null)
+                return Type.GetType($"{mod.GetType().Namespace}.{typeName}, {mod.GetType().Assembly.GetName().Name}");
+
+            return null;
+        }   
 
         /// <summary>
         /// Searches for a mod with the specified ID and author and returns it if found, otherwise returns null.

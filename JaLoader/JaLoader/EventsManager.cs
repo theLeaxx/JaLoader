@@ -49,6 +49,7 @@ namespace JaLoader
         public event GameEvents OnNewGame;
         public event GameEvents OnPause;
         public event GameEvents OnUnpause;
+        public event GameEvents OnSleep;
         public event LogEvents OnException;
         
         //public event GameEvents OnStoreTransaction;
@@ -78,6 +79,11 @@ namespace JaLoader
         public void OnUILoadFinish()
         {
             OnUILoadFinished?.Invoke();
+        }
+
+        public void OnSleepTrigger()
+        {
+            OnSleep?.Invoke();
         }
 
         public void OnPauseGame()
@@ -144,6 +150,7 @@ namespace JaLoader
                 FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
                 FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
                 Camera.main.gameObject.AddComponent<MainMenuCReceiver>();
+                Camera.main.gameObject.AddComponent<MotelsReceiver>();
                 Camera.main.gameObject.AddComponent<HarmonyManager>();
                 return;
             }
@@ -323,6 +330,14 @@ namespace JaLoader
                 if (ES3.LoadBool("savedStolenGoods") == true)
                     ES3.Save(false, "savedStolenGoods");
             }
+        }
+    }
+
+    public class MotelsReceiver : MonoBehaviour
+    {
+        public void Slept()
+        {
+            EventsManager.Instance.OnSleepTrigger();
         }
     }
 

@@ -32,7 +32,7 @@ namespace JaLoader
 
         private static Harmony harmony;
 
-        public void PatchMainMenuC()
+        public void PatchAll()
         {
             if (harmony == null)
             {
@@ -43,7 +43,7 @@ namespace JaLoader
 
         private void Start()
         {
-            PatchMainMenuC();
+            PatchAll();
         }
 
         public void PatchBuyButton()
@@ -102,6 +102,16 @@ namespace JaLoader
         public static void PostFix()
         {
             GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("LoadedGame", SendMessageOptions.DontRequireReceiver);
+        }
+    }
+
+    [HarmonyPatch(typeof(BedLogicC), "Later")]
+    public static class BedLogicC_Later_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("Slept", SendMessageOptions.DontRequireReceiver);
         }
     }
 

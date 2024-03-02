@@ -132,7 +132,7 @@ namespace BepInEx
         {
             BIXPlugin_SettingsValues values = new BIXPlugin_SettingsValues();
 
-            Console.Instance.Log(BIXPlugin_settingsIDS.Count);
+            //Console.Instance.Log(BIXPlugin_settingsIDS.Count);
 
             foreach (var ID in BIXPlugin_settingsIDS)
             {

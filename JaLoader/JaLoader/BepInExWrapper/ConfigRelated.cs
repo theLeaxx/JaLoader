@@ -17,6 +17,7 @@ namespace BepInEx.Configuration
         public ConfigEntry<T> Bind<T>(ConfigDefinition configDefinition, T defaultValue, ConfigDescription configDescription = null)
         {
             //JaLoader.Console.Instance.Log($"E 2 {(defaultValue as KeyboardShortcut).Key.ToString()}");
+            //JaLoader.Console.Instance.Log($"E 2 {defaultValue.GetType()}");
             var entry = new ConfigEntry<T>(configDefinition.section, configDefinition.key, defaultValue, Plugin, PluginAttribute, "");
 
             return entry;

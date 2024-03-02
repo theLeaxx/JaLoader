@@ -14,6 +14,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using static UIKeyBinding;
+using static UnityEngine.EventSystems.EventTrigger;
 using Debug = UnityEngine.Debug;
 
 namespace JaLoader
@@ -159,6 +160,9 @@ namespace JaLoader
                 RefreshUI();
             }
 
+            /*if (Input.GetKeyDown(KeyCode.Delete))
+                FixTranslations();*/
+
             //annoying fix for dropdowns only working once
             if (inOptions && Input.GetMouseButtonDown(0))
                 if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
@@ -241,6 +245,8 @@ namespace JaLoader
             settingsButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(ToggleModLoaderSettings_Main));
             settingsButton.GetComponent<UILabel>().text = "ModLoader Options";
             settingsButton.GetComponent<UILabel>().ProcessText();
+
+            FixTranslations();
         }
 
         public void ToggleUIVisibility(bool show)
@@ -391,6 +397,8 @@ namespace JaLoader
             showFPSDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row4/ShowFPSCounter").gameObject.GetComponent<Dropdown>();
 
             UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
+            UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenModsFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenModsFolder);
+            UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenSavesFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenSavesFolder);
 
             fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
             fpsText.AddComponent<FPSCounter>();
@@ -509,6 +517,9 @@ namespace JaLoader
                     string modID = m.Groups[1].Value;
                     string modName = Regex.Replace(Regex.Replace(nameWithSpaces, modID, @" "), modAuthor, @" ").TrimStart().TrimEnd();
 
+                    if(modName == string.Empty)
+                        modName = modID;
+
                     var mod = modLoader.FindMod(modAuthor, modID, modName);
 
                     if(mod != null && mod is Mod)
@@ -567,6 +578,16 @@ namespace JaLoader
 
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
             isObstructing = false;
+        }
+
+        private void OpenModsFolder()
+        {
+            Application.OpenURL(settingsManager.ModFolderLocation);
+        }
+
+        private void OpenSavesFolder()
+        {
+            Application.OpenURL(Application.persistentDataPath);
         }
 
         private void RefreshUI()
@@ -746,6 +767,24 @@ namespace JaLoader
 
             isObstructing = value;
             FindObjectOfType<MenuMouseInteractionsC>().restrictRay = value;
+        }
+
+        private void FixTranslations()
+        {
+            if (Language.CurrentLanguage() == LanguageCode.FR)
+            {
+                FieldInfo fieldInfo = typeof(Language).GetField("currentEntrySheets", BindingFlags.Static | BindingFlags.NonPublic);
+                if (fieldInfo != null)
+                {
+                    var fieldValue = fieldInfo.GetValue(null) as Dictionary<string, Dictionary<string, string>>;
+
+                    fieldValue["Inspector_UI"]["ui_obj_repkit_03"] = "Utilisé pour réparer les pièces du moteur de la Laika 601 Deluxe.";
+                    fieldValue["Inspector_UI"]["tooltip_03_X"] = "Pour changer l'objet en main utilisez LB ou RB";
+                    fieldValue["Inspector_UI"]["tooltip_05_X"] = "Pour Installer une amélioration, utilisez la sur le véhicule en maintenant le bouton A";
+
+                    fieldInfo.SetValue(null, fieldValue);
+                }              
+            }
         }
 
         private void SaveValues()
