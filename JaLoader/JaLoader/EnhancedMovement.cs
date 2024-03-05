@@ -37,6 +37,9 @@ namespace JaLoader
 
         public bool isDebugCameraEnabled;
 
+        private Vector3 currentVelocity;
+        private Vector3 targetVelocity;
+
         /*bool lerping;
         bool lerpingTo0;
         bool coroutinesStoped;
@@ -172,11 +175,35 @@ namespace JaLoader
                     StartCoroutine(LerpTo0(z));
                 }
             }*/
-           
-            float x = Input.GetAxis("Horizontal");
-            float z = Input.GetAxis("Vertical");
-            
-            Vector3 move = transform.right * x + transform.forward * z;
+
+            float z = 0;
+            float x = 0;
+
+            if (Input.GetKey(MainMenuC.Global.assignedInputStrings[0]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[1]))
+            {
+                z = 1f;
+            }
+            else if (Input.GetKey(MainMenuC.Global.assignedInputStrings[2]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[3]))
+            {
+                z = -1f;
+            }
+
+            if (Input.GetKey(MainMenuC.Global.assignedInputStrings[4]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[5]))
+            {
+                x = -1f;
+            }
+            else if (Input.GetKey(MainMenuC.Global.assignedInputStrings[6]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[7]))
+            {
+                x = 1f;
+            }
+
+            //float x = Input.GetAxis("Horizontal");
+            //float z = Input.GetAxis("Vertical");
+
+            Vector3 _move = transform.right * x + transform.forward * z;
+            targetVelocity = _move.normalized;
+            currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, Time.deltaTime * 7.5f);
+            Vector3 move = currentVelocity;
 
             if (Input.GetKey(MainMenuC.Global.assignedInputStrings[28]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[29]))
             {
@@ -249,6 +276,9 @@ namespace JaLoader
             velocity.y += -35f * Time.deltaTime;
 
             cc.Move(velocity * Time.deltaTime);
+
+            if(x == 0 && z == 0)
+                currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, Time.deltaTime * 7.5f);
         }
 
         /*IEnumerator LerpZ(float startValue, float endValue)
