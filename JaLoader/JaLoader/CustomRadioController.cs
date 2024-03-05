@@ -56,8 +56,6 @@ namespace JaLoader
             if(SettingsManager.Instance.DebugMode)
                 if (Input.GetKeyDown(KeyCode.F6))
                     FindObjectOfType<RadioFreqLogicC>().NextSong();
-
-            //Console.Instance?.Log(FindObjectOfType<RadioFreqLogicC>().songShuffle.Count);
         }
 
         private void ConvertSongs()
@@ -139,13 +137,26 @@ namespace JaLoader
 
             radio.enabled = false;
 
-            var songListings = radio.songListings.ToList();
+            if (SettingsManager.Instance.CustomSongsBehaviour == CustomSongsBehaviour.Add)
+            {
+                var songListings = radio.songListings.ToList();
 
-            foreach (var song in loadedSongs)
-                songListings.Add(song);
+                foreach (var song in loadedSongs)
+                    songListings.Add(song);
 
-            radio.songListings = songListings.ToArray();
-            radio.songNumber = radio.songListings.Length;
+                radio.songListings = songListings.ToArray();
+                radio.songNumber = radio.songListings.Length;
+            }
+            else
+            {
+                List<AudioClip> loadedSongsRepeated = new List<AudioClip>(loadedSongs);
+
+                while (loadedSongsRepeated.Count <= 15)
+                    loadedSongsRepeated.AddRange(loadedSongsRepeated);
+
+                radio.songListings = loadedSongsRepeated.ToArray();
+                radio.songNumber = loadedSongsRepeated.Count;
+            } 
 
             radio.songShuffle = new List<AudioClip>();
 
@@ -159,6 +170,6 @@ namespace JaLoader
             yield return new WaitForEndOfFrame();
 
             FindObjectOfType<MenuVolumeChanger>().muted = false;
-        }//BoxContentsC
+        }
     }
 }

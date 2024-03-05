@@ -24,13 +24,17 @@ namespace JaLoader
 
         private GameObject groundCheck;
         
-        private Vector3 velocity;
+        public Vector3 velocity;
         private LayerMask groundMask;
         private float groundDistance = 0.225f;
-        private float jumpHeight = 2;
-        private int speed;
+        public float jumpHeight = 2;
+        private float speed;
         private bool canMove = true;
-        private bool isGrounded;
+        public bool canSprint = true;
+        public bool isMoving = false;
+        public bool isSprinting = false;
+        public bool canJump = true;
+        public bool isGrounded;
         private bool crouching;
 
         private bool setParkingBrake;
@@ -39,6 +43,11 @@ namespace JaLoader
 
         private Vector3 currentVelocity;
         private Vector3 targetVelocity;
+
+        public float maxJumpHeight = 2f;
+        public float maxSprintSpeed = 10f;
+        public float maxWalkSpeed = 8f;
+        public float maxCrouchSpeed = 3f;
 
         /*bool lerping;
         bool lerpingTo0;
@@ -136,46 +145,6 @@ namespace JaLoader
             if(isGrounded && velocity.y < 0)
                 velocity.y = -5f;
 
-            /*if (Input.GetKey(MainMenuC.Global.assignedInputStrings[0]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[1]))
-            {
-                if (z < 1)
-                {
-                    if ((lerping || lerpingTo0) && !coroutinesStoped)
-                    {
-                        lerping = false;
-                        lerpingTo0 = false;
-                        coroutinesStoped = true;
-                        StopAllCoroutines();
-                    }
-
-                    StartCoroutine(LerpZ(z, 1));
-                }
-            }
-            else if (Input.GetKey(MainMenuC.Global.assignedInputStrings[2]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[3]))
-            {
-                if (z > -1)
-                {
-                    if ((lerping || lerpingTo0) && !coroutinesStoped)
-                    {
-                        lerping = false;
-                        lerpingTo0 = false;
-                        coroutinesStoped = true;
-                        StopAllCoroutines();
-                    }
-
-                    StartCoroutine(LerpZ(z, -1));
-                }
-            }
-            else
-            {
-                if (z != 0 && !lerpingTo0)
-                {
-                    StopAllCoroutines();
-                    coroutinesStoped = true;
-                    StartCoroutine(LerpTo0(z));
-                }
-            }*/
-
             float z = 0;
             float x = 0;
 
@@ -197,12 +166,18 @@ namespace JaLoader
                 x = 1f;
             }
 
-            //float x = Input.GetAxis("Horizontal");
-            //float z = Input.GetAxis("Vertical");
+            if (x == 0 && z == 0)
+            {
+                isMoving = false;
+            }
+            else
+            {
+                isMoving = true;
+            }
 
             Vector3 _move = transform.right * x + transform.forward * z;
             targetVelocity = _move.normalized;
-            currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, Time.deltaTime * 7.5f);
+            currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, Time.deltaTime * 15f);
             Vector3 move = currentVelocity;
 
             if (Input.GetKey(MainMenuC.Global.assignedInputStrings[28]) || Input.GetKey(MainMenuC.Global.assignedInputStrings[29]))
@@ -214,7 +189,7 @@ namespace JaLoader
                 headBobber.bobbingAmount = 0.005f;
 
                 _camera.transform.localPosition = new Vector3(_camera.transform.localPosition.x, 0.15f, _camera.transform.localPosition.z);
-                speed = 3;
+                speed = maxCrouchSpeed;
                 jumpHeight = 0.75f;
                 
                 footstepsC.audioStepLength = 0.65f;
@@ -222,16 +197,18 @@ namespace JaLoader
             else
             {
                 _camera.transform.localPosition = new Vector3(_camera.transform.localPosition.x, 0.8f, _camera.transform.localPosition.z);
-                jumpHeight = 2;
+                jumpHeight = maxJumpHeight;
                 headBobber.midpoint = 0.8f;
                 crouching = false;
             }
 
-            if (Input.GetKey(KeyCode.LeftShift))
+            if (Input.GetKey(KeyCode.LeftShift) && canSprint)
             {
                 if (!crouching)
                 {
-                    speed = 10;
+                    isSprinting = true;
+
+                    speed = maxSprintSpeed;
 
                     headBobber.bobbingSpeed = 8f;
                     headBobber.bobbingAmount = 0.045f;
@@ -248,9 +225,11 @@ namespace JaLoader
             }
             else
             {
+                isSprinting = false;
+
                 if (!crouching)
-                {
-                    speed = 8;
+                {                    
+                    speed = maxWalkSpeed;
 
                     headBobber.bobbingSpeed = 5f;
                     headBobber.bobbingAmount = 0.025f;
@@ -268,7 +247,7 @@ namespace JaLoader
 
             cc.Move(move * speed * Time.deltaTime);
 
-            if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+            if (Input.GetKeyDown(KeyCode.Space) && isGrounded && canJump)
             {
                 velocity.y = Mathf.Sqrt(jumpHeight * -2f * -35f);
             }
@@ -278,39 +257,7 @@ namespace JaLoader
             cc.Move(velocity * Time.deltaTime);
 
             if(x == 0 && z == 0)
-                currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, Time.deltaTime * 7.5f);
+                currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, Time.deltaTime * 15f);
         }
-
-        /*IEnumerator LerpZ(float startValue, float endValue)
-        {
-            lerpingTo0 = false;
-            lerping = true;
-            float timeElapsed = 0;
-            while (timeElapsed < 0.5f)
-            {
-                z = Mathf.Lerp(startValue, endValue, timeElapsed / 0.25f);
-                timeElapsed += Time.deltaTime;
-                yield return null;
-            }
-            z = endValue;
-            lerping = false;
-            coroutinesStoped = false;
-        }
-
-        IEnumerator LerpTo0(float startValue)
-        {
-            lerpingTo0 = true;
-            lerping = false;
-            float timeElapsed = 0;
-            while (timeElapsed < 0.5f)
-            {
-                z = Mathf.Lerp(startValue, 0, timeElapsed / 0.25f);
-                timeElapsed += Time.deltaTime;
-                yield return null;
-            }
-            z = 0;
-            lerpingTo0 = false;
-            coroutinesStoped = false;
-        }*/
     }
 }

@@ -4,10 +4,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
+using Random = UnityEngine.Random;
 
 namespace JaLoader
 {
@@ -89,9 +91,9 @@ namespace JaLoader
     public static class MainMenuC_SaveInventory_Patch
     {
         [HarmonyPostfix]
-        public static void PostFix()
+        public static void PostFix(MainMenuC __instance)
         {
-            GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("SavedGame", SendMessageOptions.DontRequireReceiver);
+            __instance.BroadcastMessage("SavedGame", SendMessageOptions.DontRequireReceiver);
         }
     }
 
@@ -99,9 +101,9 @@ namespace JaLoader
     public static class MainMenuC_LateStart_Patch
     {
         [HarmonyPostfix]
-        public static void PostFix()
+        public static void PostFix(MainMenuC __instance)
         {
-            GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("LoadedGame", SendMessageOptions.DontRequireReceiver);
+            __instance.BroadcastMessage("LoadedGame", SendMessageOptions.DontRequireReceiver);
         }
     }
 
@@ -109,9 +111,9 @@ namespace JaLoader
     public static class BedLogicC_Later_Patch
     {
         [HarmonyPrefix]
-        public static void Prefix()
+        public static void Prefix(MainMenuC __instance)
         {
-            GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("Slept", SendMessageOptions.DontRequireReceiver);
+            __instance.BroadcastMessage("Slept", SendMessageOptions.DontRequireReceiver);
         }
     }
 
@@ -119,11 +121,11 @@ namespace JaLoader
     public static class MainMenuC_Pause_Patch
     {
         [HarmonyPrefix]
-        public static void PreFix(MainMenuC __instance)
+        public static void Prefix(MainMenuC __instance)
         {  
             if (__instance.hasWokenUp)
             {
-                GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("PausedGame", SendMessageOptions.DontRequireReceiver);
+                __instance.BroadcastMessage("PausedGame", SendMessageOptions.DontRequireReceiver);
                 var uiRoot = GameObject.Find("UI Root");
                 
                 var modsButton = uiRoot.transform.Find("Mods").gameObject;
@@ -155,7 +157,7 @@ namespace JaLoader
         public static void PreFix(MainMenuC __instance)
         {
             if (__instance.isPaused == 1)
-                GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("UnPausedGame", SendMessageOptions.DontRequireReceiver);
+                __instance.BroadcastMessage("UnPausedGame", SendMessageOptions.DontRequireReceiver);
         }
 
         [HarmonyPostfix]
@@ -227,7 +229,7 @@ namespace JaLoader
         {
             if (__instance.hasWokenUp)
             {
-                GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("PausedGame", SendMessageOptions.DontRequireReceiver);
+                __instance.BroadcastMessage("PausedGame", SendMessageOptions.DontRequireReceiver);
                 var uiRoot = GameObject.Find("UI Root");
 
                 var modsButton = uiRoot.transform.Find("Mods").gameObject;
@@ -368,24 +370,32 @@ namespace JaLoader
     public static class MainMenuC_SavingStolenGoods_Patch
     {
         [HarmonyPostfix]
-        public static void PostFix()
+        public static void PostFix(MainMenuC __instance)
         {
-            GameObject.FindObjectOfType<MainMenuC>().BroadcastMessage("SavedStolenGoods", SendMessageOptions.DontRequireReceiver);
+            double _num = 0.0;
+            float stolenGoodsValue = __instance.GetType().GetField("stolenGoodsValue", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(__instance) as float? ?? 0; 
+            _num = ((double)stolenGoodsValue == 0.0) ? (-1.0) : (((double)stolenGoodsValue <= 10.0) ? 10.0 : (((double)stolenGoodsValue <= 25.0) ? 40.0 : ((!((double)stolenGoodsValue <= 50.0)) ? 100.0 : 80.0)));
+            float _num2 = Random.Range(0f, 100f);
 
-            // Try to give the achievement for stealing if the game doesn't do it
-            SteamManager steamManager = GameObject.FindObjectOfType<SteamManager>();
-            var targetObject = steamManager.gameObject;
-
-            if (targetObject != null)
+            if ((double)_num2 < _num)
             {
-                object internalComponent = targetObject.GetComponent("SteamStatsAndAchievements");
+                __instance.BroadcastMessage("SavedStolenGoods", SendMessageOptions.DontRequireReceiver);
 
-                if (internalComponent != null)
+                // Try to give the achievement for stealing if the game doesn't do it
+                SteamManager steamManager = GameObject.FindObjectOfType<SteamManager>();
+                var targetObject = steamManager.gameObject;
+
+                if (targetObject != null)
                 {
-                    MethodInfo methodInfo = internalComponent.GetType().GetMethod("ThiefAchieve", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    methodInfo?.Invoke(internalComponent, null);
+                    object internalComponent = targetObject.GetComponent("SteamStatsAndAchievements");
+
+                    if (internalComponent != null)
+                    {
+                        MethodInfo methodInfo = internalComponent.GetType().GetMethod("ThiefAchieve", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                        methodInfo?.Invoke(internalComponent, null);
+                    }
                 }
-            }
+            }            
         }
     }
 
@@ -404,6 +414,37 @@ namespace JaLoader
         {
             //__instance.gameObject.AddComponent<PatchedBuyButton>();
             __instance.pageLogic.SetActive(false);
+        }
+    }
+
+    [HarmonyPatch(typeof(RadioFreqLogicC), "ArrangeShuffle")]
+    public static class RadioFreqLogicC_ArrangeShuffle_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(RadioFreqLogicC __instance)
+        {
+            bool radioAds = false;
+
+            Transform[] allObjects = GameObject.FindObjectsOfType<Transform>();
+
+            foreach (Transform obj in allObjects)
+            {
+                if (obj.name == "JaLoader" && obj.gameObject.layer == 0 && obj.tag == "Untagged" && obj.transform.parent == null)
+                {
+                    var component = obj.GetComponents<MonoBehaviour>()[1];
+                    radioAds = (bool)component.GetType().GetField("RadioAds", BindingFlags.Instance | BindingFlags.Public).GetValue(component);
+                }
+            }
+
+            if (!radioAds)
+            {
+                __instance.gameObject.GetComponent<AudioSource>().Stop();
+
+                __instance.songShuffle.RemoveAll(x => x == __instance.countrySpecificIndents[0] || x == __instance.countrySpecificIndents[1] || x == __instance.countrySpecificIndents[2] || x == __instance.countrySpecificIndents[3] || x == __instance.countrySpecificIndents[4] || x == __instance.countrySpecificIndents[5]);
+
+                __instance.gameObject.GetComponent<AudioSource>().clip = __instance.songShuffle[0];
+                __instance.gameObject.GetComponent<AudioSource>().Play();
+            }
         }
     }
 }

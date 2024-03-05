@@ -146,12 +146,12 @@ namespace JaLoader
 
             if (OnGameLoad != null && current.buildIndex == 3)
             {
-                OnGameLoad();
                 FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
                 FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
                 Camera.main.gameObject.AddComponent<MainMenuCReceiver>();
                 Camera.main.gameObject.AddComponent<MotelsReceiver>();
                 Camera.main.gameObject.AddComponent<HarmonyManager>();
+                OnGameLoad();
                 return;
             }
 
