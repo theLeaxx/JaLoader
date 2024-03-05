@@ -8,7 +8,7 @@ using JaLoader.BepInExWrapper;
 
 namespace JaLoader
 {
-    class SettingsManager : MonoBehaviour
+    public class SettingsManager : MonoBehaviour
     {
         #region Singleton & ReadSettings on Awake
         public static SettingsManager Instance { get; private set; }
@@ -46,6 +46,8 @@ namespace JaLoader
         public int MenuMusicVolume;
         public bool UseExperimentalCharacterController;
         public bool UseCustomSongs;
+        public CustomSongsBehaviour CustomSongsBehaviour;
+        public bool RadioAds;
         public ConsolePositions ConsolePosition;
         public ConsoleModes ConsoleMode;
         public LicensePlateStyles ChangeLicensePlateText;
@@ -314,6 +316,8 @@ namespace JaLoader
             MenuMusicVolume = _settings.MenuMusicVolume;
             UseExperimentalCharacterController = _settings.UseEnhancedMovement;
             UseCustomSongs = _settings.UseCustomSongs;
+            CustomSongsBehaviour = _settings.CustomSongsBehaviour;
+            RadioAds = _settings.RadioAds;
             DisabledMods = _settings.DisabledMods;
             ChangeLicensePlateText = _settings.ChangeLicensePlateText;
             LicensePlateText = _settings.LicensePlateText;
@@ -338,7 +342,8 @@ namespace JaLoader
             _settings.UseEnhancedMovement = UseExperimentalCharacterController;
             _settings.DisabledMods = DisabledMods;
             _settings.UseCustomSongs = UseCustomSongs;
-
+            _settings.CustomSongsBehaviour = CustomSongsBehaviour;
+            _settings.RadioAds = RadioAds;
             _settings.ConsolePosition = ConsolePosition;
             _settings.ConsoleMode = ConsoleMode;
             _settings.ChangeLicensePlateText = ChangeLicensePlateText;
@@ -397,6 +402,8 @@ namespace JaLoader
         [SerializeField] public bool HideModFolder = false;
         [SerializeField] public bool DisableUncle = false;
         [SerializeField] public bool UseCustomSongs = true;
+        [SerializeField] public CustomSongsBehaviour CustomSongsBehaviour = CustomSongsBehaviour.Replace;
+        [SerializeField] public bool RadioAds = true;
         [SerializeField] public bool UseEnhancedMovement = false;
         [SerializeField] public LicensePlateStyles ChangeLicensePlateText = LicensePlateStyles.None;
         [SerializeField] public string LicensePlateText = "";
@@ -413,5 +420,11 @@ namespace JaLoader
         Daily,
         Every3Days,
         Weekly
+    }
+
+    public enum CustomSongsBehaviour
+    {
+        Add,
+        Replace
     }
 }

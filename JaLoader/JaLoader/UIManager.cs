@@ -108,6 +108,8 @@ namespace JaLoader
         private Dropdown menuMusicDropdown;
         private Slider menuMusicSlider;
         private Dropdown songsDropdown;
+        private Dropdown songsBehaviourDropdown;
+        private Dropdown radioAdsDropdown;
         private Dropdown uncleDropdown;
         private Dropdown enhancedMovementDropdown;
         private Dropdown changeLicensePlateTextDropdown;
@@ -165,7 +167,7 @@ namespace JaLoader
 
             //annoying fix for dropdowns only working once
             if (inOptions && Input.GetMouseButtonDown(0))
-                if (consoleModeDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
+                if (consoleModeDropdown.transform.Find("Dropdown List") || songsBehaviourDropdown.transform.Find("Dropdown List") || radioAdsDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
                     RefreshUI();
 
             if (inModsOptions && Input.GetMouseButtonDown(0))
@@ -390,6 +392,8 @@ namespace JaLoader
             menuMusicDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusic").gameObject.GetComponent<Dropdown>();
             menuMusicSlider = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusicVolume").gameObject.GetComponent<Slider>();
             songsDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/CustomSongs").gameObject.GetComponent<Dropdown>();
+            songsBehaviourDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/CustomSongsBehaviour").gameObject.GetComponent<Dropdown>();
+            radioAdsDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/RadioAds").gameObject.GetComponent<Dropdown>();
             uncleDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/Uncle").gameObject.GetComponent<Dropdown>();
             enhancedMovementDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/UseEnhancedMovement").gameObject.GetComponent<Dropdown>();
             changeLicensePlateTextDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/ChangeLicensePlate").gameObject.GetComponent<Dropdown>();
@@ -549,6 +553,8 @@ namespace JaLoader
             menuMusicSlider.value = settingsManager.MenuMusicVolume;
             uncleDropdown.value = settingsManager.DisableUncle ? 1 : 0;
             songsDropdown.value = settingsManager.UseCustomSongs ? 0 : 1;
+            songsBehaviourDropdown.value = (int)settingsManager.CustomSongsBehaviour;
+            radioAdsDropdown.value = settingsManager.RadioAds ? 0 : 1;
             enhancedMovementDropdown.value = settingsManager.UseExperimentalCharacterController ? 1 : 0;
             changeLicensePlateTextDropdown.value = (int)settingsManager.ChangeLicensePlateText;
             licensePlateTextField.text = settingsManager.LicensePlateText;
@@ -562,6 +568,9 @@ namespace JaLoader
 
         public void UpdateMenuMusic(bool enabled, float volume)
         {
+            if (SceneManager.GetActiveScene().buildIndex != 1)
+                return;
+
             menuMusicPlayer.SetActive(enabled);
             menuMusicPlayer.GetComponent<MenuVolumeChanger>().volume = volume;
         }
@@ -814,6 +823,8 @@ namespace JaLoader
             settingsManager.MenuMusicVolume = (int)menuMusicSlider.value;
             settingsManager.DisableUncle = Convert.ToBoolean(uncleDropdown.value);
             settingsManager.UseCustomSongs = !Convert.ToBoolean(songsDropdown.value);
+            settingsManager.CustomSongsBehaviour = (CustomSongsBehaviour)songsBehaviourDropdown.value;
+            settingsManager.RadioAds = !Convert.ToBoolean(radioAdsDropdown.value);
             settingsManager.UseExperimentalCharacterController = Convert.ToBoolean(enhancedMovementDropdown.value);
             settingsManager.SkipLanguage = !Convert.ToBoolean(skipLanguageSelectionDropdown.value);
             settingsManager.UseDiscordRichPresence = !Convert.ToBoolean(discordRichPresenceDropdown.value);

@@ -284,8 +284,10 @@ namespace JaLoader
                     }
 
                     Console.Instance.Log("JaLoader", message);
+                    if (settingsManager.UseCustomSongs)
+                        Console.Instance.Log("JaLoader", $"{CustomRadioController.Instance.loadedSongs.Count} custom songs loaded!");
 
-                    foreach(MonoBehaviour monoBehaviour in modsInitInMenuIncludingBIX)
+                    foreach (MonoBehaviour monoBehaviour in modsInitInMenuIncludingBIX)
                     {
                         if (monoBehaviour is Mod mod)
                         {
@@ -315,8 +317,6 @@ namespace JaLoader
                             ModInfo modInfo = bix_mod.gameObject.GetComponent<ModInfo>();
 
                             bix_mod.InstantiateBIXPluginSettings();
-
-                            //bix_mod.LoadBIXPluginSettings();
 
                             Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} completed");
 

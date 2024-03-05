@@ -147,6 +147,12 @@ namespace JaLoader
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<DebugCamera>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC_ModExtension>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<ModsPageToggle>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<MenuMouseInteractionsC>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<MainMenuCReceiver>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<MotelsReceiver>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<HarmonyManager>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<CoroutineManager>());
+                Destroy(cameraObj.transform.GetChild(0).GetComponent<LaikaCatalogueExtension>());
 
                 cameraObj.transform.GetChild(0).gameObject.AddComponent<FlareLayer>();
                 cameraObj.transform.GetChild(0).gameObject.AddComponent<AudioListener>();
