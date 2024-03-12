@@ -295,138 +295,161 @@ namespace JaLoader
             UICanvas = Instantiate(UIPrefab);
             DontDestroyOnLoad(UICanvas);
 
-            modTemplatePrefab = UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).GetChild(0).gameObject;
-            modConsole = UICanvas.transform.Find("JLConsole/Console").gameObject;
-            messageTemplatePrefab = modConsole.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
-            moreInfoPanelMods = UICanvas.transform.Find("JLModsPanel/MoreInfo").gameObject;
-            noticePanel = UICanvas.transform.Find("JLNotice").gameObject;
-            catalogueTemplate = UICanvas.transform.Find("JLCatalogue/MainTemplate").gameObject;
-            catalogueEntryTemplate = catalogueTemplate.transform.Find("Viewport/Content/Template").gameObject;
-            objectsList = UICanvas.transform.Find("JLObjectsList/ObjectsList").gameObject;
-            objectTemplate = objectsList.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
-            currentlySelectedText = objectsList.transform.Find("CurrentlySelectedText").GetComponent<Text>();
-
-            GameObject consoleObj = Instantiate(new GameObject());
-            consoleObj.AddComponent<Console>();
-            consoleObj.name = "ModConsole";
-            DontDestroyOnLoad(consoleObj);
-
-            modLoaderText = UICanvas.transform.GetChild(0).Find("JaLoader").gameObject;
-            modFolderText = UICanvas.transform.GetChild(0).Find("ModsFolder").gameObject;
-
-            if (settingsManager.HideModFolderLocation)
-                modFolderText.SetActive(false);
-
-            string latestVersion = settingsManager.GetLatestUpdateVersionString("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest", settingsManager.GetVersion());
-
-            if (latestVersion == "-1")
+            try
             {
-                //couldn't check for updates
+                modTemplatePrefab = UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).GetChild(0).gameObject;
+                modConsole = UICanvas.transform.Find("JLConsole/Console").gameObject;
+                messageTemplatePrefab = modConsole.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
+                moreInfoPanelMods = UICanvas.transform.Find("JLModsPanel/MoreInfo").gameObject;
+                noticePanel = UICanvas.transform.Find("JLNotice").gameObject;
+                catalogueTemplate = UICanvas.transform.Find("JLCatalogue/MainTemplate").gameObject;
+                catalogueEntryTemplate = catalogueTemplate.transform.Find("Viewport/Content/Template").gameObject;
+                objectsList = UICanvas.transform.Find("JLObjectsList/ObjectsList").gameObject;
+                objectTemplate = objectsList.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
+                currentlySelectedText = objectsList.transform.Find("CurrentlySelectedText").GetComponent<Text>();
 
-                Console.Instance.LogError("Couldn't check for updates!");
+                GameObject consoleObj = Instantiate(new GameObject());
+                consoleObj.AddComponent<Console>();
+                consoleObj.name = "ModConsole";
+                DontDestroyOnLoad(consoleObj);
 
-                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
+                modLoaderText = UICanvas.transform.GetChild(0).Find("JaLoader").gameObject;
+                modFolderText = UICanvas.transform.GetChild(0).Find("ModsFolder").gameObject;
+
+                if (settingsManager.HideModFolderLocation)
+                    modFolderText.SetActive(false);
+
+                string latestVersion = settingsManager.GetLatestUpdateVersionString("https://api.github.com/repos/theLeaxx/JaLoader/releases/latest", settingsManager.GetVersion());
+
+                if (latestVersion == "-1")
+                {
+                    //couldn't check for updates
+
+                    Console.Instance.LogError("Couldn't check for updates!");
+
+                    modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
+                }
+                else if (int.Parse(latestVersion.Replace(".", "")) > settingsManager.GetVersion())
+                {
+                    SetObstructRay(true);
+
+                    modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
+
+                    var dialog = UICanvas.transform.Find("JLUpdateDialog").gameObject;
+                    dialog.transform.Find("YesButton").GetComponent<Button>().onClick.AddListener(() => modLoader.StartUpdate());
+                    dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {latestVersion}";
+                    dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(delegate { dialog.SetActive(false); SetObstructRay(false); });
+                    dialog.transform.Find("OpenGitHubButton").GetComponent<Button>().onClick.AddListener(() => Application.OpenURL($"{SettingsManager.JaLoaderGitHubLink}/releases/latest"));
+                    dialog.SetActive(true);
+
+                    settingsManager.updateAvailable = true;
+                }
+                else
+                    modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
+
+                modFolderText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{settingsManager.ModFolderLocation}</color>";
+
+                UICanvas.transform.Find("JLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
+                UICanvas.transform.Find("JLModsPanel/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
+
+                UICanvas.transform.Find("JLPanel/BookUI/OptionsButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
+                UICanvas.transform.Find("JLSettingsPanel/Main/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
+
+                UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/PreferencesButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
+                UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/TweaksButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
+                UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/AccessibilityButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
+
+                UICanvas.transform.Find("JLSettingsPanel/Preferences/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
+                UICanvas.transform.Find("JLSettingsPanel/Tweaks/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
+                UICanvas.transform.Find("JLSettingsPanel/Accessibility/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
+
+                UICanvas.transform.Find("JLSettingsPanel/Preferences/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+                UICanvas.transform.Find("JLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+                UICanvas.transform.Find("JLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
+
+                noticePanel.transform.Find("UnderstandButton").GetComponent<Button>().onClick.AddListener(CloseNotice);
+
+                modSettingsScrollView = UICanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
+                modSettingsScrollViewContent = modSettingsScrollView.transform.GetChild(0).GetChild(0).gameObject;
+
+                modSettingsScrollView.transform.Find("SaveButton").GetComponent<Button>().onClick.AddListener(SaveModSettings);
+
+                modOptionsHolder = modSettingsScrollViewContent.transform.Find("SettingsHolder").gameObject;
+                modOptionsNameTemplate = modSettingsScrollViewContent.transform.Find("ModName").gameObject;
+                modOptionsHeaderTemplate = modSettingsScrollViewContent.transform.Find("HeaderTemplate").gameObject;
+                modOptionsDropdownTemplate = modSettingsScrollViewContent.transform.Find("DropdownTemplate").gameObject;
+                modOptionsToggleTemplate = modSettingsScrollViewContent.transform.Find("ToggleTemplate").gameObject;
+                modOptionsSliderTemplate = modSettingsScrollViewContent.transform.Find("SliderTemplate").gameObject;
+                modOptionsKeybindTemplate = modSettingsScrollViewContent.transform.Find("KeybindTemplate").gameObject;
+
+                consoleModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsoleMode").gameObject.GetComponent<Dropdown>();
+                consolePositionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsolePosition").gameObject.GetComponent<Dropdown>();
+                showModsFolderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
+                enableJaDownloaderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/EnableJaDownloader").gameObject.GetComponent<Dropdown>();
+                updateCheckFreqDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/UpdateCheckFrequency").gameObject.GetComponent<Dropdown>();
+                skipLanguageSelectionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/SkipLanguageSelectionScreen").gameObject.GetComponent<Dropdown>();
+                discordRichPresenceDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/DiscordRichPresence").gameObject.GetComponent<Dropdown>();
+                debugModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row3/DebugMode").gameObject.GetComponent<Dropdown>();
+
+                menuMusicDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusic").gameObject.GetComponent<Dropdown>();
+                menuMusicSlider = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusicVolume").gameObject.GetComponent<Slider>();
+                songsDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/CustomSongs").gameObject.GetComponent<Dropdown>();
+                songsBehaviourDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/CustomSongsBehaviour").gameObject.GetComponent<Dropdown>();
+                radioAdsDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/RadioAds").gameObject.GetComponent<Dropdown>();
+                uncleDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/Uncle").gameObject.GetComponent<Dropdown>();
+                enhancedMovementDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/UseEnhancedMovement").gameObject.GetComponent<Dropdown>();
+                changeLicensePlateTextDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/ChangeLicensePlate").gameObject.GetComponent<Dropdown>();
+                licensePlateTextField = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/LicensePlateText/InputField").gameObject.GetComponent<InputField>();
+                showFPSDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row4/ShowFPSCounter").gameObject.GetComponent<Dropdown>();
+
+                UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
+                UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenModsFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenModsFolder);
+                UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenSavesFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenSavesFolder);
+
+                fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
+                fpsText.AddComponent<FPSCounter>();
+
+                debugText = UICanvas.transform.Find("DebugInfo").gameObject;
+                debugText.AddComponent<DebugInfo>();
+
+                SetOptionsValues();
+
+                Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
+                gameObject.GetComponent<Stopwatch>().StopCounting();
+                Debug.Log($"Loaded JaLoader UI! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
             }
-            else if (int.Parse(latestVersion.Replace(".", "")) > settingsManager.GetVersion())
+            catch (Exception)
             {
-                SetObstructRay(true);
+                Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} failed to load successfully!");
+                gameObject.GetComponent<Stopwatch>().StopCounting();
+                Debug.Log($"Failed to load JaLoader UI!");
 
-                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
+                ShowNotice("JaLoader failed to load!", "JaLoader failed to fully load the UI. This is likely due to an outdated JaLoader_UI.unity3d file. Please try reinstalling JaLoader with JaPatcher.");
 
-                var dialog = UICanvas.transform.Find("JLUpdateDialog").gameObject;
-                dialog.transform.Find("YesButton").GetComponent<Button>().onClick.AddListener(() => modLoader.StartUpdate());
-                dialog.transform.Find("Subtitle").GetComponent<Text>().text = $"{settingsManager.GetVersionString()} ➔ {latestVersion}";
-                dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(delegate { dialog.SetActive(false); SetObstructRay(false); });
-                dialog.transform.Find("OpenGitHubButton").GetComponent<Button>().onClick.AddListener(() => Application.OpenURL($"{SettingsManager.JaLoaderGitHubLink}/releases/latest"));
-                dialog.SetActive(true);
+                if (!settingsManager.updateAvailable)
+                    modLoaderText.GetComponent<Text>().text = $"JaLoader <color=red>{settingsManager.GetVersionString()}</color> failed to load!";
+                else
+                    modLoaderText.GetComponent<Text>().text = $"JaLoader <color=red>{settingsManager.GetVersionString()}</color> failed to load! (<color=lime>Update available!</color>)";
 
-                settingsManager.updateAvailable = true;
+                throw;
             }
-            else
-                modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
+            finally
+            {
+                StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
 
-            modFolderText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{settingsManager.ModFolderLocation}</color>";
+                if (modLoader.IsCrackedVersion)
+                    ShowNotice("PIRATED GAME DETECTED", "You are using a pirated version of Jalopy.\r\n\r\nYou may encounter issues with certain mods, as well as more bugs in general.\r\n\r\nIf you encounter any game-breaking bugs, feel free to submit them to the official GitHub for JaLoader. Remember to mark them with the \"pirated\" tag!\r\n\r\nHave fun!");
 
-            UICanvas.transform.Find("JLPanel/BookUI/ModsButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
-            UICanvas.transform.Find("JLModsPanel/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModMenu);
+                if (SettingsManager.IsPreReleaseVersion)
+                    ShowNotice("USING A PRE-RELEASE VERSION OF JALOADER", "You are using a pre-release version of JaLoader.\r\n\r\nThese versions are prone to bugs and may cause issues with certain mods.\r\n\r\nPlease report any bugs you encounter to the JaLoader GitHub page, marking them with the \"pre-release\" tag.\r\n\r\nHave fun!");
 
-            UICanvas.transform.Find("JLPanel/BookUI/OptionsButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
-            UICanvas.transform.Find("JLSettingsPanel/Main/ExitButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Main);
+                if (!settingsManager.AskedAboutJaDownloader && !settingsManager.EnableJaDownloader)
+                    ShowJaDownloaderNotice();
 
-            UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/PreferencesButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
-            UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/TweaksButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
-            UICanvas.transform.Find("JLSettingsPanel/Main/VerticalButtonLayoutGroup/AccessibilityButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
+                EventsManager.Instance.OnUILoadFinish();
 
-            UICanvas.transform.Find("JLSettingsPanel/Preferences/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Preferences);
-            UICanvas.transform.Find("JLSettingsPanel/Tweaks/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Tweaks);
-            UICanvas.transform.Find("JLSettingsPanel/Accessibility/BackButton").GetComponent<Button>().onClick.AddListener(ToggleModLoaderSettings_Accessibility);
-
-            UICanvas.transform.Find("JLSettingsPanel/Preferences/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
-            UICanvas.transform.Find("JLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
-            UICanvas.transform.Find("JLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
-
-            noticePanel.transform.Find("UnderstandButton").GetComponent<Button>().onClick.AddListener(CloseNotice);
-
-            modSettingsScrollView = UICanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
-            modSettingsScrollViewContent = modSettingsScrollView.transform.GetChild(0).GetChild(0).gameObject;
-
-            modSettingsScrollView.transform.Find("SaveButton").GetComponent<Button>().onClick.AddListener(SaveModSettings);
-
-            modOptionsHolder = modSettingsScrollViewContent.transform.Find("SettingsHolder").gameObject;
-            modOptionsNameTemplate = modSettingsScrollViewContent.transform.Find("ModName").gameObject;
-            modOptionsHeaderTemplate = modSettingsScrollViewContent.transform.Find("HeaderTemplate").gameObject;
-            modOptionsDropdownTemplate = modSettingsScrollViewContent.transform.Find("DropdownTemplate").gameObject;
-            modOptionsToggleTemplate = modSettingsScrollViewContent.transform.Find("ToggleTemplate").gameObject;
-            modOptionsSliderTemplate = modSettingsScrollViewContent.transform.Find("SliderTemplate").gameObject;
-            modOptionsKeybindTemplate = modSettingsScrollViewContent.transform.Find("KeybindTemplate").gameObject;
-
-            consoleModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsoleMode").gameObject.GetComponent<Dropdown>();
-            consolePositionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ConsolePosition").gameObject.GetComponent<Dropdown>();
-            showModsFolderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/ShowModsFolderLocation").gameObject.GetComponent<Dropdown>();
-            enableJaDownloaderDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/EnableJaDownloader").gameObject.GetComponent<Dropdown>();
-            updateCheckFreqDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row1/UpdateCheckFrequency").gameObject.GetComponent<Dropdown>();
-            skipLanguageSelectionDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/SkipLanguageSelectionScreen").gameObject.GetComponent<Dropdown>();
-            discordRichPresenceDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row2/DiscordRichPresence").gameObject.GetComponent<Dropdown>();
-            debugModeDropdown = UICanvas.transform.Find("JLSettingsPanel/Preferences/Scroll View/Viewport/Content/Row3/DebugMode").gameObject.GetComponent<Dropdown>();
-
-            menuMusicDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusic").gameObject.GetComponent<Dropdown>();
-            menuMusicSlider = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row1/MenuMusicVolume").gameObject.GetComponent<Slider>();
-            songsDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/CustomSongs").gameObject.GetComponent<Dropdown>();
-            songsBehaviourDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/CustomSongsBehaviour").gameObject.GetComponent<Dropdown>();
-            radioAdsDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/RadioAds").gameObject.GetComponent<Dropdown>();
-            uncleDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/Uncle").gameObject.GetComponent<Dropdown>();
-            enhancedMovementDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row2/UseEnhancedMovement").gameObject.GetComponent<Dropdown>();
-            changeLicensePlateTextDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/ChangeLicensePlate").gameObject.GetComponent<Dropdown>();
-            licensePlateTextField = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/LicensePlateText/InputField").gameObject.GetComponent<InputField>();
-            showFPSDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row4/ShowFPSCounter").gameObject.GetComponent<Dropdown>();
-
-            UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
-            UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenModsFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenModsFolder);
-            UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenSavesFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenSavesFolder);
-
-            fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
-            fpsText.AddComponent<FPSCounter>();
-
-            debugText = UICanvas.transform.Find("DebugInfo").gameObject;
-            debugText.AddComponent<DebugInfo>();
-
-            SetOptionsValues();
-
-            Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
-            gameObject.GetComponent<Stopwatch>().StopCounting();
-            Debug.Log($"Loaded JaLoader UI! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
-
-            StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
-
-            if (modLoader.IsCrackedVersion)
-                ShowNotice("PIRATED GAME DETECTED", "You are using a pirated version of Jalopy.\r\n\r\nYou may encounter issues with certain mods, as well as more bugs in general.\r\n\r\nIf you encounter any game-breaking bugs, feel free to submit them to the official GitHub for JaLoader. Remember to mark them with the \"pirated\" tag!\r\n\r\nHave fun!");
-
-            if (SettingsManager.IsPreReleaseVersion)
-                ShowNotice("USING A PRE-RELEASE VERSION OF JALOADER", "You are using a pre-release version of JaLoader.\r\n\r\nThese versions are prone to bugs and may cause issues with certain mods.\r\n\r\nPlease report any bugs you encounter to the JaLoader GitHub page, marking them with the \"pre-release\" tag.\r\n\r\nHave fun!");
-
-            EventsManager.Instance.OnUILoadFinish();
-
-            ab.Unload(false);
+                ab.Unload(false);
+            }
         }
 
         private void AddObjectShortcuts()
@@ -874,6 +897,27 @@ namespace JaLoader
             ShowNotice(subtitle, message);
         }
 
+        private void ShowJaDownloaderNotice()
+        {
+            SetObstructRay(true);
+            var dialog = Instantiate(UICanvas.transform.Find("JLUpdateDialog").gameObject, UICanvas.transform.Find("JLUpdateDialog").parent);
+            dialog.name = "JLDownloaderNotice";
+            dialog.SetActive(false);
+            dialog.transform.Find("Subtitle").gameObject.SetActive(false);
+            dialog.transform.Find("OpenGitHubButton").gameObject.SetActive(false);
+            dialog.transform.Find("Title").GetComponent<Text>().text = "Enable JaDownloader";
+            dialog.transform.Find("Message").GetComponent<Text>().text = "JaDownloader is a tool that allows you to install most mods automatically. \r\n Would you like to enable it now? (you can find this setting in Modloader Settings/Preferences)";
+            dialog.transform.Find("YesButton").GetComponent<Button>().onClick.AddListener(delegate {
+                var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, ".."), "JaDownloader.exe"));
+                Process.Start($@"{Application.dataPath}\..\JaDownloaderSetup.exe", $"\"{path}\""); settingsManager.EnableJaDownloader = true; SetObstructRay(false); Destroy(dialog);
+            });
+            dialog.transform.Find("NoButton").GetComponent<Button>().onClick.AddListener(delegate {SetObstructRay(false); Destroy(dialog); });
+            dialog.SetActive(true);
+
+            settingsManager.AskedAboutJaDownloader = true;
+            settingsManager.SaveSettings(false);
+        }
+
         public void ShowNotice(string subtitle, string message)
         {
             noticesToShow.Add((subtitle, message));
@@ -897,7 +941,7 @@ namespace JaLoader
 
             if(noticesToShow.Count == 0) 
             {
-                 SetObstructRay(false);
+                SetObstructRay(false);
                 showingNotice = false;
                 noticePanel.SetActive(false);
             }

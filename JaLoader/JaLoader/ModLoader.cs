@@ -249,6 +249,8 @@ namespace JaLoader
                     LoadedDisabledMods = true;
                 }
 
+                List<MonoBehaviour> modsToRemoveAfter = new List<MonoBehaviour>();
+
                 if (!InitializedInMenuMods)
                 {
                     string message = $"{modsNumber} mods found!";
@@ -293,6 +295,98 @@ namespace JaLoader
                         {
                             CheckForDependencies(mod);
 
+                            try
+                            {
+                                mod.EventsDeclaration();
+
+                                mod.SettingsDeclaration();
+
+                                mod.CustomObjectsRegistration();
+
+                                if (mod.settingsIDS.Count > 0)
+                                {
+                                    mod.LoadModSettings();
+                                    mod.SaveModSettings();
+                                }
+
+                                Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
+
+                                if (!disabledMods.Contains(mod))
+                                    mod.gameObject.SetActive(true);
+
+                                Debug.Log($"Loaded mod {mod.ModName}");
+                            }
+                            catch (Exception)
+                            {
+                                mod.gameObject.SetActive(false);
+
+                                Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} failed");
+                                Debug.Log($"Failed to load mod {mod.ModName}. An error occoured while enabling the mod.");
+
+                                Console.Instance.LogError("JaLoader", $"An error occured while trying to load mod \"{mod.ModName}\"");
+
+                                modsToRemoveAfter.Add(mod);
+
+                                continue;
+                                throw;
+                            }             
+                        }
+                        else if(monoBehaviour is BaseUnityPlugin bix_mod)
+                        {
+                            ModInfo modInfo = bix_mod.gameObject.GetComponent<ModInfo>();
+
+                            try
+                            {
+                                bix_mod.InstantiateBIXPluginSettings();
+
+                                Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} completed");
+
+                                if (!disabledMods.Contains(bix_mod))
+                                    bix_mod.gameObject.SetActive(true);
+
+                                foreach (IConfigEntry entry in bix_mod.configEntries.Keys)
+                                {
+                                    if (entry is ConfigEntry<bool> boolEntry)
+                                    {
+                                        bool value = boolEntry._typedValue;
+                                        bix_mod.AddBIXPluginToggle(bix_mod.configEntries[entry].Item1, bix_mod.configEntries[entry].Item2, value);
+                                    }
+                                    else if (entry is ConfigEntry<KeyboardShortcut> keyEntry)
+                                    {
+                                        KeyboardShortcut keyboardShortcut = keyEntry._typedValue;
+                                        bix_mod.AddBIXPluginKeybind(bix_mod.configEntries[entry].Item1, bix_mod.configEntries[entry].Item2, keyboardShortcut.Key);
+                                    }
+                                }
+
+                                if (bix_mod.configEntries.Count > 0)
+                                    bix_mod.LoadBIXPluginSettings();
+
+                                Debug.Log($"Loaded BepInEx mod {modInfo.Name}");
+
+                            }
+                            catch (Exception)
+                            {
+                                bix_mod.gameObject.SetActive(false);
+
+                                Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} failed");
+                                Debug.Log($"Failed to load BepInEx mod {modInfo.Name}. An error occoured while enabling the mod.");
+
+                                Console.Instance.LogError("JaLoader", $"An error occured while trying to load BepInEx mod \"{modInfo.name}\"");
+
+                                modsToRemoveAfter.Add(bix_mod);
+
+                                continue;
+                                throw;
+                            }
+                        }
+                    }
+
+                    foreach (Mod mod in modsInitInGame)
+                    {
+                        CheckForDependencies(mod);
+
+                        try
+                        {
                             mod.EventsDeclaration();
 
                             mod.SettingsDeclaration();
@@ -306,61 +400,28 @@ namespace JaLoader
                             }
 
                             Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
-
-                            if (!disabledMods.Contains(mod))
-                                mod.gameObject.SetActive(true);
-
-                            Debug.Log($"Loaded mod {mod.ModName}");
                         }
-                        else if(monoBehaviour is BaseUnityPlugin bix_mod)
+                        catch (Exception)
                         {
-                            ModInfo modInfo = bix_mod.gameObject.GetComponent<ModInfo>();
+                            mod.gameObject.SetActive(false);
 
-                            bix_mod.InstantiateBIXPluginSettings();
+                            Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} failed");
+                            Debug.Log($"Failed to load mod {mod.ModName}. An error occoured while enabling the mod.");
 
-                            Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} completed");
+                            Console.Instance.LogError("JaLoader", $"An error occured while trying to load mod \"{mod.ModName}\"");
 
-                            if (!disabledMods.Contains(bix_mod))
-                                bix_mod.gameObject.SetActive(true);
-
-                            foreach (IConfigEntry entry in bix_mod.configEntries.Keys)
-                            {
-                                if (entry is ConfigEntry<bool> boolEntry)
-                                {
-                                    bool value = boolEntry._typedValue;
-                                    bix_mod.AddBIXPluginToggle(bix_mod.configEntries[entry].Item1, bix_mod.configEntries[entry].Item2, value);
-                                }
-                                else if (entry is ConfigEntry<KeyboardShortcut> keyEntry)
-                                {
-                                    KeyboardShortcut keyboardShortcut = keyEntry._typedValue;
-                                    bix_mod.AddBIXPluginKeybind(bix_mod.configEntries[entry].Item1, bix_mod.configEntries[entry].Item2, keyboardShortcut.Key);
-                                }
-                            }
-
-                            if (bix_mod.configEntries.Count > 0)
-                                bix_mod.LoadBIXPluginSettings();
-
-                            Debug.Log($"Loaded BepInEx mod {modInfo.Name}");
+                            modsToRemoveAfter.Add(mod);
+                            continue;
+                            throw;
                         }
                     }
 
-                    foreach (Mod mod in modsInitInGame)
+                    foreach (MonoBehaviour mod in modsToRemoveAfter)
                     {
-                        CheckForDependencies(mod);
-                        
-                        mod.EventsDeclaration();
-
-                        mod.SettingsDeclaration();
-
-                        mod.CustomObjectsRegistration();
-
-                        if (mod.settingsIDS.Count > 0)
-                        {
-                            mod.LoadModSettings();
-                            mod.SaveModSettings();
-                        }
-
-                        Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
+                        if(modsInitInGame.Contains((Mod)mod))
+                            modsInitInGame.Remove((Mod)mod);
+                        else if(modsInitInMenuIncludingBIX.Contains(mod))
+                            modsInitInMenuIncludingBIX.Remove(mod);
                     }
 
                     stopWatch.StopCounting();
@@ -666,7 +727,7 @@ namespace JaLoader
                     validMods--;
 
                     Debug.Log($"Failed to initialize mod {modFile.Name}");
-                    Console.Instance.LogError("JaLoader", $"An error occured while trying to load mod \"{modFile.Name}\": ");
+                    Console.Instance.LogError("JaLoader", $"An error occured while trying to initialize mod \"{modFile.Name}\": ");
 
                     uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modFile.Name;
                     uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = "Failed to load mod";
