@@ -10,6 +10,7 @@ using Microsoft.Win32;
 using System.IO.Compression;
 using System.Net;
 using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace JaDownloader;
 // This program is used for downloading mods from the internet. 
@@ -72,7 +73,10 @@ internal abstract class Program
         if (jalopyKey != null && jalopyKey.GetValue("ModsLocation") != null)
             return jalopyKey.GetValue("ModsLocation").ToString();
         else
+        {
+            MessageBox.Show("The ModsLocation key could not be found. Please start the game at least once and/or reinstall JaLoader via JaPatcher.", "JaDownloader", MessageBoxButtons.OK, MessageBoxIcon.Error);
             throw new Exception("The ModsLocation key could not be found. Please start the game at least once and/or reinstall JaLoader via JaPatcher.");
+        }
     }
 
     private static async Task ProcessRepositoriesAsync(string uri)
@@ -180,4 +184,3 @@ public class GitAsset
     public string Browser_Download_URL { get; set;}
     public string Name { get; set;}
 }
-// jaloader://install/jalopy-mods/DDR-PaperPlease

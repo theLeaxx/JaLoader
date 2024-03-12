@@ -13,7 +13,7 @@ internal static class Setup
     {
         if (args.Length <= 0)
         {
-            MessageBox.Show("No arguments provided! Please use the in-game option to enable JaLoader, or use JaPatcher.");
+            MessageBox.Show("No arguments provided! Please use the in-game option to enable JaLoader, or use JaPatcher.", "JaDownloader", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
@@ -27,12 +27,12 @@ internal static class Setup
                 if (principal.IsInRole(WindowsBuiltInRole.Administrator))
                 {
                     Registry.ClassesRoot.DeleteSubKeyTree(@"jaloader");
-                    MessageBox.Show("JaDownloader successfully uninstalled!");
+                    MessageBox.Show("JaDownloader successfully uninstalled!", "JaDownloader", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 return;
             }
 
-            MessageBox.Show("JaDownloader is already setup!");
+            MessageBox.Show("JaDownloader is already setup!", "JaDownloader", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
         else
@@ -46,9 +46,9 @@ internal static class Setup
                 if (args[0].Contains("\"")) args[0].Replace("\"", "");
                 key0?.SetValue("", $"\"{args[0]}\" \"%1\"");
                 key1?.SetValue("URL Protocol", "");
-                MessageBox.Show("JaDownloader successfully setup!");
+                MessageBox.Show("JaDownloader successfully setup!", "JaDownloader", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            else MessageBox.Show("Please run this program as administrator!");
+            else MessageBox.Show("Please run this program as administrator!", "JaDownloader", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

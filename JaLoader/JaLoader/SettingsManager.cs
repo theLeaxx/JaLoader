@@ -33,7 +33,7 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        public static readonly string JaLoaderVersion = "3.1.0";
+        public static readonly string JaLoaderVersion = "3.1.1";
         public static readonly bool IsPreReleaseVersion = false;
         public static readonly string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
         public string ModFolderLocation { get; private set; }
@@ -56,6 +56,7 @@ namespace JaLoader
         public bool ShowFPSCounter;
         public bool EnableJaDownloader;
         public UpdateCheckModes UpdateCheckMode;
+        public bool AskedAboutJaDownloader;
 
         public DateTime lastUpdateCheck;
         private bool shouldCheckForUpdates = true;
@@ -324,14 +325,16 @@ namespace JaLoader
             UseDiscordRichPresence = _settings.UseDiscordRichPresence;
             ShowFPSCounter = _settings.ShowFPSCounter;
             EnableJaDownloader = _settings.EnableJaDownloader;
+            AskedAboutJaDownloader = _settings.AskedAboutJaDownloader;
             UpdateCheckMode = _settings.UpdateCheckMode;
 
             EventsManager.Instance.OnSettingsLoad();
         }
 
-        public void SaveSettings()
+        public void SaveSettings(bool includeDisabledMods = true)
         {
-            DisabledMods.Clear();
+            if (includeDisabledMods)
+                DisabledMods.Clear();
 
             _settings.SkipLanguageSelector = SkipLanguage;
             _settings.DisableUncle = DisableUncle;
@@ -351,24 +354,28 @@ namespace JaLoader
             _settings.UseDiscordRichPresence = UseDiscordRichPresence;
             _settings.ShowFPSCounter = ShowFPSCounter;
             _settings.EnableJaDownloader = EnableJaDownloader;
+            _settings.AskedAboutJaDownloader = AskedAboutJaDownloader;
             _settings.UpdateCheckMode = UpdateCheckMode;
 
-            for (int i = 0; i < modLoaderReference.disabledMods.ToArray().Length; i++)
+            if (includeDisabledMods)
             {
-                var mod = modLoaderReference.disabledMods.ToArray()[i];
-
-                if (mod is Mod)
+                for (int i = 0; i < modLoaderReference.disabledMods.ToArray().Length; i++)
                 {
-                    var modReference = mod as Mod;
-                    DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
-                }
-                else if (mod is BaseUnityPlugin)
-                {
-                    var modReference = mod as BaseUnityPlugin;
+                    var mod = modLoaderReference.disabledMods.ToArray()[i];
 
-                    ModInfo modInfo = modReference.gameObject.GetComponent<ModInfo>();
+                    if (mod is Mod)
+                    {
+                        var modReference = mod as Mod;
+                        DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
+                    }
+                    else if (mod is BaseUnityPlugin)
+                    {
+                        var modReference = mod as BaseUnityPlugin;
 
-                    DisabledMods.Add($"BepInEx_CompatLayer_{modInfo.GUID}");
+                        ModInfo modInfo = modReference.gameObject.GetComponent<ModInfo>();
+
+                        DisabledMods.Add($"BepInEx_CompatLayer_{modInfo.GUID}");
+                    }
                 }
             }
 
@@ -410,6 +417,7 @@ namespace JaLoader
         [SerializeField] public bool UseDiscordRichPresence = true;
         [SerializeField] public bool ShowFPSCounter = false;
         [SerializeField] public bool EnableJaDownloader = false;
+        [SerializeField] public bool AskedAboutJaDownloader = false;
         [SerializeField] public UpdateCheckModes UpdateCheckMode = UpdateCheckModes.Daily;
     }
 
