@@ -65,7 +65,7 @@ namespace JaLoader
             if (Input.GetKeyDown(KeyCode.F5) && settingsManager.DebugMode)
             {
                 SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
-                Console.Instance.Log(FindObjectOfType<MirrorReflection>().m_TextureSize);
+                Console.Log(FindObjectOfType<MirrorReflection>().m_TextureSize);
             }
         }
 

@@ -104,7 +104,7 @@ namespace JaLoader
                 activityManager.UpdateActivity(activity, (res) =>
                 {
                     if (res != Result.Ok && SettingsManager.Instance.DebugMode)
-                        Console.Instance.LogError("Failed connecting to Discord!");
+                        Console.LogError("Failed connecting to Discord!");
                 });
             }
             catch (Exception)

@@ -60,7 +60,7 @@ namespace BepInEx
 
         public void AddBIXPluginToggle(string ID, string name, bool defaultValue)
         {
-            //Console.Instance.Log($"Adding toggle {ID} to {PluginAttribute.Name} settings");
+            //Console.Log($"Adding toggle {ID} to {PluginAttribute.Name} settings");
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsToggleTemplate);
             obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
@@ -81,7 +81,7 @@ namespace BepInEx
 
         public void AddBIXPluginKeybind(string ID, string name, KeyCode defaultPrimaryKey)
         {
-            //Console.Instance.Log($"Adding keybind {ID} to {PluginAttribute.Name} settings");
+            //Console.Log($"Adding keybind {ID} to {PluginAttribute.Name} settings");
 
             GameObject obj = Instantiate(UIManager.Instance.modOptionsKeybindTemplate);
             obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
@@ -109,8 +109,8 @@ namespace BepInEx
 
         public KeyCode GetBIXPluginKeybind(string ID)
         {
-            //Console.Instance.Log(ID);
-            //Console.Instance.Log(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind"));
+            //Console.Log(ID);
+            //Console.Log(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind"));
 
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind"))
                 return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().SelectedKey;
@@ -132,11 +132,11 @@ namespace BepInEx
         {
             BIXPlugin_SettingsValues values = new BIXPlugin_SettingsValues();
 
-            //Console.Instance.Log(BIXPlugin_settingsIDS.Count);
+            //Console.Log(BIXPlugin_settingsIDS.Count);
 
             foreach (var ID in BIXPlugin_settingsIDS)
             {
-                //Console.Instance.Log($"Saving {ID} to {PluginAttribute.Name} settings with value {UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value}");
+                //Console.Log($"Saving {ID} to {PluginAttribute.Name} settings with value {UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value}");
                 string type = Regex.Match(ID, @"(.{6})\s*$").ToString();
 
                 switch (type)

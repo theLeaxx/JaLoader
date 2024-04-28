@@ -53,17 +53,17 @@ namespace JaLoader
                 }
                 catch (Exception ex)
                 {
-                    Console.Instance.Log(ex);
-                    Console.Instance.Log(asmFile.Name, $"Assembly {asmFile.Name} is not a valid assembly!");
+                    Console.Log(ex);
+                    Console.Log(asmFile.Name, $"Assembly {asmFile.Name} is not a valid assembly!");
                     validAsm--;
                     throw;
                 }
             }
 
             if (loadedAsm == 1)
-                Console.Instance.LogMessage("JaLoader", $"1 assembly found and loaded!");
+                Console.LogMessage("JaLoader", $"1 assembly found and loaded!");
             else if (loadedAsm > 1)
-                Console.Instance.LogMessage("JaLoader", $"{loadedAsm} assemblies found and loaded!");
+                Console.LogMessage("JaLoader", $"{loadedAsm} assemblies found and loaded!");
 
             gameObject.GetComponent<Stopwatch>().StopCounting();
             Debug.Log($"Loaded JaLoader assemblies! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");

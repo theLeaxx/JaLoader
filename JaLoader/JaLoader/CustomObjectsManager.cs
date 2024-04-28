@@ -54,12 +54,12 @@ namespace JaLoader
             {
                 if (Input.GetKeyDown(KeyCode.S))
                 {
-                    Console.Instance.LogDebug("JaLoader", "Saved custom objects status!");
+                    Console.LogDebug("JaLoader", "Saved custom objects status!");
                     SaveData();
                 }
                 else if (Input.GetKeyDown(KeyCode.L))
                 {
-                    Console.Instance.LogDebug("JaLoader", "Loaded custom objects status!");
+                    Console.LogDebug("JaLoader", "Loaded custom objects status!");
                     LoadData(true);
                 }
             }
@@ -122,7 +122,7 @@ namespace JaLoader
             {
                 if (!ignoreAlreadyExists)
                 {
-                    Console.Instance.LogError("CustomObjectsManager", "The object you're trying to register is null!");
+                    Console.LogError("CustomObjectsManager", "The object you're trying to register is null!");
                 }
                 
                 return;
@@ -132,7 +132,7 @@ namespace JaLoader
             {
                 if (!ignoreAlreadyExists)
                 {
-                    Console.Instance.LogError("CustomObjectsManager", $"An object with the registry key {registryName} already exists! Please pick another one.");
+                    Console.LogError("CustomObjectsManager", $"An object with the registry key {registryName} already exists! Please pick another one.");
                 }
                 return;
             }
