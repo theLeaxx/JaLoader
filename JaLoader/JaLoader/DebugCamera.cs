@@ -85,6 +85,8 @@ namespace JaLoader
         private bool createdInGamePPCamera;
         private GameObject cursors;
 
+        private bool firstTimeOpening = true;
+
         void OnEnable()
         {
             cameraObj = ModHelper.Instance.debugCam;
@@ -99,7 +101,7 @@ namespace JaLoader
                 cursors = GameObject.Find("Cursors");
         }
 
-        private void ResetCameraPos()
+        public void ResetCameraPos()
         {
             cameraObj.transform.position = mainCameraObj.transform.position;
             cameraObj.transform.rotation = mainCameraObj.transform.rotation;
@@ -115,6 +117,7 @@ namespace JaLoader
 
         private void OnGameLoad()
         {
+            firstTimeOpening = true;
             cameraObj.transform.GetChild(0).gameObject.SetActive(true);
             cameraObj.transform.GetChild(2).gameObject.SetActive(false);
 
@@ -245,6 +248,12 @@ namespace JaLoader
         {
             if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.C))
             {
+                if (SceneManager.GetActiveScene().buildIndex == 3 && firstTimeOpening)
+                {
+                    firstTimeOpening = false;
+                    ResetCameraPos();
+                }
+
                 Toggle();
             }
 

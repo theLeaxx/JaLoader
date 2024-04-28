@@ -32,7 +32,7 @@ namespace JaLoader
             Clear();
 
             if (keys.Count != values.Count)
-                Console.Instance.LogError($"There are {keys.Count} keys and {values.Count} values after deserialization. Make sure that both key and value types are serializable");
+                Console.LogError($"There are {keys.Count} keys and {values.Count} values after deserialization. Make sure that both key and value types are serializable");
 
             for (int i = 0; i < keys.Count; i++)
                 Add(keys[i], values[i]);

@@ -46,6 +46,36 @@ namespace JaLoader
 
             settingsManager = SettingsManager.Instance;
             uiManager = UIManager.Instance;
+            Application.logMessageReceived += HandleLog;
+        }
+
+        private void HandleLog(string message, string stackTrace, LogType type)
+        {
+            if (!LogEverythingFromDebug)
+                return;
+
+            switch (type)
+            {
+                case LogType.Error:
+                    LogError("Unity", message);
+                    break;
+
+                case LogType.Assert:
+                    LogError("Unity", message);
+                    break;
+
+                case LogType.Warning:
+                    LogWarning("Unity", message);
+                    break;
+
+                case LogType.Log:
+                    LogMessage("Unity", message);
+                    break;
+
+                case LogType.Exception:
+                    LogError("Unity", message);
+                    break;
+            }
         }
         #endregion
 
@@ -60,20 +90,28 @@ namespace JaLoader
 
         private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
 
+        private bool init = false;
+
+        private readonly List<(string, string, string)> queuedLogs = new List<(string, string, string)>();
+
+        public bool LogEverythingFromDebug = false;
+
         public bool Visible
         {
             get { return uiManager.modConsole.activeSelf; }
             private set { }
         }
-
-        private void Start()
+        
+        public void Init()
         {
             inputField = uiManager.modConsole.transform.GetChild(2).GetComponent<InputField>();
             consoleRectTransform = uiManager.modConsole.GetComponent<RectTransform>();
 
-            //ToggleVisibility(false);
-
             SetPosition(settingsManager.ConsolePosition);
+
+            init = true;
+
+            LogAllQueuedMessages();
         }
 
         public void SetPosition(ConsolePositions pos)
@@ -198,6 +236,9 @@ namespace JaLoader
 
         private void Update()
         {
+            if (!init)
+                return;
+
             if (Input.GetKeyDown(KeyCode.Tab))
                 ToggleVisibility(!Visible);
 
@@ -275,7 +316,7 @@ namespace JaLoader
         /// </summary>
         /// <param name="sender">The message sender (use ModID or ModName)</param>
         /// <param name="message">The message to be sent</param>
-        public void Log(object sender, object message)
+        public static void Log(object sender, object message)
         {
             LogMessage(sender, message);
         }
@@ -284,7 +325,7 @@ namespace JaLoader
         /// Same as LogMessage().
         /// </summary>
         /// <param name="message">The message to be sent</param>
-        public void Log(object message)
+        public static void Log(object message)
         {
             LogMessage(message);
         }
@@ -293,23 +334,12 @@ namespace JaLoader
         /// Logs a normal message to the in-game console.
         /// </summary>
         /// <param name="message">The message to be sent</param>
-        public void LogMessage(object message)
+        public static void LogMessage(object message)
         {
-            if (settingsManager.ConsoleMode != ConsoleModes.Default)
+            if (SettingsManager.Instance.ConsoleMode != ConsoleModes.Default)
                 return;
 
-            ToggleVisibility(true);
-
-            float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
-
-            GameObject _msg = Instantiate(uiManager.messageTemplatePrefab);
-            _msg.transform.SetParent(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
-            _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>/</color>: {message}";
-            log.Add($"{DateTime.Now} > '/': '{message}'");
-            _msg.SetActive(true);
-
-            UpdateConsole(_value);
-            WriteLog();
+            Instance.LogMessage("/", message, "aqua");
         }
 
         /// <summary>
@@ -317,37 +347,61 @@ namespace JaLoader
         /// </summary>
         /// <param name="sender">The message sender (use ModID or ModName)</param>
         /// <param name="message">The message to be sent</param>
-        public void LogMessage(object sender, object message)
+        public static void LogMessage(object sender, object message)
         {
-            if (settingsManager.ConsoleMode != ConsoleModes.Default)
+            if (SettingsManager.Instance.ConsoleMode != ConsoleModes.Default)
                 return;
 
-            ToggleVisibility(true);
-
-            float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
-
-            GameObject _msg = Instantiate(uiManager.messageTemplatePrefab);
-            _msg.transform.SetParent(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
-            _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>{sender}</color>: {message}";
-            log.Add($"{DateTime.Now} > '{sender}': '{message}'");
-            _msg.SetActive(true);
-
-            UpdateConsole(_value);
-            WriteLog();
+            Instance.LogMessage(sender, message, "aqua");
         }
 
         /// <summary>
         /// Logs a normal message to the JaLoader_log.log file, does not show in-game.
         /// </summary>
         /// <param name="message"></param>
-        public void LogOnlyToFile(object message)
+        public static void LogOnlyToFile(object message)
         {
-            log.Add($"{DateTime.Now} - {message}");
-            WriteLog();
+            Instance.log.Add($"{DateTime.Now} - {message}");
+            Instance.WriteLog();
+        }
+
+        private void LogAllQueuedMessages()
+        {
+            foreach ((string, string, string) log in queuedLogs)
+            {
+                LogMessage(log.Item1, log.Item2, log.Item3);
+            }
+
+            queuedLogs.Clear();
         }
 
         private void LogMessage(object sender, object message, string color)
         {
+            if (!init)
+            {
+                queuedLogs.Add((sender.ToString(), message.ToString(), color));
+
+                switch (color)
+                {
+                    case "grey":
+                        log.Add($"{DateTime.Now} * '{sender}': '{message}'");
+                        break;
+
+                    case "red":
+                        log.Add($"{DateTime.Now} >!! '{sender}': '{message}'");
+                        break;
+
+                    case "yellow":
+                        log.Add($"{DateTime.Now} >! '{sender}': '{message}'");
+                        break;
+
+                    case "aqua":
+                        log.Add($"{DateTime.Now} > '/': '{message}'");
+                        break;
+                }
+                return;
+            }
+
             ToggleVisibility(true);
 
             float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
@@ -370,6 +424,11 @@ namespace JaLoader
                     _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>{sender}</color>: <color=yellow>{message}</color>";
                     log.Add($"{DateTime.Now} >! '{sender}': '{message}'");
                     break;
+
+                case "aqua":
+                    _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>{sender}</color>: {message}";
+                    log.Add($"{DateTime.Now} > '/': '{message}'");
+                    break;
             }
 
             _msg.SetActive(true);
@@ -383,24 +442,24 @@ namespace JaLoader
         /// </summary>
         /// <param name="sender">The message sender (use ModID or ModName)</param>
         /// <param name="message">The message to be sent</param>
-        public void LogWarning(object sender, object message)
+        public static void LogWarning(object sender, object message)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled || settingsManager.ConsoleMode == ConsoleModes.Errors)
+            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || SettingsManager.Instance.ConsoleMode == ConsoleModes.Errors)
                 return;
 
-            LogMessage(sender, message, "yellow");
+            Instance.LogMessage(sender, message, "yellow");
         }
 
         /// <summary>
         /// Logs a warning to the in-game console.
         /// </summary>
         /// <param name="message">The message to be sent</param>
-        public void LogWarning(object message)
+        public static void LogWarning(object message)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled || settingsManager.ConsoleMode == ConsoleModes.Errors)
+            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || SettingsManager.Instance.ConsoleMode == ConsoleModes.Errors)
                 return;
 
-            LogMessage("/", message, "yellow");
+            Instance.LogMessage("/", message, "yellow");
         }
 
         /// <summary>
@@ -408,24 +467,24 @@ namespace JaLoader
         /// </summary>
         /// <param name="sender">The message sender (use ModID or ModName)</param>
         /// <param name="message">The message to be sent</param>
-        public void LogError(object sender, object message)
+        public static void LogError(object sender, object message)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled)
+            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled)
                 return;
 
-            LogMessage(sender, message, "red");
+            Instance.LogMessage(sender, message, "red");
         }
 
         /// <summary>
         /// Logs an error to the in-game console.
         /// </summary>
         /// <param name="message">The message to be sent</param>
-        public void LogError(object message)
+        public static void LogError(object message)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled)
+            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled)
                 return;
 
-            LogMessage("/", message, "red");
+            Instance.LogMessage("/", message, "red");
         }
 
         /// <summary>
@@ -433,24 +492,24 @@ namespace JaLoader
         /// </summary>
         /// <param name="sender">The message sender (use ModID or ModName)</param>
         /// <param name="message">The message to be sent</param>
-        public void LogDebug(object sender, object message)
+        public static void LogDebug(object sender, object message)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled || !settingsManager.DebugMode)
+            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.Instance.DebugMode)
                 return;
 
-            LogMessage(sender, message, "grey");
+            Instance.LogMessage(sender, message, "grey");
         }
 
         /// <summary>
         /// Logs a debug message to the in-game console. These are only visible if debug mode is enabled.
         /// </summary>
         /// <param name="message">The message to be sent</param>
-        public void LogDebug(object message)
+        public static void LogDebug(object message)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled || !settingsManager.DebugMode)
+            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.Instance.DebugMode)
                 return;
 
-            LogMessage("/", message, "grey");
+            Instance.LogMessage("/", message, "grey");
         }
 
         private void OnApplicationQuit()

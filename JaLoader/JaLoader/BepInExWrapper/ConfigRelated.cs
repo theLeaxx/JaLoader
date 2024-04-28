@@ -16,8 +16,8 @@ namespace BepInEx.Configuration
 
         public ConfigEntry<T> Bind<T>(ConfigDefinition configDefinition, T defaultValue, ConfigDescription configDescription = null)
         {
-            //JaLoader.Console.Instance.Log($"E 2 {(defaultValue as KeyboardShortcut).Key.ToString()}");
-            //JaLoader.Console.Instance.Log($"E 2 {defaultValue.GetType()}");
+            //JaLoader.Console.Log($"E 2 {(defaultValue as KeyboardShortcut).Key.ToString()}");
+            //JaLoader.Console.Log($"E 2 {defaultValue.GetType()}");
             var entry = new ConfigEntry<T>(configDefinition.section, configDefinition.key, defaultValue, Plugin, PluginAttribute, "");
 
             return entry;
@@ -25,7 +25,7 @@ namespace BepInEx.Configuration
 
         public ConfigEntry<T> Bind<T>(string section, string key, T defaultValue, ConfigDescription configDescription = null)
         {
-            //JaLoader.Console.Instance.Log($"E {(defaultValue as KeyboardShortcut).Key.ToString()}");
+            //JaLoader.Console.Log($"E {(defaultValue as KeyboardShortcut).Key.ToString()}");
             return Bind(new ConfigDefinition(section, key), defaultValue, configDescription);
         }
 
@@ -94,12 +94,12 @@ namespace BepInEx.Configuration
             }
             else if (typeof(T) == typeof(KeyboardShortcut))
             {
-                //JaLoader.Console.Instance.Log($"E 3 Value Type: {_typedValue.GetType().FullName}");
-                //JaLoader.Console.Instance.Log($"E 3 Constructed with Key: {(_typedValue as KeyboardShortcut).Key.ToString()}");
+                //JaLoader.Console.Log($"E 3 Value Type: {_typedValue.GetType().FullName}");
+                //JaLoader.Console.Log($"E 3 Constructed with Key: {(_typedValue as KeyboardShortcut).Key.ToString()}");
 
                 shortcut = new KeyboardShortcut((defaultValue as KeyboardShortcut).Key);
 
-                //JaLoader.Console.Instance.Log(_typedValue);
+                //JaLoader.Console.Log(_typedValue);
                 //(_typedValue as KeyboardShortcut).keyName = name;
                 //(_typedValue as KeyboardShortcut).plugin = plugin;
                 //(_typedValue as KeyboardShortcut).Key = (defaultValue as KeyboardShortcut).Key;
@@ -117,12 +117,12 @@ namespace BepInEx.Configuration
                 }
                 else if(typeof(T) == typeof(KeyboardShortcut))
                 {
-                    //JaLoader.Console.Instance.Log(_typedValue);
+                    //JaLoader.Console.Log(_typedValue);
                     //(_typedValue as KeyboardShortcut).Key = Plugin.GetBIXPluginKeybind(Name);
-                    //JaLoader.Console.Instance.Log((_typedValue as KeyboardShortcut).Key.ToString());
-                    //JaLoader.Console.Instance.Log((_typedValue as KeyboardShortcut).keyName);
-                    //JaLoader.Console.Instance.Log((_typedValue as KeyboardShortcut).plugin.Config.PluginAttribute.GUID);
-                    //JaLoader.Console.Instance.Log($"E 3 Accessed Value with Key: {(shortcut as KeyboardShortcut).Key}");
+                    //JaLoader.Console.Log((_typedValue as KeyboardShortcut).Key.ToString());
+                    //JaLoader.Console.Log((_typedValue as KeyboardShortcut).keyName);
+                    //JaLoader.Console.Log((_typedValue as KeyboardShortcut).plugin.Config.PluginAttribute.GUID);
+                    //JaLoader.Console.Log($"E 3 Accessed Value with Key: {(shortcut as KeyboardShortcut).Key}");
                     return (T)(object)shortcut;
                 }
                 else
@@ -202,9 +202,9 @@ namespace BepInEx.Configuration
         {
             Key = mainKey;
             keyCodes = new KeyCode[1] { mainKey }.Concat(modifiers).ToArray();
-            //JaLoader.Console.Instance.Log($"Constructed KeyboardShortcut with Key: {Key}");
+            //JaLoader.Console.Log($"Constructed KeyboardShortcut with Key: {Key}");
             //keyName = "";
-            //JaLoader.Console.Instance.Log(Key.ToString());
+            //JaLoader.Console.Log(Key.ToString());
         }
 
         public KeyboardShortcut(KeyCode[] keyCodes)
@@ -225,17 +225,17 @@ namespace BepInEx.Configuration
             string callingMethod = new System.Diagnostics.StackTrace().GetFrame(1).GetMethod().Name;
             //string callingClass = this.GetType().FullName;
 
-            JaLoader.Console.Instance.Log($"IsDown method called from: {callingMethod}");
-            JaLoader.Console.Instance.Log($"Key before check: {Key}, Type: {Key.GetType().FullName}");
+            JaLoader.Console.Log($"IsDown method called from: {callingMethod}");
+            JaLoader.Console.Log($"Key before check: {Key}, Type: {Key.GetType().FullName}");
 
             bool isDown = Key != KeyCode.None && Input.GetKeyDown(Key);
 
-            JaLoader.Console.Instance.Log($"Key after check: {Key}, Type: {Key.GetType().FullName}");
+            JaLoader.Console.Log($"Key after check: {Key}, Type: {Key.GetType().FullName}");
 
             return isDown;
             return false;
 
-            JaLoader.Console.Instance.Log($"Key in IsDown: {Key}");
+            JaLoader.Console.Log($"Key in IsDown: {Key}");
             //return Input.GetKeyDown(key));
             return false;
 
@@ -243,12 +243,12 @@ namespace BepInEx.Configuration
 
             /*if(Key == KeyCode.None || plugin == null || keyName == "")
             {
-                //JaLoader.Console.Instance.Log(keyName);
+                //JaLoader.Console.Log(keyName);
                 return false;
             }
 
             KeyCode keyToCheck = plugin.GetBIXPluginKeybind(keyName);
-            //JaLoader.Console.Instance.Log(plugin.GetBIXPluginKeybind(keyName).ToString());
+            //JaLoader.Console.Log(plugin.GetBIXPluginKeybind(keyName).ToString());
             return Input.GetKeyDown(keyToCheck);
             return false;*/
         }
@@ -395,7 +395,7 @@ namespace BepInEx.Configuration
 
             if (CanConvert(type))
             {
-                JaLoader.Console.Instance.LogWarning("Tried to add a TomlConverter when one already exists for type " + type.FullName);
+                JaLoader.Console.LogWarning("Tried to add a TomlConverter when one already exists for type " + type.FullName);
                 return false;
             }
 

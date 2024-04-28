@@ -68,7 +68,7 @@ namespace JaLoader
 
         private void OnLoadStart()
         {
-            //Console.Instance.Log("Started");
+            //Console.Log("Started");
 
             //FindObjectOfType<LoadLevelManagerC>().enabled = false;
 
@@ -178,7 +178,7 @@ namespace JaLoader
         {
             if (File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png") == false)
             {
-                Console.Instance.LogError($"Texture {name} does not exist!");
+                Console.LogError($"Texture {name} does not exist!");
 
                 Texture2D defaulTexture = new Texture2D(1, 1);
                 defaulTexture.SetPixel(0, 0, Color.white);
@@ -205,7 +205,7 @@ namespace JaLoader
             renderedTexture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
             RenderTexture.active = null;
             byte[] byteArray = renderedTexture.EncodeToPNG();
-            //Console.Instance.Log(entry + ", " + ModID);
+            //Console.Log(entry + ", " + ModID);
             File.WriteAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png", byteArray);
         }
     }

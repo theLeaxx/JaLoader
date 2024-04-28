@@ -13,7 +13,6 @@ namespace JaLoader
     {
         public static LaikaCatalogueExtension Instance { get; private set; }
 
-        private bool createdScrollViews;
         private bool setPriceImage;
         private bool addedAllComponents;
 
@@ -38,6 +37,11 @@ namespace JaLoader
 
         public void AddPages(string start, string destination, int distance)
         {
+            Destroy(UIManager.Instance.catalogueEntryTemplate.transform.GetChild(2).gameObject.GetComponent<ModsPageItem>());
+
+            for (int i = 1; i < UIManager.Instance.catalogueTemplate.transform.parent.childCount; i++)
+                Destroy(UIManager.Instance.catalogueTemplate.transform.parent.GetChild(i).gameObject);
+
             StartCoroutine(DelayThenAddPages());
         }
 
@@ -142,12 +146,7 @@ namespace JaLoader
 
                     buttons[PartTypes.Custom].name = "Custom_1";
 
-                    if (!createdScrollViews)
-                    {
-                        createdScrollViews = true;
-
-                        StartCoroutine(CreateScrollViews(magazine.gameObject));                 
-                    }
+                    StartCoroutine(CreateScrollViews(magazine.gameObject));
 
                     // y - 0.015f each time
                     // simulate vertical layout group
@@ -228,8 +227,6 @@ namespace JaLoader
                     page.transform.Find("NoneFound").gameObject.SetActive(true);
                 }
             }
-
-            createdScrollViews = false;
 
             yield return null;
         }
@@ -553,7 +550,7 @@ namespace JaLoader
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            //Console.Instance.Log($"Added item {itemName} to cart");
+            //Console.Log($"Added item {itemName} to cart");
 
             var list = magazine.transform.Find("Page2_EngineParts").GetComponent<EngineComponentsCataloguePageC>();
             list.AddToShoppingList(sellingItem);

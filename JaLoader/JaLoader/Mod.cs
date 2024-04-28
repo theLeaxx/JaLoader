@@ -43,6 +43,9 @@ namespace JaLoader
         public virtual void Awake() { }
         public virtual void OnEnable() { }
         public virtual void OnDisable() { }
+        public virtual void OnDestroy() { }
+
+        public virtual void OnReload() { }
 
 
         /// <summary>
@@ -58,13 +61,13 @@ namespace JaLoader
         {
             if (!UseAssets)
             {
-                Console.Instance.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
+                Console.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
                 return null;
             }
 
             if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
             {
-                Console.Instance.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
                 return null;
             }
 
@@ -73,7 +76,7 @@ namespace JaLoader
 
             if (prefab == null)
             {
-                Console.Instance.LogError(ModID, $"Tried to load prefab {prefabName} from asset {assetName}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load prefab {prefabName} from asset {assetName}, but it does not exist.");
                 return null;
             }
 
@@ -105,13 +108,13 @@ namespace JaLoader
         {
             if (!UseAssets)
             {
-                Console.Instance.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
+                Console.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
                 return null;
             }
 
             if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
             {
-                Console.Instance.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
                 return null;
             }
 
@@ -120,7 +123,7 @@ namespace JaLoader
 
             if (asset == null)
             {
-                Console.Instance.LogError(ModID, $"Tried to load {typeof(T).Name} {prefabName}{prefabSuffix} from asset {assetName}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load {typeof(T).Name} {prefabName}{prefabSuffix} from asset {assetName}, but it does not exist.");
                 ab.Unload(true);
                 return null;
             }
@@ -156,13 +159,13 @@ namespace JaLoader
         {
             if (!UseAssets)
             {
-                Console.Instance.LogError(ModID, "Tried to call PNGToTexture, but UseAssets is false.");
+                Console.LogError(ModID, "Tried to call PNGToTexture, but UseAssets is false.");
                 return null;
             }
 
             if (!File.Exists($@"{AssetsPath}\{name}.png"))
             {
-                Console.Instance.LogError(ModID, $"Tried to load PNG {name}.png, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load PNG {name}.png, but it does not exist.");
                 return null;
             }
 
@@ -184,12 +187,12 @@ namespace JaLoader
         {
             if (!UseAssets)
             {
-                Console.Instance.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
+                Console.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
             }
 
             if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
             {
-                Console.Instance.LogError(ModID, $"Tried to load scene {assetName}{fileSuffix}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load scene {assetName}{fileSuffix}, but it does not exist.");
             }
 
             AssetBundle.LoadFromFile($@"{AssetsPath}\{assetName}{fileSuffix}");
@@ -201,7 +204,7 @@ namespace JaLoader
         {
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
-                Console.Instance.LogError(ModID, "Settings are already instantiated!");
+                Console.LogError(ModID, "Settings are already instantiated!");
                 return;
             }
 
@@ -221,7 +224,7 @@ namespace JaLoader
         {
             if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
-                Console.Instance.LogError(ModID, "Tried adding header, but settings aren't instantiated!");
+                Console.LogError(ModID, "Tried adding header, but settings aren't instantiated!");
                 return;
             }
 
@@ -235,13 +238,13 @@ namespace JaLoader
         {
             if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
-                Console.Instance.LogError(ModID, "Tried adding dropdown, but settings aren't instantiated!");
+                Console.LogError(ModID, "Tried adding dropdown, but settings aren't instantiated!");
                 return;
             }
 
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
             {
-                Console.Instance.LogError(ModID, $"Dropdown with ID {ID} already exists!");
+                Console.LogError(ModID, $"Dropdown with ID {ID} already exists!");
                 return;
             }
 
@@ -266,13 +269,13 @@ namespace JaLoader
         {
             if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
-                Console.Instance.LogError(ModID, "Tried adding toggle, but settings aren't instantiated!");
+                Console.LogError(ModID, "Tried adding toggle, but settings aren't instantiated!");
                 return;
             }
 
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Toggle"))
             {
-                Console.Instance.LogError(ModID, $"Toggle with ID {ID} already exists!");
+                Console.LogError(ModID, $"Toggle with ID {ID} already exists!");
                 return;
             }
 
@@ -297,13 +300,13 @@ namespace JaLoader
         {
             if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
-                Console.Instance.LogError(ModID, "Tried adding slider, but settings aren't instantiated!");
+                Console.LogError(ModID, "Tried adding slider, but settings aren't instantiated!");
                 return;
             }
 
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider"))
             {
-                Console.Instance.LogError(ModID, $"Slider with ID {ID} already exists!");
+                Console.LogError(ModID, $"Slider with ID {ID} already exists!");
                 return;
             }
 
@@ -325,13 +328,13 @@ namespace JaLoader
         {
             if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
-                Console.Instance.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
+                Console.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
                 return;
             }
 
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
             {
-                Console.Instance.LogError(ModID, $"Keybind with ID {ID} already exists!");
+                Console.LogError(ModID, $"Keybind with ID {ID} already exists!");
                 return;
             }
 
@@ -353,13 +356,13 @@ namespace JaLoader
         {
             if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
-                Console.Instance.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
+                Console.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
                 return;
             }
 
             if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
             {
-                Console.Instance.LogError(ModID, $"Keybind with ID {ID} already exists!");
+                Console.LogError(ModID, $"Keybind with ID {ID} already exists!");
                 return;
             }
 

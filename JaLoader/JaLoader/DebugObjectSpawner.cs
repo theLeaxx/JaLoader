@@ -329,6 +329,8 @@ namespace JaLoader
             {
                 AddObjectToList(keyValuePair.Key.ToString(), "");
             }
+
+            EventsManager.Instance.OnCustomObjectsRegisterFinished -= OnCustomObjectsRegisterFinished;
         }
 
         private void Update()

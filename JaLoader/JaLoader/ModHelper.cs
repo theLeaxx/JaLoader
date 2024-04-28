@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-using Theraot.Collections;
 using System.Reflection;
 using UnityEngine.SceneManagement;
 using UnityEngine.Networking;
@@ -9,6 +8,7 @@ using System.Diagnostics;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using System.Xml.Linq;
 using System.Data.SqlTypes;
+using System.Linq;
 
 namespace JaLoader
 {
@@ -57,6 +57,8 @@ namespace JaLoader
         public GameObject CrateMed;
         public GameObject CrateSmall;
 
+        public bool patchedEverything = false;
+
         private Material defaultGlowMaterial = new Material(Shader.Find("Legacy Shaders/Transparent/Specular"))
         {
             color = new Color(1, 1, 1, 0.17f)
@@ -97,11 +99,11 @@ namespace JaLoader
 
                         effectsCam.transform.parent = normalCam.transform.parent = inGameEffectsCam.transform.parent = debugCam.transform;
 
-                        var components = Camera.main.GetComponents<MonoBehaviour>();
-                        components.RemoveLast();
-                        components.RemoveLast();
-                        components.RemoveLast();
-                        components.RemoveFirst();
+                        var components = Camera.main.GetComponents<MonoBehaviour>().ToList();
+                        components.RemoveAt(components.Count - 1);
+                        components.RemoveAt(components.Count - 1);
+                        components.RemoveAt(components.Count - 1);
+                        components.RemoveAt(0);
 
                         effectsCam.AddComponent<Camera>();
                         inGameEffectsCam.AddComponent<Camera>();
@@ -217,7 +219,7 @@ namespace JaLoader
         {
             if (obj == null)
             {
-                Console.Instance.LogError("The object you're trying to add logic to is null!");
+                Console.LogError("The object you're trying to add logic to is null!");
                 return;
             }
 
@@ -273,7 +275,7 @@ namespace JaLoader
         {
             if (obj == null)
             {
-                Console.Instance.LogError("The object you're trying to add logic to is null!");
+                Console.LogError("The object you're trying to add logic to is null!");
                 return;
             }
 
@@ -344,7 +346,7 @@ namespace JaLoader
         {
             if (obj == null)
             {
-                Console.Instance.LogError("The object you're trying to add logic to is null!");
+                Console.LogError("The object you're trying to add logic to is null!");
                 return;
             }
 
@@ -353,7 +355,7 @@ namespace JaLoader
 
             if (!obj.GetComponent<ObjectPickupC>())
             {
-                Console.Instance.LogError("You need to add basic object logic before adding engine part logic!");
+                Console.LogError("You need to add basic object logic before adding engine part logic!");
                 return;
             }
 
@@ -414,7 +416,7 @@ namespace JaLoader
                     break;
 
                 case PartTypes.WaterTank:
-                    Console.Instance.LogWarning("Water tanks are not fully supported yet!");
+                    Console.LogWarning("Water tanks are not fully supported yet!");
                     ob.engineString = "WaterContainer";
                     obj.name = "WaterContainer";
                     obj.AddComponent<ObjectInteractionsC>();
@@ -434,7 +436,7 @@ namespace JaLoader
                 case PartTypes.Custom:
                     ob.engineString = "";
                     ob.isEngineComponent = false;
-                    Console.Instance.LogError("Custom components are not supported yet!");
+                    Console.LogError("Custom components are not supported yet!");
                     break;
             }
 
@@ -451,6 +453,9 @@ namespace JaLoader
         /// <param name="registryName">Internal extra name</param>
         public void CreateIconForExtra(GameObject objOnCar, Vector3 position, Vector3 scale, Vector3 rotation, string registryName)
         {
+            if (CustomObjectsManager.Instance.ignoreAlreadyExists)
+                return;
+
             var duplicate = Instantiate(objOnCar);
             duplicate.name = $"{duplicate.name}_DUPLICATE";
             duplicate.SetActive(false);
@@ -483,7 +488,7 @@ namespace JaLoader
             {
                 if (!CustomObjectsManager.Instance.ignoreAlreadyExists)
                 {
-                    Console.Instance.LogError($"An extra with the registry name {registryName} already exists!");
+                    Console.LogError($"An extra with the registry name {registryName} already exists!");
                 }
                 else
                 {
@@ -928,7 +933,7 @@ namespace JaLoader
                 return "-1";
             else
             {
-                Console.Instance.LogError(modName, $"Error getting response for URL \"{URL}\": {request.error}");
+                Console.LogError(modName, $"Error getting response for URL \"{URL}\": {request.error}");
                 return "-1";
             }
 
@@ -969,7 +974,7 @@ namespace JaLoader
                 return "-1";
             else
             {
-                Console.Instance.LogError($"Error getting response for URL \"{URL}\": {request.error}");
+                Console.LogError($"Error getting response for URL \"{URL}\": {request.error}");
                 return "-1";
             }
 

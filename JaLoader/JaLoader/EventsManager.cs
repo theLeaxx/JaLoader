@@ -88,44 +88,49 @@ namespace JaLoader
 
         public void OnPauseGame()
         {
-            Console.Instance.LogOnlyToFile("Paused game!");
+            Console.LogOnlyToFile("Paused game!");
             OnPause?.Invoke();
         }
 
         public void OnUnPauseGame()
         {
-            Console.Instance.LogOnlyToFile("Unpaused game!");
+            Console.LogOnlyToFile("Unpaused game!");
             OnUnpause?.Invoke();
         }
 
         public void OnSettingsLoad()
         {
-            //Console.Instance.LogOnlyToFile("Loaded JaLoader settings!");
+            //Console.LogOnlyToFile("Loaded JaLoader settings!");
             OnSettingsLoaded?.Invoke();
         }
 
         public void OnSettingsSave()
         {
-            Console.Instance.LogOnlyToFile("Saved JaLoader settings!");
+            Console.LogOnlyToFile("Saved JaLoader settings!");
             OnSettingsSaved?.Invoke();
         }
 
         public void OnNewGameStart()
         {
-            Console.Instance.LogOnlyToFile("New game started!");
+            Console.LogOnlyToFile("New game started!");
             OnNewGame?.Invoke();
         }
 
         public void OnCustomObjectsRegisterFinish()
         {
-            Console.Instance.LogOnlyToFile("Finished registering custom objects!");
+            Console.LogOnlyToFile("Finished registering custom objects!");
             OnCustomObjectsRegisterFinished?.Invoke();
         }
 
         public void OnSceneUnload(Scene unloadedScene)
         {
             if (OnGameUnload != null && unloadedScene.buildIndex == 3)
-                OnGameUnload();
+                OnGameUnloadFunc();
+        }
+
+        public void OnGameUnloadFunc()
+        {
+            OnGameUnload();
         }
 
         public void OnSceneLoad(Scene current, LoadSceneMode mode)
@@ -145,20 +150,29 @@ namespace JaLoader
             }
 
             if (OnGameLoad != null && current.buildIndex == 3)
-            {
-                FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
-                FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
-                Camera.main.gameObject.AddComponent<MainMenuCReceiver>();
-                Camera.main.gameObject.AddComponent<MotelsReceiver>();
-                Camera.main.gameObject.AddComponent<HarmonyManager>();
-                OnGameLoad();
+            {      
+                OnGameLoadFunc();
                 return;
             }
 
             if(current.buildIndex == 0 && SettingsManager.Instance.SkipLanguage && SettingsManager.Instance.selectedLanguage)
             {
                 SceneManager.LoadScene("MainMenu");
+            }                
+        }
+
+        public void OnGameLoadFunc(bool addComps = true)
+        {
+            if(addComps)
+            {
+                FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
+                FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
+                Camera.main.gameObject.AddComponent<MainMenuCReceiver>();
+                Camera.main.gameObject.AddComponent<MotelsReceiver>();
+                //Camera.main.gameObject.AddComponent<HarmonyManager>();
             }
+
+            OnGameLoad();
         }
 
         public void OnLog(string message, string stack, LogType type)
@@ -172,13 +186,13 @@ namespace JaLoader
 
         public void OnLoad()
         {
-            Console.Instance.LogOnlyToFile("Loaded save!");
+            Console.LogOnlyToFile("Loaded save!");
             OnLoadSave?.Invoke();
         }
 
         public void OnSaved()
         {
-            Console.Instance.LogOnlyToFile("Saved game!");
+            Console.LogOnlyToFile("Saved game!");
             OnSave?.Invoke();
         }
 
@@ -186,7 +200,7 @@ namespace JaLoader
         {
             OnRouteGenerated?.Invoke(start, destination, distance);
 
-            //Console.Instance.Log(cityName);
+            //Console.Log(cityName);
         }
 
         public void CallTransaction(string type)
@@ -250,22 +264,22 @@ namespace JaLoader
             foreach (var dealership in FindObjectsOfType<MagazineLogicC>())
                 dealerships.Add(dealership);
 
-            Console.Instance.Log(motels.Count);
-            Console.Instance.Log(shops.Count);
-            Console.Instance.Log(dealerships.Count);
+            Console.Log(motels.Count);
+            Console.Log(shops.Count);
+            Console.Log(dealerships.Count);
 
             if (firstTime) return;
 
-            Console.Instance.Log("---");
+            Console.Log("---");
 
             /*paidMotel.Remove(motels[0]);
             motels.RemoveAt(0);
             shops.RemoveAt(0);
             dealerships.RemoveAt(0);
 
-            Console.Instance.Log(motels.Count);
-            Console.Instance.Log(shops.Count);
-            Console.Instance.Log(dealerships.Count);*/
+            Console.Log(motels.Count);
+            Console.Log(shops.Count);
+            Console.Log(dealerships.Count);*/
         }
 
         public void ChangeMoney()
@@ -276,17 +290,17 @@ namespace JaLoader
                 if (motels[i].hasPaid && !paidMotel[motels[i]])
                 {
                     paidMotel[motels[i]] = true;
-                    Console.Instance.Log($"paid for motel");
+                    Console.Log($"paid for motel");
                     EventsManager.Instance.CallTransaction("motel");
                 }
                 else if (shops[i].shutterOpen)
                 {
-                    Console.Instance.Log($"paid for shop");
+                    Console.Log($"paid for shop");
                     EventsManager.Instance.CallTransaction("shop");
                 }
                 else if (dealerships[i].isBookOpen)
                 {
-                    Console.Instance.Log($"paid for dealership");
+                    Console.Log($"paid for dealership");
                     EventsManager.Instance.CallTransaction("laika");
                 }
             }*/

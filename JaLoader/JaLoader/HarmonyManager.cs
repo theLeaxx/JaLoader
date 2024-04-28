@@ -17,6 +17,7 @@ namespace JaLoader
     {
         #region Singleton
         public static HarmonyManager Instance { get; private set; }
+        private static Harmony harmony;
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -29,32 +30,21 @@ namespace JaLoader
             }
 
             gameObject.AddComponent<CoroutineManager>();
+
+            harmony = new Harmony("Leaxx.JaLoader");
+            PatchAll();
         }
         #endregion
 
-        private static Harmony harmony;
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.F2))
+                PatchAll();
+        }
 
         public void PatchAll()
         {
-            if (harmony == null)
-            {
-                harmony = new Harmony("JaLoader.Leaxx");
-                harmony.PatchAll();
-            }
-        }
-
-        private void Start()
-        {
-            PatchAll();
-        }
-
-        public void PatchBuyButton()
-        {
-             if (harmony == null)
-             {
-                harmony = new Harmony("JaLoader.Leaxx");
-                harmony.Patch(typeof(CatalogueBuyButtonC).GetMethod("Trigger"), prefix: new HarmonyMethod(typeof(CatalogueBuyButtonC_Trigger_Patch).GetMethod("Prefix")) ,postfix: new HarmonyMethod(typeof(CatalogueBuyButtonC_Trigger_Patch).GetMethod("Postfix")));
-            }
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
     }
 
@@ -86,7 +76,7 @@ namespace JaLoader
             instance.StopCoroutine(routine);
         }
     }
-
+    
     [HarmonyPatch(typeof(MainMenuC), "SaveInventory")]
     public static class MainMenuC_SaveInventory_Patch
     {
@@ -117,12 +107,39 @@ namespace JaLoader
         }
     }
 
+    /*[HarmonyPatch(typeof(WheelScriptPCC), "SteerControle")]
+    public static class WheelScriptPCC_SteerControle_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(WheelScriptPCC __instance)
+        {
+            double numToSteer = 1;
+            if (!__instance.noClip && MainMenuC.Global.padInput == 2)
+            {
+                numToSteer *= Input.GetAxis("JoypadX");
+            }
+            Debug.Log(numToSteer);
+
+            __instance.wheelCollider.steerAngle = Mathf.Lerp(__instance.wheelCollider.steerAngle, (float)numToSteer, Time.deltaTime * 5f);
+        }
+    }*/
+
+    [HarmonyPatch(typeof(EngineComponentsCataloguePageC), "PurchaseGo")]
+    public static class EngineComponentsCataloguePageC_PurchaseGo_Patch
+    {
+        [HarmonyPostfix]
+        public static void PostFix(EngineComponentsCataloguePageC __instance)
+        {
+            GameObject.FindObjectOfType<WalletC>().GetComponent<ObjectPickupC>().DropOff();
+        }
+    }
+
     [HarmonyPatch(typeof(MainMenuC), "Pause")]
     public static class MainMenuC_Pause_Patch
     {
         [HarmonyPrefix]
         public static void Prefix(MainMenuC __instance)
-        {  
+        {
             if (__instance.hasWokenUp)
             {
                 __instance.BroadcastMessage("PausedGame", SendMessageOptions.DontRequireReceiver);
@@ -405,15 +422,15 @@ namespace JaLoader
         [HarmonyPrefix]
         public static void Prefix(CatalogueBuyButtonC __instance)
         {
-            //__instance.gameObject.AddComponent<PatchedBuyButton>();
-            __instance.pageLogic.SetActive(true);
+            if(__instance.gameObject.GetComponent<HomeStorageClipboardC>() != null)
+                __instance.pageLogic.SetActive(true);
         }
 
         [HarmonyPostfix]
         public static void Postfix(CatalogueBuyButtonC __instance)
         {
-            //__instance.gameObject.AddComponent<PatchedBuyButton>();
-            __instance.pageLogic.SetActive(false);
+            if (__instance.gameObject.GetComponent<HomeStorageClipboardC>() != null)
+                __instance.pageLogic.SetActive(false);
         }
     }
 

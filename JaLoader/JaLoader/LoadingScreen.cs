@@ -16,11 +16,17 @@ namespace JaLoader
 
         private CanvasGroup canvasGroup;
 
+        public bool useCircle = true;
+        public bool dontDestroyOnLoad = false;
+
         public void ShowLoadingScreen()
         {
             GameObject canvasGO = new GameObject("JaLoader Loading Screen Canvas");
             Canvas canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            canvas.sortingLayerName = "LoadingScreen";
+            canvas.sortingOrder = 999;
 
             CanvasScaler canvasScaler = canvasGO.AddComponent<CanvasScaler>();
             canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -40,17 +46,23 @@ namespace JaLoader
             Image panelImage = panelGO.AddComponent<Image>();
             panelImage.color = new Color(0, 0, 0, 1);
 
-            var loadingSprite = GameObject.Find("Canvas").transform.Find("Loading Sprite").GetComponent<Image>().sprite;
+            if(useCircle)
+            {
+                var loadingSprite = GameObject.Find("Canvas").transform.Find("Loading Sprite").GetComponent<Image>().sprite;
 
-            var loadingIcon = new GameObject("Loading Icon");
-            loadingIcon.transform.SetParent(panelGO.transform, false);
-            loadingIcon.AddComponent<Image>().sprite = loadingSprite;
-            rt = loadingIcon.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(1, 0);
-            rt.anchorMax = new Vector2(1, 0);
-            rt.position = new Vector2(rt.position.x - 100, rt.position.y + 100);
+                var loadingIcon = new GameObject("Loading Icon");
+                loadingIcon.transform.SetParent(panelGO.transform, false);
+                loadingIcon.AddComponent<Image>().sprite = loadingSprite;
+                rt = loadingIcon.GetComponent<RectTransform>();
+                rt.anchorMin = new Vector2(1, 0);
+                rt.anchorMax = new Vector2(1, 0);
+                rt.position = new Vector2(rt.position.x - 100, rt.position.y + 100);
+            }    
             
             showing = true;
+
+            if (dontDestroyOnLoad)
+                DontDestroyOnLoad(canvasGO);
         }
 
         public void DeleteLoadingScreen()
@@ -64,7 +76,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (showing)
+            if (showing && useCircle)
             {
                 rt.Rotate(0, 0, -150 * Time.deltaTime);
             }

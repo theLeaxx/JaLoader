@@ -165,7 +165,7 @@ namespace JaLoader
             {
                 if (pair.Key.Item1 == registryName)
                 {
-                    Console.Instance.Log($"Extra with registry name {registryName} already exists!");
+                    Console.Log($"Extra with registry name {registryName} already exists!");
                     return;
                 }
             }
@@ -255,12 +255,12 @@ namespace JaLoader
             {
                 if (Input.GetKeyDown(KeyCode.S))
                 {
-                    Console.Instance.LogDebug("JaLoader", "Saved extra upgrades status!");
+                    Console.LogDebug("JaLoader", "Saved extra upgrades status!");
                     SaveData();
                 }
                 else if (Input.GetKeyDown(KeyCode.L))
                 {
-                    Console.Instance.LogDebug("JaLoader", "Loaded extra upgrades status!");
+                    Console.LogDebug("JaLoader", "Loaded extra upgrades status!");
                     LoadData();
                 }
             }

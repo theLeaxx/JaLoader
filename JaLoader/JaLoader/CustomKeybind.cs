@@ -117,7 +117,7 @@ namespace JaLoader
                 KeyCode key = KeyCode.None;
                 waiting = false;
                 string strToCheck = Input.inputString.ToUpper();
-                //Console.Instance.Log($"'{strToCheck}'");
+                //Console.Log($"'{strToCheck}'");
                 if (strToCheck != string.Empty)
                 {
                     switch (strToCheck)
@@ -241,7 +241,7 @@ namespace JaLoader
                 else if (waitingFor == WaitingFor.Secondary)
                     SetSecondaryKey(key);
 
-                //Console.Instance.Log(key);
+                //Console.Log(key);
 
                 waitingFor = WaitingFor.Nothing;
             }

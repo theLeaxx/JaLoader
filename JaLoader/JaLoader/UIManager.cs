@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+
 using System;
 using System.CodeDom;
 using System.Collections;
@@ -228,6 +229,22 @@ namespace JaLoader
         private void OnGameLoad()
         {
             var uiRoot = GameObject.Find("UI Root");
+
+            AddPauseButtons();
+
+            var optionsSubMenu = uiRoot.transform.GetChild(5).Find("Restart Confirm/Accept").gameObject;
+            optionsSubMenu.GetComponent<UIButton>().onClick.Clear();
+            optionsSubMenu.GetComponent<UIButton>().onClick.Add(new EventDelegate(SaveDataThenReload));
+            
+            FixTranslations();
+
+            if (gameObject.GetComponent<LoadingScreen>())
+                gameObject.GetComponent<LoadingScreen>().DeleteLoadingScreen();
+        }
+
+        private void AddPauseButtons()
+        {
+            var uiRoot = GameObject.Find("UI Root");
             var optionsButton = uiRoot.transform.Find("Options").gameObject;
 
             var modsButton = Instantiate(optionsButton, uiRoot.transform, true);
@@ -247,8 +264,18 @@ namespace JaLoader
             settingsButton.GetComponent<UIButton>().onClick.Add(new EventDelegate(ToggleModLoaderSettings_Main));
             settingsButton.GetComponent<UILabel>().text = "ModLoader Options";
             settingsButton.GetComponent<UILabel>().ProcessText();
+        }
 
-            FixTranslations();
+        private void SaveDataThenReload()
+        {
+            MainMenuC.Global.SaveData(0);
+
+            var loadingScreenScript = gameObject.AddComponent<LoadingScreen>();
+            loadingScreenScript.useCircle = false;
+            loadingScreenScript.dontDestroyOnLoad = true;
+            loadingScreenScript.ShowLoadingScreen();
+
+            SceneManager.LoadScene(2);
         }
 
         public void ToggleUIVisibility(bool show)
@@ -308,13 +335,10 @@ namespace JaLoader
                 objectTemplate = objectsList.transform.Find("Scroll View/Viewport/Content").GetChild(0).gameObject;
                 currentlySelectedText = objectsList.transform.Find("CurrentlySelectedText").GetComponent<Text>();
 
-                GameObject consoleObj = Instantiate(new GameObject());
-                consoleObj.AddComponent<Console>();
-                consoleObj.name = "ModConsole";
-                DontDestroyOnLoad(consoleObj);
-
                 modLoaderText = UICanvas.transform.GetChild(0).Find("JaLoader").gameObject;
                 modFolderText = UICanvas.transform.GetChild(0).Find("ModsFolder").gameObject;
+
+                Console.Instance.Init();
 
                 if (settingsManager.HideModFolderLocation)
                     modFolderText.SetActive(false);
@@ -325,7 +349,7 @@ namespace JaLoader
                 {
                     //couldn't check for updates
 
-                    Console.Instance.LogError("Couldn't check for updates!");
+                    Console.LogError("Couldn't check for updates!");
 
                     modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
                 }
@@ -414,15 +438,17 @@ namespace JaLoader
 
                 SetOptionsValues();
 
-                Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
+                Console.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
                 gameObject.GetComponent<Stopwatch>().StopCounting();
                 Debug.Log($"Loaded JaLoader UI! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Console.Instance.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} failed to load successfully!");
+                Console.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} failed to load successfully!");
                 gameObject.GetComponent<Stopwatch>().StopCounting();
                 Debug.Log($"Failed to load JaLoader UI!");
+
+                Debug.Log($"Exception: {e}");
 
                 ShowNotice("JaLoader failed to load!", "JaLoader failed to fully load the UI. This is likely due to an outdated JaLoader_UI.unity3d file. Please try reinstalling JaLoader with JaPatcher.");
 

@@ -2,10 +2,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Theraot.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -101,6 +101,13 @@ namespace JaLoader
                 yield return req.SendWebRequest();
 
                 AudioClip clip = DownloadHandlerAudioClip.GetContent(req);
+
+                if(clip.frequency != 44100)
+                {
+                    Console.LogError($"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
+
+                    continue;
+                }
 
                 clip.name = file.Name;
 

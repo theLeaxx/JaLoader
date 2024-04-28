@@ -1,23 +1,17 @@
 ﻿using UnityEngine;
 using JaLoader;
-using System.Timers;
 using Object = UnityEngine.Object;
-using Timer = System.Timers.Timer;
 using System.Reflection;
 using System.IO;
 using System;
-using System.Collections.Generic;
-using System.Threading;
 using System.Windows.Forms;
 
-// THE FUCKING PRELOADER DOESN'T LOAD EVERYTIME AGAIN
-// TODO: find a better, reliable way to inject the main dll, maybe merge the two DLLs together?
 namespace Doorstop
 {
     class Entrypoint
     {
-        private static Timer timer;
         static string unityVersion = "";
+        static int i = 0;
 
         public static void Start()
         {
@@ -28,47 +22,87 @@ namespace Doorstop
             if (unityVersion.StartsWith("4"))
             {
                 MessageBox.Show("JaLoader is currently not compatible with versions of Jalopy prior to v1.1!", "JaLoader", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
+                AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoadUnity4;
             }
-
-            timer = new Timer(3000);
-            timer.Elapsed += RunTimer;
-            timer.Enabled = true;
+            else
+            {
+                AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoadUnity5;
+            }
         }
 
-        private static void RunTimer(object sender, ElapsedEventArgs e)
+        static void OnAssemblyLoadUnity4(object sender, AssemblyLoadEventArgs args)
         {
-            GameObject obj = new GameObject();
+            i++;
 
-            GameObject insObj = Object.Instantiate(obj);
-            insObj.AddComponent<AddModLoaderComponent>();
-            Object.DontDestroyOnLoad(insObj);
+            if (i == 17)
+            {
+                GameObject obj = (GameObject)Object.Instantiate(new GameObject());
+                Debug.Log("Created object");
+                obj.name = "JaPreLoader";
+                obj.AddComponent<AddModLoaderComponentUnity4>();
+                Object.DontDestroyOnLoad(obj);
+            }
+        }
 
-            timer.Enabled = false;
-            timer.Dispose();
-            timer.Elapsed -= RunTimer;
-            timer = null;
+        static void OnAssemblyLoadUnity5(object sender, AssemblyLoadEventArgs args)
+        {
+            i++;
+
+            if(i == 66)
+            {
+                Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoader.dll");
+
+                GameObject obj = (GameObject)Object.Instantiate(new GameObject());
+                obj.AddComponent<AddModLoaderComponent>();
+                Object.DontDestroyOnLoad(obj);
+            } 
         }
     }
 
     public class AddModLoaderComponent : MonoBehaviour
     {
-        void Start()
+        private EventInfo logMessageReceivedEvent;
+        private Delegate delegateInstance;
+
+        void Awake()
         {
             Debug.Log("JaLoader found!");
+
+            // alternative to
+            // UnityEngine.Application.logMessageReceived += LogMessageReceived;
+            // using reflection, since it doesnt exist in unity 4 and below, but required for unity 5 and above
+
+            Type applicationType = typeof(UnityEngine.Application);
+
+            logMessageReceivedEvent = applicationType.GetEvent("logMessageReceived");
+
+            Type delegateType = logMessageReceivedEvent.EventHandlerType;
+
+            delegateInstance = Delegate.CreateDelegate(delegateType, this, typeof(AddModLoaderComponent).GetMethod("LogMessageReceived"));
+
+            logMessageReceivedEvent.AddEventHandler(null, delegateInstance);
         }
 
-        void Update()
+        public void LogMessageReceived(string message, string stack, LogType type)
         {
-            if (!gameObject.GetComponent<ModLoader>())
+            if ((message == "Received stats and achievements from Steam\n" && type == LogType.Log) || (message.EndsWith("Is the refresh rate") && type == LogType.Error))
             {
-                gameObject.AddComponent<ModLoader>();
+                GameObject obj = (GameObject)Instantiate(new GameObject());
+                obj.AddComponent<ModLoader>();
+
+                logMessageReceivedEvent.RemoveEventHandler(null, delegateInstance);
             }
-            else
-            {
-                gameObject.name = "JaLoader";
-                Destroy(this);
-            }
+        }    
+    }
+
+    public class AddModLoaderComponentUnity4 : MonoBehaviour
+    {
+        private void Start()
+        {
+            Debug.Log("Compatibility mode enabled! JaLoader is not yet fully stable on Unity 4, please report any issues on GitHub!");
+            Debug.Log("JaLoader found! (Compatibility mode, Unity 4 detected)");
+
+            // TO DO: Add compatibility mode for Unity 4
         }
     }
 }
