@@ -85,7 +85,7 @@ namespace Doorstop
 
         public void LogMessageReceived(string message, string stack, LogType type)
         {
-            if (message == "Received stats and achievements from Steam\n" && type == LogType.Log)
+            if ((message == "Received stats and achievements from Steam\n" && type == LogType.Log) || (message.EndsWith("Is the refresh rate") && type == LogType.Error))
             {
                 GameObject obj = (GameObject)Instantiate(new GameObject());
                 obj.AddComponent<ModLoader>();

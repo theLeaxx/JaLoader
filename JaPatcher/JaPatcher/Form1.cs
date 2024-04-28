@@ -101,7 +101,8 @@ namespace JalopyModLoader
             "MonoMod.Utils.dll",
             "JaLoader.dll",
             "JaPreLoader.dll",
-            "JaLoader.xml"
+            "JaLoader.xml",
+            "MonoMod.ILHelpers.dll"
         };
 
         private readonly string winhttpDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\winhttp.dll");

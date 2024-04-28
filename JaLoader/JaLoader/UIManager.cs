@@ -1,6 +1,5 @@
 ﻿using BepInEx;
-using HarmonyLib;
-using HarmonyLib.Tools;
+
 using System;
 using System.CodeDom;
 using System.Collections;
@@ -46,9 +45,6 @@ namespace JaLoader
 
             values = (int[])Enum.GetValues(typeof(KeyCode));
             keys = new bool[values.Length];
-
-            HarmonyFileLog.Enabled = true;
-            //Harmony.DEBUG = true;
         }
 
         #endregion

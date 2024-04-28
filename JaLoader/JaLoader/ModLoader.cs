@@ -72,7 +72,7 @@ namespace JaLoader
         Color32 defaultWhiteColor = new Color32(255, 255, 255, 255);
         Color32 defaultGrayColor = new Color32(120, 120, 120, 255);
 
-        private string[] requiredDLLs = new string[] { 
+        private string[] requiredDLLs = new string[] {
             "0Harmony.dll",
             "HarmonyXInterop.dll",
             "NAudio.dll",
@@ -83,6 +83,7 @@ namespace JaLoader
             "MonoMod.Backports.dll",
             "MonoMod.RuntimeDetour.dll",
             "MonoMod.Utils.dll",
+            "MonoMod.ILHelpers.dll"
         };
 
         private void Start()
