@@ -10,6 +10,7 @@ using Octokit;
 using System.Diagnostics;
 using Microsoft.Win32;
 using Application = System.Windows.Forms.Application;
+using System.Drawing.Text;
 
 namespace JalopyModLoader
 {
@@ -87,15 +88,25 @@ namespace JalopyModLoader
         private bool installed = false;
         private bool updateRequired = false;
 
+        private readonly string[] requiredManagedFiles = new string[] {
+            "0Harmony.dll",
+            "HarmonyXInterop.dll",
+            "NAudio.dll",
+            "Mono.Cecil.dll",
+            "Mono.Cecil.Mdb.dll",
+            "Mono.Cecil.Pdb.dll",
+            "Mono.Cecil.Rocks.dll",
+            "MonoMod.Backports.dll",
+            "MonoMod.RuntimeDetour.dll",
+            "MonoMod.Utils.dll",
+            "JaLoader.dll",
+            "JaPreLoader.dll",
+            "JaLoader.xml"
+        };
+
         private readonly string winhttpDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\winhttp.dll");
         private readonly string doorstopConfig = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\doorstop_config.ini");
-        private readonly string jaLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\JaLoader.dll");
-        private readonly string jaLoaderXML = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\JaLoader.xml");
-        private readonly string jaPreLoaderDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\JaPreLoader.dll");
-        private readonly string theraotDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\Theraot.Core.dll");
-        private readonly string naudioDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\NAudio.dll");
         private readonly string discordDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\discord_game_sdk.dll");
-        private readonly string harmonyDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed\0Harmony.dll");
 
         private readonly string jsonDLL = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\Newtonsoft.Json.dll");
         private readonly string jaDownloader = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\JaDownloader.exe");
@@ -104,7 +115,7 @@ namespace JalopyModLoader
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
-        private readonly string version = "3.1.1";
+        private readonly string version = "3.2.0";
 
         private bool canClickCustom = false;
 
@@ -117,7 +128,17 @@ namespace JalopyModLoader
                 SetDarkMode();
             }
 
-            if (!File.Exists(winhttpDLL) || !File.Exists(harmonyDLL) || !File.Exists(doorstopConfig) || !File.Exists(jaPreLoaderDLL) || !File.Exists(jaLoaderDLL) || !File.Exists(jaLoaderXML) || !File.Exists(assetBundle) || !File.Exists(theraotDLL) || !File.Exists(naudioDLL) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
+            bool anyMissing = false;
+            foreach(string file in requiredManagedFiles)
+            {
+                if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed", file)))
+                {
+                    anyMissing = true;
+                    break;
+                }
+            }
+
+            if (anyMissing || !File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(assetBundle) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
             {
                 MessageBox.Show("Please extract all of the contents from the archive!", "DLLs not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Close();
@@ -152,9 +173,17 @@ namespace JalopyModLoader
             if (tagInt > currentInt)
             {
                 updateButton.Visible = true;
-                installedTextValue.Text = "Yes, Update Available";
                 installedTextValue.ForeColor = Color.Orange;
                 updateRequired = true;
+
+                if (installed)
+                    installedTextValue.Text = "Yes, Update Available";
+                else
+                {
+                    installedTextValue.ForeColor = Color.OrangeRed;
+                    installedTextValue.Text = "No, Update Available";
+                }
+
                 TellAboutUpdate(latest);
             }
         }
@@ -262,16 +291,15 @@ namespace JalopyModLoader
         {
             File.Copy(winhttpDLL, Path.Combine(gamePath, @"winhttp.dll"), true);
             File.Copy(doorstopConfig, Path.Combine(gamePath, @"doorstop_config.ini"), true);
-            File.Copy(jaPreLoaderDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll"), true);
-            File.Copy(jaLoaderDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll"), true);
-            File.Copy(jaLoaderXML, Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.xml"), true);
-            File.Copy(theraotDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll"), true);
-            File.Copy(naudioDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\NAudio.dll"), true);
             File.Copy(discordDLL, Path.Combine(gamePath, @"discord_game_sdk.dll"), true);
             File.Copy(jsonDLL, Path.Combine(gamePath, @"Newtonsoft.Json.dll"), true);
             File.Copy(jaDownloader, Path.Combine(gamePath, @"JaDownloader.exe"), true);
             File.Copy(jaDownloaderSetup, Path.Combine(gamePath, @"JaDownloaderSetup.exe"), true);
-            File.Copy(harmonyDLL, Path.Combine(gamePath, @"Jalopy_Data\Managed\0Harmony.dll"), true);
+
+            foreach(string file in requiredManagedFiles)
+            {
+                File.Copy(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed", file), Path.Combine(gamePath, @"Jalopy_Data\Managed", file), true);
+            }
 
             File.Copy(updater, Path.Combine(gamePath, @"JaUpdater.exe"), true);
 
@@ -303,17 +331,16 @@ namespace JalopyModLoader
         {
             File.Delete(Path.Combine(gamePath, @"winhttp.dll"));
             File.Delete(Path.Combine(gamePath, @"doorstop_config.ini"));
-            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll"));
-            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll"));
-            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.xml"));
-            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll"));
-            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\NAudio.dll"));
             File.Delete(Path.Combine(gamePath, @"discord_game_sdk.dll"));
             File.Delete(Path.Combine(gamePath, @"JaUpdater.exe"));
             File.Delete(Path.Combine(gamePath, @"Newtonsoft.Json.dll"));
             File.Delete(Path.Combine(gamePath, @"JaDownloader.exe"));
             File.Delete(Path.Combine(gamePath, @"JaDownloaderSetup.exe"));
-            File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed\0Harmony.dll"));
+
+            foreach (string file in requiredManagedFiles)
+            {
+                File.Delete(Path.Combine(gamePath, @"Jalopy_Data\Managed", file));
+            }
 
             if (MessageBox.Show("Would you like to delete the configuration files too?", "JaPatcher", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
             {
@@ -345,7 +372,17 @@ namespace JalopyModLoader
             gamePath = Path.GetDirectoryName(folder);
             gameFolderModsPath = Path.Combine(gamePath, @"Mods");
 
-            if (File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaLoader.dll")) && File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\JaPreLoader.dll")) && File.Exists(Path.Combine(gamePath, @"winhttp.dll")) && File.Exists(Path.Combine(gamePath, @"doorstop_config.ini")) && File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\Theraot.Core.dll")) && File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed\NAudio.dll")) && File.Exists(Path.Combine(gamePath, @"discord_game_sdk.dll")))
+            bool allExist = true;
+            foreach (string file in requiredManagedFiles)
+            {
+                if (!File.Exists(Path.Combine(gamePath, @"Jalopy_Data\Managed", file)))
+                {
+                    allExist = false;
+                    break;
+                }
+            }
+
+            if (allExist && File.Exists(Path.Combine(gamePath, @"winhttp.dll")) && File.Exists(Path.Combine(gamePath, @"doorstop_config.ini")) && File.Exists(Path.Combine(gamePath, @"discord_game_sdk.dll")))
             {
                 installed = true;
 
@@ -365,10 +402,20 @@ namespace JalopyModLoader
             else
             {
                 installed = false;
-                updateRequired = false;
-                installButton.Text = "Install";
-                installedTextValue.Text = "No";
-                installedTextValue.ForeColor = Color.Red;
+
+                if (updateRequired)
+                {
+                    updateButton.Visible = true;
+                    installButton.Text = "Install";
+                    installedTextValue.Text = "No, Update Available";
+                    installedTextValue.ForeColor = Color.OrangeRed;
+                }
+                else
+                {
+                    installButton.Text = "Install";
+                    installedTextValue.Text = "No";
+                    installedTextValue.ForeColor = Color.Red;
+                }
             }
 
             if (!Directory.Exists(documentsModsPath))
@@ -414,9 +461,19 @@ namespace JalopyModLoader
                 Uninstall();
                 installed = false;
                 installButton.Text = "Install";
-                installedTextValue.Text = "No";
-                installedTextValue.ForeColor = Color.Red;
-                updateButton.Visible = false;
+
+                if (updateRequired)
+                {
+                    updateButton.Visible = true;
+                    installedTextValue.Text = "No, Update Available";
+                    installedTextValue.ForeColor = Color.OrangeRed;
+                }
+                else
+                {
+                    updateButton.Visible = false;
+                    installedTextValue.Text = "No";
+                    installedTextValue.ForeColor = Color.Red;
+                }
             }
             else
             {

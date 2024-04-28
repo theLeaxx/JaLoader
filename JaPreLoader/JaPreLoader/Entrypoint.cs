@@ -37,11 +37,10 @@ namespace Doorstop
             if (i == 17)
             {
                 GameObject obj = (GameObject)Object.Instantiate(new GameObject());
-                Debug.Log("CREATED OBJECT");
-                obj.name = "TEST TEST TEST";
+                Debug.Log("Created object");
+                obj.name = "JaPreLoader";
                 obj.AddComponent<AddModLoaderComponentUnity4>();
                 Object.DontDestroyOnLoad(obj);
-                Debug.Log("ADDED COMPONENT");
             }
         }
 
@@ -70,7 +69,7 @@ namespace Doorstop
             Debug.Log("JaLoader found!");
 
             // alternative to
-            //UnityEngine.Application.logMessageReceived += LogMessageReceived;
+            // UnityEngine.Application.logMessageReceived += LogMessageReceived;
             // using reflection, since it doesnt exist in unity 4 and below, but required for unity 5 and above
 
             Type applicationType = typeof(UnityEngine.Application);
@@ -90,9 +89,7 @@ namespace Doorstop
             {
                 GameObject obj = (GameObject)Instantiate(new GameObject());
                 obj.AddComponent<ModLoader>();
-                Debug.Log("ADDED JALOADER");
 
-                //UnityEngine.Application.logMessageReceived -= LogMessageReceived;
                 logMessageReceivedEvent.RemoveEventHandler(null, delegateInstance);
             }
         }    
@@ -105,7 +102,7 @@ namespace Doorstop
             Debug.Log("Compatibility mode enabled! JaLoader is not yet fully stable on Unity 4, please report any issues on GitHub!");
             Debug.Log("JaLoader found! (Compatibility mode, Unity 4 detected)");
 
-            
+            // TO DO: Add compatibility mode for Unity 4
         }
     }
 }

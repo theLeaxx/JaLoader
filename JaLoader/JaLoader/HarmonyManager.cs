@@ -44,19 +44,8 @@ namespace JaLoader
 
         public void PatchAll()
         {
-            Console.Log("PATCHING ALL");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
-
-        public void PatchBuyButton()
-        {
-             /*if (harmony == null)
-             {
-                harmony = new Harmony("JaLoader.Leaxx");
-                harmony.Patch(typeof(CatalogueBuyButtonC).GetMethod("Trigger"), prefix: new HarmonyMethod(typeof(CatalogueBuyButtonC_Trigger_Patch).GetMethod("Prefix")) ,postfix: new HarmonyMethod(typeof(CatalogueBuyButtonC_Trigger_Patch).GetMethod("Postfix")));
-             }*/
-        }
-
     }
 
     public class CoroutineManager : MonoBehaviour

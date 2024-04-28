@@ -173,8 +173,6 @@ namespace JaLoader
             }
 
             OnGameLoad();
-
-            Console.Log("ON GAME LOAD");
         }
 
         public void OnLog(string message, string stack, LogType type)
