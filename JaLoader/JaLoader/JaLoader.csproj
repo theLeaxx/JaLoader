@@ -203,6 +203,7 @@
     <Compile Include="EventsManager.cs" />
     <Compile Include="EnhancedMovement.cs" />
     <Compile Include="Console.cs" />
+    <Compile Include="GameTweaks.cs" />
     <Compile Include="HarmonyManager.cs" />
     <Compile Include="DragRigidbodyC_ModExtension.cs" />
     <Compile Include="CustomObjectInfo.cs" />

@@ -33,7 +33,7 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        public static readonly string JaLoaderVersion = "3.2.0";
+        public static readonly string JaLoaderVersion = "3.3.0";
         public static readonly bool IsPreReleaseVersion = false;
         public static readonly string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
         public string ModFolderLocation { get; private set; }
@@ -54,9 +54,11 @@ namespace JaLoader
         public bool UseDiscordRichPresence;
         public string LicensePlateText;
         public bool ShowFPSCounter;
-        public bool EnableJaDownloader;
         public UpdateCheckModes UpdateCheckMode;
+        public bool EnableJaDownloader;
         public bool AskedAboutJaDownloader;
+        public bool FixLaikaShopMusic;
+        public MirrorDistances MirrorDistances;
 
         public DateTime lastUpdateCheck;
         private bool shouldCheckForUpdates = true;
@@ -326,6 +328,8 @@ namespace JaLoader
             EnableJaDownloader = _settings.EnableJaDownloader;
             AskedAboutJaDownloader = _settings.AskedAboutJaDownloader;
             UpdateCheckMode = _settings.UpdateCheckMode;
+            FixLaikaShopMusic = _settings.FixLaikaShopMusic;
+            MirrorDistances = _settings.MirrorDistances;
 
             EventsManager.Instance.OnSettingsLoad();
         }
@@ -355,6 +359,9 @@ namespace JaLoader
             _settings.EnableJaDownloader = EnableJaDownloader;
             _settings.AskedAboutJaDownloader = AskedAboutJaDownloader;
             _settings.UpdateCheckMode = UpdateCheckMode;
+
+            _settings.FixLaikaShopMusic = FixLaikaShopMusic;
+            _settings.MirrorDistances = MirrorDistances;
 
             if (includeDisabledMods)
             {
@@ -418,6 +425,8 @@ namespace JaLoader
         [SerializeField] public bool EnableJaDownloader = false;
         [SerializeField] public bool AskedAboutJaDownloader = false;
         [SerializeField] public UpdateCheckModes UpdateCheckMode = UpdateCheckModes.Daily;
+        [SerializeField] public bool FixLaikaShopMusic = true;
+        [SerializeField] public MirrorDistances MirrorDistances = MirrorDistances.m1000;
     }
 
     public enum UpdateCheckModes
@@ -433,5 +442,20 @@ namespace JaLoader
     {
         Add,
         Replace
+    }
+
+    public enum MirrorDistances
+    {
+        m250,
+        m500,
+        m750,
+        m1000,
+        m1500,
+        m2000,
+        m2500,
+        m3000,
+        m3500,
+        m4000,
+        m5000
     }
 }
