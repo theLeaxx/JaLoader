@@ -123,6 +123,7 @@ namespace JaLoader
             gameObject.AddComponent<ReferencesLoader>();
             gameObject.AddComponent<CustomRadioController>();
             gameObject.AddComponent<ExtrasManager>();
+            gameObject.AddComponent<GameTweaks>();
 
             helperObj.AddComponent<ModHelper>();
             helperObj.AddComponent<UncleHelper>();
@@ -327,12 +328,13 @@ namespace JaLoader
 
                                 Debug.Log($"Loaded mod {mod.ModName}");
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
                                 mod.gameObject.SetActive(false);
 
                                 Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} failed");
                                 Debug.Log($"Failed to load mod {mod.ModName}. An error occoured while enabling the mod.");
+                                Debug.Log(ex);
 
                                 Console.LogError("JaLoader", $"An error occured while trying to load mod \"{mod.ModName}\"");
 
@@ -375,12 +377,13 @@ namespace JaLoader
                                 Debug.Log($"Loaded BepInEx mod {modInfo.Name}");
 
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
                                 bix_mod.gameObject.SetActive(false);
 
                                 Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} failed");
                                 Debug.Log($"Failed to load BepInEx mod {modInfo.Name}. An error occoured while enabling the mod.");
+                                Debug.Log(ex);
 
                                 Console.LogError("JaLoader", $"An error occured while trying to load BepInEx mod \"{modInfo.name}\"");
 
@@ -412,12 +415,13 @@ namespace JaLoader
 
                             Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             mod.gameObject.SetActive(false);
 
                             Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} failed");
                             Debug.Log($"Failed to load mod {mod.ModName}. An error occoured while enabling the mod.");
+                            Debug.Log(ex);
 
                             Console.LogError("JaLoader", $"An error occured while trying to load mod \"{mod.ModName}\"");
 

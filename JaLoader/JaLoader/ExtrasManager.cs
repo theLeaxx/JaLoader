@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Steamworks;
+using System;
+using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -36,10 +38,14 @@ namespace JaLoader
 
         private ModHelper modHelper;
         public Dictionary<AttachExtraTo, GameObject> ExtrasHolders = new Dictionary<AttachExtraTo, GameObject>();
-        private readonly Dictionary<int, GameObject> SpawnedExtras = new Dictionary<int, GameObject>();
-        private readonly Dictionary<(string, int), (GameObject, AttachExtraTo)> Extras = new Dictionary<(string, int), (GameObject, AttachExtraTo)>();
+        private readonly Dictionary<int, (GameObject, string, Dictionary<string, bool>)> SpawnedExtras = new Dictionary<int, (GameObject, string, Dictionary<string, bool>)>();
+        private readonly Dictionary<(string, int), (GameObject, AttachExtraTo, Dictionary<string, bool>)> Extras = new Dictionary<(string, int), (GameObject, AttachExtraTo, Dictionary<string, bool>)>();
 
         [SerializeField] private ExtrasSave data = new ExtrasSave();
+
+        public Color red = new Color32(255, 0, 0, 43);
+        public Color def = new Color32(255, 255, 255, 43);
+        public Color orange = new Color32(255, 78, 0, 43);
 
         private void AddExtrasHolders()
         {
@@ -109,7 +115,7 @@ namespace JaLoader
         /// <returns></returns>
         public GameObject GetHolder(string name)
         {
-            return SpawnedExtras[GetExtraID(name)];
+            return SpawnedExtras[GetExtraID(name)].Item1;
         }
 
         /// <summary>
@@ -119,7 +125,7 @@ namespace JaLoader
         /// <returns></returns>
         public GameObject GetHolder(int ID)
         {
-            return SpawnedExtras[ID];
+            return SpawnedExtras[ID].Item1;
         }
 
         /// <summary>
@@ -171,7 +177,30 @@ namespace JaLoader
             }
 
             currentFreeID++;
-            Extras.Add((registryName, currentFreeID), (obj, attachTo));
+            Extras.Add((registryName, currentFreeID), (obj, attachTo, null));
+        }
+
+        /// <summary>
+        /// Add an extra to the game
+        /// </summary>
+        /// <param name="obj">The object in question</param>
+        /// <param name="pos">The position of the object</param>
+        /// <param name="registryName">The registry name of the extra</param>
+        /// <param name="attachTo">What should it attach to?</param>
+        /// <param name="blockedBy">Parts that may block the installation of this extra part, or replace it (registryName, completely block (true) or replace current part (false))</param>
+        public void AddExtraObject(GameObject obj, Vector3 pos, string registryName, AttachExtraTo attachTo, Dictionary<string, bool> blockedBy)
+        {
+            foreach (var pair in Extras)
+            {
+                if (pair.Key.Item1 == registryName)
+                {
+                    Console.Log($"Extra with registry name {registryName} already exists!");
+                    return;
+                }
+            }
+
+            currentFreeID++;
+            Extras.Add((registryName, currentFreeID), (obj, attachTo, blockedBy));
         }
 
         /// <summary>
@@ -194,29 +223,131 @@ namespace JaLoader
 
         public void StartGlow(int ID)
         {
-            SpawnedExtras[ID].GetComponent<ExtraReceiverC>().GlowMesh();
-            SpawnedExtras[ID].GetComponent<ExtraReceiverC>().CollisionsOn();
-            SpawnedExtras[ID].transform.GetChild(2).gameObject.SetActive(true);
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().GlowMesh();
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOn();
+            SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(true);
         }
 
         public void StopGlow(int ID)
         {
-            SpawnedExtras[ID].GetComponent<ExtraReceiverC>().GlowStop();
-            SpawnedExtras[ID].GetComponent<ExtraReceiverC>().CollisionsOff();
-            SpawnedExtras[ID].transform.GetChild(2).gameObject.SetActive(false);
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().GlowStop();
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
+            SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(true);
         }
 
-        public void Fitted(int ID)
+        public void Fitted(int ID) // make red if cant install, orange if replace
         {
-            SpawnedExtras[ID].GetComponent<ExtraReceiverC>().Action();
+            bool canInstall = true;
+
+            foreach(KeyValuePair<string, bool> pair in GetBlockedBy(ID))
+            {
+                if (pair.Key == GetExtraRegistryName(ID))
+                    continue;
+
+                if (Replace(pair, ID) == false)
+                {
+                    canInstall = false;
+                    return;
+                }
+            }
+
+            if (SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed == true)
+                canInstall = false;
+
+            if (!canInstall)
+                return;
+
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().Action();
             if (SceneManager.GetActiveScene().buildIndex == 3)
             {
-                FindObjectOfType<CarPerformanceC>().carExtrasWeight += SpawnedExtras[ID].GetComponent<HolderInformation>().Weight;
-                FindObjectOfType<CarPerformanceC>().totalCarWeight += SpawnedExtras[ID].GetComponent<HolderInformation>().Weight;
+                FindObjectOfType<CarPerformanceC>().carExtrasWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;
+                FindObjectOfType<CarPerformanceC>().totalCarWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;
             }
-            SpawnedExtras[ID].GetComponent<ExtraReceiverC>().CollisionsOff();
-            SpawnedExtras[ID].transform.GetChild(2).gameObject.SetActive(false);
-            SpawnedExtras[ID].GetComponent<HolderInformation>().Installed = true;
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
+            SpawnedExtras[ID].Item1.transform.GetChild(2).gameObject.SetActive(false);
+            SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed = true;
+            SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().CurrentlyInstalledPart = SpawnedExtras[ID].Item2;
+        }
+
+        public Dictionary<string, bool> GetBlockedBy(int ID)
+        {
+            var toReturn = new Dictionary<string, bool>();
+
+            if (SpawnedExtras[ID].Item3 != null && SpawnedExtras[ID].Item3.Count > 0)
+            {
+                foreach (var pair in SpawnedExtras[ID].Item3)
+                {
+                    if (ExtraExists(pair.Key))
+                    {
+                        if (GetHolder(GetExtraIDByRegistryName(pair.Key))?.GetComponent<HolderInformation>())
+                        {
+                            toReturn.Add(pair.Key, pair.Value);
+                        }
+                    }
+                }
+            }
+
+            foreach(var entry in SpawnedExtras)
+            {
+                if(entry.Value.Item3 != null && entry.Value.Item3.Count > 0)
+                {
+                    foreach(var pair in entry.Value.Item3)
+                    {
+                        if (pair.Key == GetExtraRegistryName(ID))
+                        {
+                            toReturn.Add(entry.Value.Item2, pair.Value);
+                        }
+                    }
+                }
+            }
+
+            return toReturn;
+        }
+
+        private bool Replace(KeyValuePair<string, bool> pair, int ID)
+        {
+            if (pair.Value == true)
+            {
+                return false;
+            }
+            else
+            {
+                var extraObj = SpawnedExtras[GetExtraIDByRegistryName(pair.Key)].Item1;
+                extraObj.transform.Find("Mesh").gameObject.SetActive(false);
+                var clone = extraObj.transform.Find("MeshReceiverClone");
+                var newReceiver = Instantiate(clone, clone.transform.parent);
+                Destroy(clone.transform.parent.Find("MeshReceiver").gameObject);
+                newReceiver.name = "MeshReceiver";
+
+                newReceiver.position = clone.position;
+                newReceiver.rotation = clone.rotation;
+                newReceiver.localScale = clone.localScale;
+
+                List<GameObject> children = new List<GameObject>();
+
+                foreach (Transform child in newReceiver.transform)
+                    children.Add(child.gameObject);
+
+                newReceiver.gameObject.SetActive(true);
+
+                newReceiver.transform.parent.GetComponent<ExtraReceiverC>().glowMesh = children.ToArray();
+                newReceiver.transform.parent.GetComponent<ExtraReceiverC>().stopGlow = false;
+                newReceiver.transform.parent.GetComponent<HolderInformation>().Installed = false;
+                newReceiver.transform.parent.GetComponent<HolderInformation>().CurrentlyInstalledPart = "";
+
+                FindObjectOfType<CarPerformanceC>().carExtrasWeight -= extraObj.GetComponent<HolderInformation>().Weight;
+                FindObjectOfType<CarPerformanceC>().totalCarWeight -= extraObj.GetComponent<HolderInformation>().Weight;
+
+                SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().Action();
+
+                SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
+                SpawnedExtras[ID].Item1.transform.GetChild(2).gameObject.SetActive(false);
+                SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed = true;
+                SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().CurrentlyInstalledPart = SpawnedExtras[ID].Item2;
+                SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(false);
+
+                return true;
+            }
         }
 
         private void AddExtras()
@@ -233,7 +364,7 @@ namespace JaLoader
                 spawnedHolder.transform.localPosition = new Vector3(-0.1f, -0.9f, 0.1f);
                 spawnedHolder.transform.localEulerAngles = new Vector3(0, 0, 0);
                 spawnedHolder.transform.localScale = new Vector3(1, 1, 1);
-                SpawnedExtras.Add(extra.Key.Item2, spawnedHolder);
+                SpawnedExtras.Add(extra.Key.Item2, (spawnedHolder, extra.Key.Item1, extra.Value.Item3));
 
                 if (SceneManager.GetActiveScene().buildIndex == 1)
                 {
@@ -284,7 +415,7 @@ namespace JaLoader
 
             foreach (var entry in SpawnedExtras.Keys)
             {
-                if (!SpawnedExtras[entry].GetComponent<HolderInformation>() || !SpawnedExtras[entry].GetComponent<HolderInformation>().Installed)
+                if (!SpawnedExtras[entry].Item1.GetComponent<HolderInformation>() || !SpawnedExtras[entry].Item1.GetComponent<HolderInformation>().Installed)
                     continue;
 
                 string name = $"{GetExtraRegistryName(entry)}";
@@ -356,8 +487,14 @@ namespace JaLoader
 
         public GameObject[] sprites = new GameObject[0];
 
+        public int ID;
+        public string registryName;
+        private ExtrasManager extrasManager;
+        private ExtraInformation extraInformation;
+
         private void Start()
         {
+            extrasManager = ExtrasManager.Instance;
             _camera = Camera.main.gameObject;
             carLogic = GameObject.FindWithTag("CarLogic");
 
@@ -384,11 +521,19 @@ namespace JaLoader
 
             audioOpen = clonedClip;
             Destroy(prefab);
+
+            ID = GetComponent<ObjectIdentification>().ExtraID;
+            registryName = extrasManager.GetExtraRegistryName(ID);
+
+            extraInformation = GetComponent<ExtraInformation>();
+            extraInformation.ID = ID;
+            extraInformation.RegistryName = registryName;
+            extraInformation.BlockedBy = extrasManager.GetBlockedBy(ID);
         }
 
         private void Update()
         {
-            if ((double)openTimer >= 0.7 && !debugOpen)
+            if (openTimer >= 0.7 && !debugOpen)
             {
                 debugOpen = true;
                 ActionPart2();
@@ -423,7 +568,7 @@ namespace JaLoader
 
         public void PickUp()
         {
-            ExtrasManager.Instance.StartGlow(componentID);   
+            StartRendering();
         }
 
         public void DecalReload()
@@ -435,27 +580,128 @@ namespace JaLoader
 
         public void MoveToSlot1()
         {
+            StartRendering();
+        }
+
+        public void StartRendering()
+        {
+            bool caseRed = false;
+            bool caseOrange = false;
+
+            if(extraInformation.BlockedBy.Count > 0)
+            {
+                foreach(var pair in extraInformation.BlockedBy)
+                {
+                    var thisID = extrasManager.GetExtraIDByRegistryName(pair.Key);
+
+                    if (!extrasManager.GetHolder(thisID).GetComponent<HolderInformation>().Installed)
+                        continue;
+
+                    var renderers = extrasManager.GetHolder(thisID).transform.Find("MeshReceiverClone").GetComponentsInChildren<Renderer>();
+
+                    if (pair.Value)
+                    {
+                        caseRed = true;
+
+                        foreach (var renderer in renderers)
+                        {
+                            foreach (var material in renderer.materials)
+                                material.color = extrasManager.red;
+
+                            renderer.enabled = true;
+                        }
+                    }
+                    else
+                    {
+                        caseOrange = true;
+
+                        foreach (var renderer in renderers)
+                        {
+                            foreach(var material in renderer.materials)
+                                material.color = extrasManager.orange;
+ 
+                            renderer.enabled = true;
+                        }
+                    }
+
+                    var origMeshRenderers = extrasManager.GetHolder(thisID).transform.Find("Mesh").GetComponentsInChildren<Renderer>();
+                    foreach (var renderer in origMeshRenderers)
+                            renderer.enabled = false;
+                    if(extrasManager.GetHolder(thisID).transform.Find("Mesh").GetComponent<MeshRenderer>() != null)
+                        extrasManager.GetHolder(thisID).transform.Find("Mesh").GetComponent<MeshRenderer>().enabled = false;
+
+                    extrasManager.GetHolder(thisID).transform.Find("MeshReceiverClone").gameObject.SetActive(true);
+                }
+            }
+
+            if(caseRed)
+                UIManager.Instance.ShowTooltip("This part is incompatible with the parts highlighted in red!");
+            else if(caseOrange)
+                UIManager.Instance.ShowTooltip("Installing this part will remove the parts highlighted in orange!");
+
             ExtrasManager.Instance.StartGlow(componentID);
         }
 
         public void MoveToSlot2()
         {
-            ExtrasManager.Instance.StopGlow(componentID);
+            StopRendering();
         }
 
         public void MoveToSlot3()
         {
-            ExtrasManager.Instance.StopGlow(componentID);
+            StopRendering();
         }
 
         public void StopRendering()
         {
+            UIManager.Instance.HideTooltip();
+
             ExtrasManager.Instance.StopGlow(componentID);
+        }
+
+        private void RevertColors()
+        {
+            if (extraInformation.BlockedBy.Count > 0)
+            {
+                foreach (var pair in extraInformation.BlockedBy)
+                {
+                    var thisID = extrasManager.GetExtraIDByRegistryName(pair.Key);
+
+                    var renderers = extrasManager.GetHolder(thisID).transform.Find("MeshReceiverClone").GetComponentsInChildren<Renderer>();
+                    foreach (var renderer in renderers)
+                    {
+                        foreach (var material in renderer.materials)
+                            material.color = extrasManager.def;
+
+                        renderer.enabled = false;
+                    }
+
+                    extrasManager.GetHolder(thisID).transform.Find("MeshReceiverClone").gameObject.SetActive(false);
+
+                    var renderers_new = extrasManager.GetHolder(thisID).transform.Find("MeshReceiver").GetComponentsInChildren<Renderer>();
+                    foreach (var renderer in renderers_new)
+                    {
+                        foreach (var material in renderer.materials)
+                            material.color = extrasManager.def;
+
+                        renderer.enabled = false;
+                    }
+
+                    var origMeshRenderers = extrasManager.GetHolder(thisID).transform.Find("Mesh").GetComponentsInChildren<Renderer>();
+                    foreach (var renderer in origMeshRenderers)
+                        renderer.enabled = true;
+
+                    if (extrasManager.GetHolder(thisID).transform.Find("Mesh").GetComponent<MeshRenderer>() != null)
+                        extrasManager.GetHolder(thisID).transform.Find("Mesh").GetComponent<MeshRenderer>().enabled = true;
+                }
+            }
+
+            UIManager.Instance.HideTooltip();
         }
 
         public void ThrowLogic()
         {
-            ExtrasManager.Instance.StopGlow(componentID);
+            StopRendering();
         }
 
         public void Action()
@@ -487,6 +733,7 @@ namespace JaLoader
 
         public void ActionPart2()
         {
+            RevertColors();
             ExtrasManager.Instance.Fitted(componentID);
 
             StartCoroutine("ParticlesAndAnim");

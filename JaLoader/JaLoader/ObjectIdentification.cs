@@ -30,5 +30,13 @@ namespace JaLoader
     {
         public bool Installed;
         public int Weight;
+        public string CurrentlyInstalledPart = "";
+    }
+
+    public class ExtraInformation : MonoBehaviour
+    {
+        public Dictionary<string, bool> BlockedBy = new Dictionary<string, bool>();
+        public int ID;
+        public string RegistryName = "";
     }
 }

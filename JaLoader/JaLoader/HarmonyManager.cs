@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using MonoMod.RuntimeDetour;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -422,14 +423,14 @@ namespace JaLoader
         [HarmonyPrefix]
         public static void Prefix(CatalogueBuyButtonC __instance)
         {
-            if(__instance.gameObject.GetComponent<HomeStorageClipboardC>() != null)
+            if(__instance.transform.parent.parent.gameObject.GetComponent<HomeStorageClipboardC>() == null)
                 __instance.pageLogic.SetActive(true);
         }
 
         [HarmonyPostfix]
         public static void Postfix(CatalogueBuyButtonC __instance)
         {
-            if (__instance.gameObject.GetComponent<HomeStorageClipboardC>() != null)
+            if (__instance.transform.parent.parent.gameObject.GetComponent<HomeStorageClipboardC>() == null)
                 __instance.pageLogic.SetActive(false);
         }
     }
@@ -461,6 +462,45 @@ namespace JaLoader
 
                 __instance.gameObject.GetComponent<AudioSource>().clip = __instance.songShuffle[0];
                 __instance.gameObject.GetComponent<AudioSource>().Play();
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(MapLogicC), "Update")]
+    public static class MapLogicC_Update_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(MapLogicC __instance)
+        {
+            if (__instance.isGlowing)
+            {
+                float value = Mathf.PingPong(Time.time, 0.75f) + 1.25f;
+                __instance.book.GetComponent<Renderer>().material.SetFloat("_RimPower", value);
+            }
+
+            if (Input.GetMouseButtonDown(0) && __instance.isBookOpen)
+            {
+                UIManager.Instance.CanCloseMap = false;
+                UIManager.Instance.Invoke("ResetCanCloseMap", 3.5f);
+            }
+
+            if(!UIManager.Instance.CanCloseMap)
+                return false;
+
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(DragRigidbodyC), "Update")]
+    public static class DragRigidbodyC_Update_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(DragRigidbodyC __instance)
+        {
+            if (__instance.pickingUp && GameTweaks.Instance.ResettingPickingUp == false)
+            {
+                GameTweaks.Instance.ResettingPickingUp = true;
+                GameTweaks.Instance.Invoke("ResetPickingUp", 0.25f);
             }
         }
     }

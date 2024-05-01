@@ -1,11 +1,12 @@
 ﻿using BepInEx;
-
+using HarmonyLib;
 using System;
 using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Security.Policy;
@@ -85,6 +86,9 @@ namespace JaLoader
         public GameObject fpsText { get; private set; }
         public GameObject debugText { get; private set; }
 
+        public GameObject tooltipText { get; private set; }
+        public Text tooltipTextText { get; private set; }
+
         private MainMenuBookC book;
         private GameObject exitConfirmButton;
         private GameObject newGameConfirmButton;
@@ -93,6 +97,7 @@ namespace JaLoader
         private bool inOptions;
         private bool inModsOptions;
         private bool isObstructing;
+        public bool CanCloseMap = true;
 
         #region Settings Dropdown
         // Preferences tab
@@ -116,6 +121,9 @@ namespace JaLoader
         private Dropdown changeLicensePlateTextDropdown;
         private InputField licensePlateTextField;
         private Dropdown showFPSDropdown;
+        private Dropdown fixLaikaShopMusic;
+        private Dropdown replace0WithBanned;
+        public Dropdown mirrorDistance;
         #endregion
 
         private GameObject menuMusicPlayer;
@@ -128,6 +136,11 @@ namespace JaLoader
                 return true;
 
             return (bool)book.GetType().GetField("bookClosed", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).GetValue(book);
+        }
+
+        public void ResetCanCloseMap()
+        {
+            CanCloseMap = true;
         }
 
         private void Update()
@@ -168,7 +181,7 @@ namespace JaLoader
 
             //annoying fix for dropdowns only working once
             if (inOptions && Input.GetMouseButtonDown(0))
-                if (consoleModeDropdown.transform.Find("Dropdown List") || songsBehaviourDropdown.transform.Find("Dropdown List") || radioAdsDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
+                if (consoleModeDropdown.transform.Find("Dropdown List") || fixLaikaShopMusic.transform.Find("Dropdown List") || replace0WithBanned.transform.Find("Dropdown List") || mirrorDistance.transform.Find("Dropdown List") || songsBehaviourDropdown.transform.Find("Dropdown List") || radioAdsDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
                     RefreshUI();
 
             if (inModsOptions && Input.GetMouseButtonDown(0))
@@ -425,6 +438,9 @@ namespace JaLoader
                 changeLicensePlateTextDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/ChangeLicensePlate").gameObject.GetComponent<Dropdown>();
                 licensePlateTextField = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/LicensePlateText/InputField").gameObject.GetComponent<InputField>();
                 showFPSDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row4/ShowFPSCounter").gameObject.GetComponent<Dropdown>();
+                fixLaikaShopMusic = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/FixLaikaShopMusic").gameObject.GetComponent<Dropdown>();
+                replace0WithBanned = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/Replace0WithBanned").gameObject.GetComponent<Dropdown>();
+                mirrorDistance = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/MirrorDistance").gameObject.GetComponent<Dropdown>();
 
                 UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
                 UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenModsFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenModsFolder);
@@ -437,6 +453,8 @@ namespace JaLoader
                 debugText.AddComponent<DebugInfo>();
 
                 SetOptionsValues();
+
+                mirrorDistance.onValueChanged.AddListener(delegate { GameTweaks.Instance.UpdateMirrors((MirrorDistances)mirrorDistance.value); });
 
                 Console.LogMessage("JaLoader", $"JaLoader {settingsManager.GetVersionString()} loaded successfully!");
                 gameObject.GetComponent<Stopwatch>().StopCounting();
@@ -560,17 +578,20 @@ namespace JaLoader
                 if (modSettingsScrollViewContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(modSettingsScrollViewContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
                 {
                     string fullName = modSettingsScrollViewContent.transform.GetChild(i).gameObject.name;
-                    string nameWithSpaces = Regex.Replace(fullName, "_", @" ");
-                    nameWithSpaces = Regex.Replace(nameWithSpaces, Regex.Match(modSettingsScrollViewContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString(), @" ");
 
-                    Regex r = new Regex(@"\s+([^\s]+)");
-                    Match m = r.Match(nameWithSpaces);
+                    string modAuthor = "";
+                    string modID = "";
+                    string modName = "";
 
-                    string modAuthor = Regex.Match(nameWithSpaces, @"^([\w\-]+)").Value;
-                    string modID = m.Groups[1].Value;
-                    string modName = Regex.Replace(Regex.Replace(nameWithSpaces, modID, @" "), modAuthor, @" ").TrimStart().TrimEnd();
+                    string[] parts = fullName.Split('_');
 
-                    if(modName == string.Empty)
+                    modAuthor = parts[0];
+                    modID = parts[1];
+
+                    parts[2].Remove(parts[2].Length - 15);
+                    modName = parts[2];
+
+                    if (modName == string.Empty)
                         modName = modID;
 
                     var mod = modLoader.FindMod(modAuthor, modID, modName);
@@ -610,6 +631,9 @@ namespace JaLoader
             showFPSDropdown.value = settingsManager.ShowFPSCounter ? 1 : 0;
             enableJaDownloaderDropdown.value = settingsManager.EnableJaDownloader ? 0 : 1;
             updateCheckFreqDropdown.value = (int)settingsManager.UpdateCheckMode;
+
+            fixLaikaShopMusic.value = settingsManager.FixLaikaShopMusic ? 0 : 1;
+            mirrorDistance.value = (int)settingsManager.MirrorDistances;
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
             debugText.SetActive(settingsManager.DebugMode);
@@ -655,6 +679,18 @@ namespace JaLoader
 
             UICanvas.SetActive(false);
             UICanvas.SetActive(true);
+        }
+
+        public void ShowTooltip(string text)
+        {
+            UICanvas.transform.Find("JLTooltip/Text").GetComponent<Text>().text = text;
+            UICanvas.transform.Find("JLTooltip").gameObject.SetActive(true);
+        }
+
+        public void HideTooltip()
+        {
+            UICanvas.transform.Find("JLTooltip/Text").GetComponent<Text>().text = "";
+            UICanvas.transform.Find("JLTooltip").gameObject.SetActive(false);
         }
 
         public void ToggleMoreInfo(string name, string author, string version, string description)
@@ -882,6 +918,9 @@ namespace JaLoader
             settingsManager.ShowFPSCounter = Convert.ToBoolean(showFPSDropdown.value);
             settingsManager.EnableJaDownloader = !Convert.ToBoolean(enableJaDownloaderDropdown.value);
             settingsManager.UpdateCheckMode = (UpdateCheckModes)updateCheckFreqDropdown.value;
+
+            settingsManager.FixLaikaShopMusic = !Convert.ToBoolean(fixLaikaShopMusic.value);
+            settingsManager.MirrorDistances = (MirrorDistances)mirrorDistance.value;
 
             fpsText.SetActive(settingsManager.ShowFPSCounter);
             debugText.gameObject.SetActive(settingsManager.DebugMode);

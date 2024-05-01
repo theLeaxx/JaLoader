@@ -166,6 +166,8 @@ namespace JaLoader
                 CrateMed = route.cratePrefabs[4];
                 CrateSmall = route.cratePrefabs[5];
 
+
+
                 OverwriteBoxObjects();
 
                 Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
@@ -431,6 +433,7 @@ namespace JaLoader
                     interactions.handInteractive = true;
                     interactions.targetObjectStringName = obj.name;
                     obj.AddComponent<ExtraComponentC_ModExtension>();
+                    obj.AddComponent<ExtraInformation>();
                     break;
 
                 case PartTypes.Custom:
@@ -484,6 +487,26 @@ namespace JaLoader
         /// <returns></returns>
         public GameObject CreateExtraObject(GameObject objOnCar, BoxSizes size, string name, string description, int price, int weight, string registryName, AttachExtraTo attachTo)
         {
+            return CreateExtraObject(objOnCar, size, name, description, price, weight, registryName, attachTo, null);
+        }
+
+        /// <summary>
+        /// Create a custom extra object, that can be attached to the car
+        /// </summary>
+        /// <param name="objOnCar">The object that will appear on the car, this should have the desired positions set already</param>
+        /// <param name="size">The size of the box</param>
+        /// <param name="name">The name of the extra</param>
+        /// <param name="description">The description of the extra</param>
+        /// <param name="price">The price of the extra</param>
+        /// <param name="weight">How much weight does this add to the car</param>
+        /// <param name="registryName">Internal extra name</param>
+        /// <param name="attachTo">What should the object attach to?</param>
+        /// <param name="blockedBy">Parts that may block the installation of this extra part, or replace it (registryName, completely block (true) or replace current part (false))</param>
+        /// <returns></returns>
+        public GameObject CreateExtraObject(GameObject objOnCar, BoxSizes size, string name, string description, int price, int weight, string registryName, AttachExtraTo attachTo, Dictionary<string, bool> blockedBy = null)
+        {
+            blockedBy = blockedBy ?? new Dictionary<string, bool>();
+
             if(ExtrasManager.Instance.ExtraExists(registryName))
             {
                 if (!CustomObjectsManager.Instance.ignoreAlreadyExists)
@@ -573,8 +596,15 @@ namespace JaLoader
             interactions.handInteractive = false;
             colliderObj.SetActive(false);
 
+            var copy = Instantiate(meshesHolder, meshesHolder.transform.parent);
+            copy.name = "MeshReceiverClone";
+            copy.SetActive(false);
+            copy.transform.position = meshesHolder.transform.position;
+            copy.transform.rotation = meshesHolder.transform.rotation;
+            copy.transform.localScale = meshesHolder.transform.localScale;
+
             DontDestroyOnLoad(extraHolder);
-            ExtrasManager.Instance.AddExtraObject(extraHolder, extraHolder.transform.localPosition, registryName, attachTo);
+            ExtrasManager.Instance.AddExtraObject(extraHolder, extraHolder.transform.localPosition, registryName, attachTo, blockedBy);
 
             var boxObject = Instantiate(new GameObject());
             boxObject.name = extraHolder.name;
@@ -596,6 +626,7 @@ namespace JaLoader
  
             return boxObject;
         }
+
 
         /// <summary>
         /// Adjust a custom part's location, rotation and scale for the part icon
@@ -656,8 +687,8 @@ namespace JaLoader
                 box.transform.SetParent(obj.transform, false);
                 box.transform.position = Vector3.zero;
                 box.transform.eulerAngles = Vector3.zero;
-                boxCol.center = box.GetComponent<BoxCollider>().center;//new Vector3(-0.003056686f, 0.2523057f, 00381637f);
-                boxCol.size = box.GetComponent<BoxCollider>().size;//new Vector3(0.8438829f, 0.3813403f, 0.4849125f);
+                boxCol.center = box.GetComponent<BoxCollider>().center;
+                boxCol.size = box.GetComponent<BoxCollider>().size;
                 DestroyImmediate(box.GetComponent<BoxCollider>());
                 DestroyImmediate(box.GetComponent<Rigidbody>());
                 DestroyImmediate(box.GetComponent<BoxContentsC>());
