@@ -6,6 +6,9 @@ using UnityEngine.UI;
 using Text = UnityEngine.UI.Text;
 using Image = UnityEngine.UI.Image;
 using UnityEngine.EventSystems;
+using System;
+using static System.Net.Mime.MediaTypeNames;
+using System.ComponentModel;
 
 namespace JaLoader
 {
@@ -15,9 +18,12 @@ namespace JaLoader
 
         private bool setPriceImage;
         private bool addedAllComponents;
+        private bool addedScrollViews;
 
         private readonly Dictionary<PartTypes, GameObject> scrollViews = new Dictionary<PartTypes, GameObject>();
-        private readonly Dictionary<PartTypes, GameObject> buttons = new Dictionary<PartTypes, GameObject>();
+        private readonly Dictionary<(Transform, PartTypes), GameObject> buttons = new Dictionary<(Transform, PartTypes), GameObject>();
+
+        public MagazineLogicC currentOpenMagazine = null;
 
         #region Singleton & OnRouteGenerated
         private void Awake()
@@ -37,33 +43,27 @@ namespace JaLoader
 
         public void AddPages(string start, string destination, int distance)
         {
-            Destroy(UIManager.Instance.catalogueEntryTemplate.transform.GetChild(2).gameObject.GetComponent<ModsPageItem>());
-
-            for (int i = 1; i < UIManager.Instance.catalogueTemplate.transform.parent.childCount; i++)
-                Destroy(UIManager.Instance.catalogueTemplate.transform.parent.GetChild(i).gameObject);
-
             StartCoroutine(DelayThenAddPages());
         }
 
         private IEnumerator DelayThenAddPages()
         {
             yield return new WaitForSeconds(2f);
+            
             AddModsPages();
         }
 
         private void AddModsPages()
         {
             var magazines = FindObjectsOfType<MagazineLogicC>();
-            scrollViews.Clear();
-            buttons.Clear();
 
             foreach (var magazine in magazines)
             {
                 if (!magazine.transform.Find("ModPages") && magazine.name == "LaikaCatalogue")
                 {
-                    var receipt = magazine.transform.Find("Page2_EngineParts").Find("Receipt");
-                    receipt.parent = magazine.transform;
-                    receipt.gameObject.SetActive(false);
+                    var receipt = magazine.transform.Find("Page2_EngineParts").Find("Receipt").gameObject;
+                    receipt.transform.parent = magazine.transform;
+                    receipt.SetActive(false);
 
                     var template = Instantiate(magazine.transform.Find("Page2_EngineParts"), magazine.transform);
                     template.name = "ModPages";
@@ -103,6 +103,8 @@ namespace JaLoader
                             Destroy(price.gameObject);
                     }
 
+                    setPriceImage = false;
+
                     var desc = template.Find("Stats/ComponentDesc");
                     desc.parent = template;
                     desc.GetComponent<TextMeshPro>().text = "Various Laika-Certified modifications.";
@@ -110,55 +112,14 @@ namespace JaLoader
 
                     Destroy(template.Find("Extras_2").gameObject);
 
-                    var text = ".................VARIOUS";
-
                     var extrasTitle = Instantiate(template.Find("Extras"), template.transform);
                     extrasTitle.name = "Custom";
                     extrasTitle.GetComponent<TextMeshPro>().text = "CUSTOM";
 
-                    buttons.Add(PartTypes.Engine, template.Find("Engine_1").gameObject);
-                    buttons.Add(PartTypes.FuelTank, template.Find("FUELTANKS_1").gameObject);
-                    buttons.Add(PartTypes.Carburettor, template.Find("CARBURETTOR_1").gameObject);
-                    buttons.Add(PartTypes.AirFilter, template.Find("AIR FILTERS_1").gameObject);
-                    buttons.Add(PartTypes.IgnitionCoil, template.Find("IGNITIONCOIL_1").gameObject);
-                    buttons.Add(PartTypes.Battery, template.Find("BATTERY_1").gameObject);
-                    buttons.Add(PartTypes.WaterTank, template.Find("WATERTANKS_1").gameObject);
-                    buttons.Add(PartTypes.Extra, template.Find("Extras_1").gameObject);
-                    buttons.Add(PartTypes.Custom, Instantiate(buttons[PartTypes.Extra], template.transform).gameObject);
+                    AddButtons(template);
 
-                    foreach (var button in buttons.Values)
-                    {
-                        button.GetComponent<TextMeshPro>().text = text;
-                        button.AddComponent<ModsPageNavigator>();
-                        button.GetComponent<ModsPageNavigator>().scale = button.GetComponent<MagazineCatalogueRelayC>().scale;
-                        Destroy(button.GetComponent<MagazineCatalogueRelayC>());
-                    }
-
-                    buttons[PartTypes.Engine].GetComponent<ModsPageNavigator>().partType = PartTypes.Engine;
-                    buttons[PartTypes.FuelTank].GetComponent<ModsPageNavigator>().partType = PartTypes.FuelTank;
-                    buttons[PartTypes.Carburettor].GetComponent<ModsPageNavigator>().partType = PartTypes.Carburettor;
-                    buttons[PartTypes.AirFilter].GetComponent<ModsPageNavigator>().partType = PartTypes.AirFilter;
-                    buttons[PartTypes.IgnitionCoil].GetComponent<ModsPageNavigator>().partType = PartTypes.IgnitionCoil;
-                    buttons[PartTypes.Battery].GetComponent<ModsPageNavigator>().partType = PartTypes.Battery;
-                    buttons[PartTypes.WaterTank].GetComponent<ModsPageNavigator>().partType = PartTypes.WaterTank;
-                    buttons[PartTypes.Extra].GetComponent<ModsPageNavigator>().partType = PartTypes.Extra;
-                    buttons[PartTypes.Custom].GetComponent<ModsPageNavigator>().partType = PartTypes.Custom;
-
-                    buttons[PartTypes.Custom].name = "Custom_1";
-
-                    StartCoroutine(CreateScrollViews(magazine.gameObject));
-
-                    // y - 0.015f each time
-                    // simulate vertical layout group
-                    buttons[PartTypes.Engine].transform.localPosition = new Vector3(-0.1325f, 0.185f, 0.0035f);
-                    buttons[PartTypes.FuelTank].transform.localPosition = new Vector3(-0.1325f, 0.155f, 0.0035f);
-                    buttons[PartTypes.Carburettor].transform.localPosition = new Vector3(-0.1325f, 0.125f, 0.0035f);
-                    buttons[PartTypes.AirFilter].transform.localPosition = new Vector3(-0.1325f, 0.095f, 0.0035f);
-                    buttons[PartTypes.IgnitionCoil].transform.localPosition = new Vector3(-0.1325f, 0.065f, 0.0035f);
-                    buttons[PartTypes.Battery].transform.localPosition = new Vector3(-0.1325f, 0.035f, 0.0035f);
-                    buttons[PartTypes.WaterTank].transform.localPosition = new Vector3(-0.1325f, 0.005f, 0.0035f);
-                    buttons[PartTypes.Extra].transform.localPosition = new Vector3(-0.1325f, -0.025f, 0.0035f);
-                    buttons[PartTypes.Custom].transform.localPosition = new Vector3(-0.1325f, -0.055f, 0.0035f);
+                    if (!addedScrollViews)
+                        StartCoroutine(CreateScrollViews());
 
                     template.Find("Engine").localPosition = new Vector3(-0.05f, 0.2f, 0.0035f);
                     template.Find("FUEL TANKS").transform.localPosition = new Vector3(-0.05f, 0.17f, 0.0035f);
@@ -172,20 +133,69 @@ namespace JaLoader
 
                     var extension = buttonTemplate.gameObject.AddComponent<ModsPageToggle>();
                     extension.scale = buttonTemplate.gameObject.GetComponent<MagazineCatalogueRelayC>().scale;
+
                     Destroy(buttonTemplate.gameObject.GetComponent<MagazineCatalogueRelayC>());
-                    extension.magazineParent = magazine;
-                    extension.modPage = template.gameObject;
-                    extension.modPageBG = magazine.transform.Find("Page4").gameObject;
-                    extension.defaultPage = magazine.transform.Find("Page2_EngineParts").gameObject;
-                    extension.receipt = receipt.gameObject;
 
                     Destroy(magazine.transform.Find("Page4").GetChild(2).gameObject);
+
                     magazine.transform.Find("Page4").GetChild(1).GetComponent<SkinnedMeshRenderer>().material = template.transform.Find("Cube_985").GetComponent<SkinnedMeshRenderer>().material;
                 }
             }
         }
 
-        private IEnumerator CreateScrollViews(GameObject magazine)
+        private void AddButtons(Transform template)
+        {
+            var text = ".................VARIOUS";
+
+            buttons.Add((template, PartTypes.Engine), template.Find("Engine_1").gameObject);
+            buttons.Add((template, PartTypes.FuelTank), template.Find("FUELTANKS_1").gameObject);
+            buttons.Add((template, PartTypes.Carburettor), template.Find("CARBURETTOR_1").gameObject);
+            buttons.Add((template, PartTypes.AirFilter), template.Find("AIR FILTERS_1").gameObject);
+            buttons.Add((template, PartTypes.IgnitionCoil), template.Find("IGNITIONCOIL_1").gameObject);
+            buttons.Add((template, PartTypes.Battery), template.Find("BATTERY_1").gameObject);
+            buttons.Add((template, PartTypes.WaterTank), template.Find("WATERTANKS_1").gameObject);
+            buttons.Add((template, PartTypes.Extra), template.Find("Extras_1").gameObject);
+            buttons.Add((template, PartTypes.Custom), Instantiate(buttons[(template, PartTypes.Extra)], template.transform).gameObject);
+
+            foreach (var entry in buttons)
+            {
+                if (entry.Key.Item1 != template)
+                    continue;
+
+                var button = entry.Value;
+
+                button.GetComponent<TextMeshPro>().text = text;
+                button.AddComponent<ModsPageNavigator>();
+                button.GetComponent<ModsPageNavigator>().scale = button.GetComponent<MagazineCatalogueRelayC>().scale;
+                Destroy(button.GetComponent<MagazineCatalogueRelayC>());
+            }
+
+            buttons[(template, PartTypes.Engine)].GetComponent<ModsPageNavigator>().partType = PartTypes.Engine;
+            buttons[(template, PartTypes.FuelTank)].GetComponent<ModsPageNavigator>().partType = PartTypes.FuelTank;
+            buttons[(template, PartTypes.Carburettor)].GetComponent<ModsPageNavigator>().partType = PartTypes.Carburettor;
+            buttons[(template, PartTypes.AirFilter)].GetComponent<ModsPageNavigator>().partType = PartTypes.AirFilter;
+            buttons[(template, PartTypes.IgnitionCoil)].GetComponent<ModsPageNavigator>().partType = PartTypes.IgnitionCoil;
+            buttons[(template, PartTypes.Battery)].GetComponent<ModsPageNavigator>().partType = PartTypes.Battery;
+            buttons[(template, PartTypes.WaterTank)].GetComponent<ModsPageNavigator>().partType = PartTypes.WaterTank;
+            buttons[(template, PartTypes.Extra)].GetComponent<ModsPageNavigator>().partType = PartTypes.Extra;
+            buttons[(template, PartTypes.Custom)].GetComponent<ModsPageNavigator>().partType = PartTypes.Custom;
+
+            buttons[(template, PartTypes.Custom)].name = "Custom_1";
+
+            // y - 0.015f each time
+            // simulate vertical layout group
+            buttons[(template, PartTypes.Engine)].transform.localPosition = new Vector3(-0.1325f, 0.185f, 0.0035f);
+            buttons[(template, PartTypes.FuelTank)].transform.localPosition = new Vector3(-0.1325f, 0.155f, 0.0035f);
+            buttons[(template, PartTypes.Carburettor)].transform.localPosition = new Vector3(-0.1325f, 0.125f, 0.0035f);
+            buttons[(template, PartTypes.AirFilter)].transform.localPosition = new Vector3(-0.1325f, 0.095f, 0.0035f);
+            buttons[(template, PartTypes.IgnitionCoil)].transform.localPosition = new Vector3(-0.1325f, 0.065f, 0.0035f);
+            buttons[(template, PartTypes.Battery)].transform.localPosition = new Vector3(-0.1325f, 0.035f, 0.0035f);
+            buttons[(template, PartTypes.WaterTank)].transform.localPosition = new Vector3(-0.1325f, 0.005f, 0.0035f);
+            buttons[(template, PartTypes.Extra)].transform.localPosition = new Vector3(-0.1325f, -0.025f, 0.0035f);
+            buttons[(template, PartTypes.Custom)].transform.localPosition = new Vector3(-0.1325f, -0.055f, 0.0035f);
+        }
+
+        private IEnumerator CreateScrollViews()
         {
             UIManager.Instance.catalogueEntryTemplate.transform.GetChild(2).gameObject.AddComponent<ModsPageItem>();
 
@@ -215,7 +225,7 @@ namespace JaLoader
                 view.transform.position = UIManager.Instance.catalogueTemplate.transform.position;
             }
 
-            StartCoroutine(AddAllEntries(magazine));
+            StartCoroutine(AddAllEntries());
 
             while (!addedAllComponents)
                 yield return null;
@@ -228,10 +238,12 @@ namespace JaLoader
                 }
             }
 
+            addedScrollViews = true;
+
             yield return null;
         }
 
-        private void AddEntry(PartTypes partType, string title, string description, Texture2D image, string price, string registryName, GameObject magazine)
+        private void AddEntry(PartTypes partType, string title, string description, Texture2D image, string price, string registryName)
         {
             var entry = Instantiate(UIManager.Instance.catalogueEntryTemplate, scrollViews[partType].transform.Find("Viewport/Content")).gameObject;
             entry.transform.GetChild(0).GetComponent<Text>().text = title;
@@ -239,12 +251,11 @@ namespace JaLoader
             entry.transform.GetChild(2).GetComponent<RawImage>().texture = image;
             entry.transform.GetChild(4).GetComponent<Text>().text = price;
             entry.transform.GetChild(2).GetComponent<ModsPageItem>().itemName = registryName;
-            entry.transform.GetChild(2).GetComponent<ModsPageItem>().magazine = magazine;
             entry.SetActive(true);
             StartCoroutine(RefreshPage(partType));
         }
 
-        private IEnumerator AddAllEntries(GameObject magazine)
+        private IEnumerator AddAllEntries()
         {
             CustomObjectsManager manager = CustomObjectsManager.Instance;
 
@@ -295,7 +306,7 @@ namespace JaLoader
                     //var comp = obj.GetComponent<ObjectIdentification>();
                     var objInfo = obj.GetComponent<CustomObjectInfo>();
                     Texture2D tex = PartIconManager.Instance.GetTexture(objName);
-                    AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName, magazine);
+                    AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName);
                 }
             }
 
@@ -317,14 +328,17 @@ namespace JaLoader
         private bool visible;
         private bool showingMods;
 
-        public MagazineLogicC magazineParent;
-        public GameObject modPage;
-        public GameObject modPageBG;
-        public GameObject defaultPage;
-        public GameObject receipt;
-
         public void Trigger()
         {
+            if (LaikaCatalogueExtension.Instance.currentOpenMagazine == null)
+                return;
+
+            var magazine = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform;
+
+            var defaultPage = magazine.Find("Page2_EngineParts").gameObject;
+            var modPage = magazine.Find("ModPages").gameObject;
+            var modPageBG = magazine.Find("Page4").gameObject;
+
             if (!showingMods)
             {
                 defaultPage.SetActive(false);
@@ -347,7 +361,20 @@ namespace JaLoader
 
         void Update()
         {
-            if (magazineParent.isBookOpen)
+            if (LaikaCatalogueExtension.Instance.currentOpenMagazine == null)
+                return;
+
+            if (LaikaCatalogueExtension.Instance.currentOpenMagazine != transform.parent.GetComponent<MagazineLogicC>())
+                return;
+
+            var magazine = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform;
+
+            var defaultPage = magazine.Find("Page2_EngineParts").gameObject;
+            var modPage = magazine.Find("ModPages").gameObject;
+            var modPageBG = magazine.Find("Page4").gameObject;
+            var receipt = magazine.Find("Receipt").gameObject;
+
+            if (LaikaCatalogueExtension.Instance.currentOpenMagazine.isBookOpen)
             {
                 receipt.SetActive(true);
 
@@ -393,7 +420,25 @@ namespace JaLoader
             else
                 receipt.SetActive(false);
 
-            if (showingMods && Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                Close();
+            }
+        }
+
+        public void Close()
+        {
+            if (LaikaCatalogueExtension.Instance.currentOpenMagazine == null)
+                return;
+
+            var magazine = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform;
+
+            var defaultPage = magazine.Find("Page2_EngineParts").gameObject;
+            var modPage = magazine.Find("ModPages").gameObject;
+            var modPageBG = magazine.Find("Page4").gameObject;
+            var receipt = magazine.Find("Receipt").gameObject;
+
+            if (showingMods)
             {
                 receipt.SetActive(false);
                 visible = false;
@@ -406,10 +451,17 @@ namespace JaLoader
                 defaultPage.GetComponent<EngineComponentsCataloguePageC>().PageClose();
                 StartCoroutine(WaitFrameThenHide());
             }
-            else if (defaultPage.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            else
             {
                 visible = false;
                 receipt.SetActive(false);
+
+                LaikaCatalogueExtension.Instance.currentOpenMagazine.isBookOpen = false;
+                iTween.Stop(LaikaCatalogueExtension.Instance.currentOpenMagazine.gameObject);
+                LaikaCatalogueExtension.Instance.currentOpenMagazine.ZoomOutClose();
+                LaikaCatalogueExtension.Instance.currentOpenMagazine.gameObject.GetComponent<Collider>().enabled = true;
+                MainMenuC.Global.restrictPause = false;
+                LaikaCatalogueExtension.Instance.currentOpenMagazine = null;
             }
         }
 
@@ -422,11 +474,26 @@ namespace JaLoader
         {
             transform.localScale = scale[0];
         }
-
+        
         IEnumerator WaitFrameThenHide()
         {
             yield return new WaitForEndOfFrame();
+
+            if (LaikaCatalogueExtension.Instance.currentOpenMagazine == null)
+                yield return null;
+
+            var magazine = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform;
+
+            var defaultPage = magazine.Find("Page2_EngineParts").gameObject;
+
             defaultPage.SetActive(false);
+
+            LaikaCatalogueExtension.Instance.currentOpenMagazine.isBookOpen = false;
+            iTween.Stop(LaikaCatalogueExtension.Instance.currentOpenMagazine.gameObject);
+            LaikaCatalogueExtension.Instance.currentOpenMagazine.ZoomOutClose();
+            LaikaCatalogueExtension.Instance.currentOpenMagazine.gameObject.GetComponent<Collider>().enabled = true;
+            MainMenuC.Global.restrictPause = false;
+            LaikaCatalogueExtension.Instance.currentOpenMagazine = null;
         }
 
         public void HideAllModsPages()
@@ -464,7 +531,6 @@ namespace JaLoader
         public void Trigger()
         {
             HideAllPages();
-
             switch (partType)
             {
                 case PartTypes.Engine:
@@ -522,7 +588,6 @@ namespace JaLoader
         private bool isHovering;
         private Transform priceImage;
         private Transform priceText;
-        public GameObject magazine;
 
         private GameObject sellingItem;
 
@@ -552,7 +617,10 @@ namespace JaLoader
         {
             //Console.Log($"Added item {itemName} to cart");
 
-            var list = magazine.transform.Find("Page2_EngineParts").GetComponent<EngineComponentsCataloguePageC>();
+            if (LaikaCatalogueExtension.Instance.currentOpenMagazine == null)
+                return;
+
+            var list = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform.Find("Page2_EngineParts").GetComponent<EngineComponentsCataloguePageC>();
             list.AddToShoppingList(sellingItem);
 
             int num2 = list.shoppingList.Count - 1;

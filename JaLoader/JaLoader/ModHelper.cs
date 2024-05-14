@@ -373,6 +373,14 @@ namespace JaLoader
             var identif = obj.GetComponent<ObjectIdentification>();
             identif.PartIconScaleAdjustment = obj.transform.localScale;
 
+            var template = GameObject.Find("EngineBlock");
+            var template_ec = template.GetComponent<EngineComponentC>();
+            var toCopy = template.transform.Find("DamageSprite");
+
+            ec.sprites = template_ec.sprites;
+            var clone = Instantiate(toCopy, obj.transform);
+            ec.spriteTarget = clone.gameObject;
+
             switch (type)
             {
                 case PartTypes.Engine:
@@ -382,10 +390,11 @@ namespace JaLoader
                     break;
 
                 case PartTypes.FuelTank:
+                    Console.LogWarning("Water tanks are not fully supported yet!");
                     ob.engineString = "FuelTank";
                     obj.name = "FuelTank";
                     identif.PartIconPositionAdjustment = new Vector3(0.5f, -0.05f, 0);
-                    identif.PartIconRotationAdjustment = new Vector3(-140, -4, -210);
+                    identif.PartIconRotationAdjustment = new Vector3(-140, -4, -210);;
                     break;
 
                 case PartTypes.Carburettor:

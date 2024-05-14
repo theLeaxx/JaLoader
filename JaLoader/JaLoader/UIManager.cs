@@ -54,6 +54,7 @@ namespace JaLoader
 
         private readonly ModLoader modLoader = ModLoader.Instance;
         private readonly SettingsManager settingsManager = SettingsManager.Instance;
+        private bool resetCursorStatus = false;
 
         public GameObject UICanvas {get; private set;}
         public GameObject modTemplatePrefab { get; private set; }
@@ -62,6 +63,9 @@ namespace JaLoader
         private GameObject moreInfoPanelMods;
         private GameObject modSettingsScrollView;
         public GameObject modSettingsScrollViewContent { get; private set; }
+
+        private InputField modsInputField;
+        private Transform modsPanelScrollView;
 
         public GameObject modOptionsHolder { get; private set; }
         public GameObject modOptionsNameTemplate { get; private set; }
@@ -188,6 +192,22 @@ namespace JaLoader
                 foreach (RectTransform item in modSettingsScrollViewContent.transform.GetComponentsInChildren<RectTransform>())
                     if (item.gameObject.name == "Dropdown List" && item.parent.gameObject.activeSelf)
                         RefreshUI();
+
+            if (SceneManager.GetActiveScene().buildIndex == 3)
+            {
+                if (GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.activeSelf && !resetCursorStatus)
+                {
+                    resetCursorStatus = true;
+                    Cursor.lockState = CursorLockMode.None;
+                    Cursor.visible = true;
+                }
+                else if (!GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.activeSelf && resetCursorStatus)
+                {
+                    resetCursorStatus = false;
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
+            }
         }
 
         private void OnMenuLoad()
@@ -408,6 +428,10 @@ namespace JaLoader
 
                 modSettingsScrollView = UICanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
                 modSettingsScrollViewContent = modSettingsScrollView.transform.GetChild(0).GetChild(0).gameObject;
+
+                modsPanelScrollView = UICanvas.transform.Find("JLModsPanel/Scroll View/Viewport/Content");
+                modsInputField = UICanvas.transform.Find("JLModsPanel/SearchBar").GetComponent<InputField>();
+                modsInputField.onValueChanged.AddListener(delegate { OnInputValueChanged_ModsList(); });
 
                 modSettingsScrollView.transform.Find("SaveButton").GetComponent<Button>().onClick.AddListener(SaveModSettings);
 
@@ -748,6 +772,8 @@ namespace JaLoader
             if (!IsBookClosed())
                 book.CloseBook();
 
+            modsInputField.Select();
+            modsInputField.text = "";
             UICanvas.transform.GetChild(1).gameObject.SetActive(!UICanvas.transform.GetChild(1).gameObject.activeSelf);
 
             if (SceneManager.GetActiveScene().buildIndex == 3)
@@ -842,6 +868,23 @@ namespace JaLoader
                 var optionsButton = uiRoot.transform.Find("ModLoader Settings").gameObject;
                 TweenAlpha.Begin(optionsButton, 0.8f, 1f);
                 optionsButton.GetComponent<Collider>().enabled = true;
+            }
+        }
+
+        private void OnInputValueChanged_ModsList()
+        {
+            foreach (Transform child in modsPanelScrollView)
+            {
+                if (child.name == "ModTemplate") continue;
+
+                if (child.GetChild(2).GetChild(0).GetComponent<Text>().text.ToLower().Contains(modsInputField.text.ToLower()))
+                {
+                    child.gameObject.SetActive(true);
+                }
+                else
+                {
+                    child.gameObject.SetActive(false);
+                }
             }
         }
 
