@@ -273,7 +273,8 @@ namespace JaLoader
         {
             if(ID < 0 || ID > 233) return;
 
-            Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], ModHelper.Instance.player.transform.position, ModHelper.Instance.player.transform.rotation);
+            var obj = Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], ModHelper.Instance.player.transform.position, ModHelper.Instance.player.transform.rotation);
+            obj.transform.localScale = obj.GetComponent<ObjectPickupC>().adjustScale;
         }
 
         public GameObject GetDuplicateVanillaObject(int ID, Transform parent)

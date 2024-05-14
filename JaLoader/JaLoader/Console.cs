@@ -732,6 +732,8 @@ namespace JaLoader
             car.transform.position = player.transform.position + player.transform.forward * 8 + new Vector3(0, 2, 0);
             car.transform.rotation = player.transform.rotation;
             script.SendMessage("SavePause");
+            if(script.isPaused == 0)
+                script.SendMessage("UpdateTime", 1f);
 
             Log("/", "Teleported laika to player!");
         }

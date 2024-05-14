@@ -37,12 +37,6 @@ namespace JaLoader
         }
         #endregion
 
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.F2))
-                PatchAll();
-        }
-
         public void PatchAll()
         {
             harmony.PatchAll(Assembly.GetExecutingAssembly());
@@ -131,7 +125,8 @@ namespace JaLoader
         [HarmonyPostfix]
         public static void PostFix(EngineComponentsCataloguePageC __instance)
         {
-            GameObject.FindObjectOfType<WalletC>().GetComponent<ObjectPickupC>().DropOff();
+            ModHelper.Instance.wallet.GetComponent<ObjectPickupC>().ThrowLogic();
+            EventsManager.Instance.CallTransaction("laika");
         }
     }
 
@@ -423,15 +418,21 @@ namespace JaLoader
         [HarmonyPrefix]
         public static void Prefix(CatalogueBuyButtonC __instance)
         {
-            if(__instance.transform.parent.parent.gameObject.GetComponent<HomeStorageClipboardC>() == null)
+            if (__instance.transform.parent.parent.gameObject.GetComponent<HomeStorageClipboardC>() == null)
+            {
                 __instance.pageLogic.SetActive(true);
+                LaikaCatalogueExtension.Instance.currentOpenMagazine.dropOffPoint.parent.GetComponent<LaikaBuildingC>().StartCoroutine("PartsOrdered");
+            }
         }
 
         [HarmonyPostfix]
         public static void Postfix(CatalogueBuyButtonC __instance)
         {
             if (__instance.transform.parent.parent.gameObject.GetComponent<HomeStorageClipboardC>() == null)
+            {
+                LaikaCatalogueExtension.Instance.currentOpenMagazine.transform.Find("Mods").GetComponent<ModsPageToggle>().Close();
                 __instance.pageLogic.SetActive(false);
+            }
         }
     }
 
@@ -502,6 +503,16 @@ namespace JaLoader
                 GameTweaks.Instance.ResettingPickingUp = true;
                 GameTweaks.Instance.Invoke("ResetPickingUp", 0.25f);
             }
+        }
+    }
+
+    [HarmonyPatch(typeof(MagazineLogicC), "PickUp")]
+    public static class MagazineLogicC_PickUp_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(MagazineLogicC __instance)
+        {
+            LaikaCatalogueExtension.Instance.currentOpenMagazine = __instance;
         }
     }
 }

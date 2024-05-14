@@ -232,7 +232,11 @@ namespace JaLoader
                 lockedCursor = true;
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+
+                Console.Log("JaLoader", "Debug Camera Enabled!");
             }
+            else
+                Console.Log("JaLoader", "Debug Camera Disabled!");
 
             if (SettingsManager.Instance.UseExperimentalCharacterController)
             {
@@ -280,6 +284,7 @@ namespace JaLoader
             if (Input.GetKeyDown(KeyCode.Backspace))
             {
                 ResetCameraPos();
+                Console.Log("JaLoader", "Teleported Debug Camera to player!");
                 return;
             }
 
@@ -303,7 +308,10 @@ namespace JaLoader
             if (Input.GetKeyDown(KeyCode.F7))
             {
                 if (SceneManager.GetActiveScene().buildIndex == 3)
+                {
                     TeleportPlayerToCam();
+                    Console.Log("JaLoader", "Teleported player to Debug Camera!");
+                }
             }
 
             Vector3 translation = Vector3.zero;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,10 +37,21 @@ namespace JaLoader
 
         private void OnGameLoad()
         {
-            Invoke("UpdateMirrors", 3);
+            StartCoroutine(OnGameLoadDelay());
+        }
+
+        private IEnumerator OnGameLoadDelay()
+        {
+            yield return new WaitForSeconds(3);
+            UpdateMirrors();
 
             if (settingsManager.FixLaikaShopMusic)
-                Invoke("FixLaikaDealershipSong", 5);
+            {
+                yield return new WaitForSeconds(2);
+                FixLaikaDealershipSong();
+            }
+
+            yield return null;
         }
 
         public void ResetPickingUp()
