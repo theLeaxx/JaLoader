@@ -200,6 +200,7 @@
     <Compile Include="Discord\LobbyManager.cs" />
     <Compile Include="Discord\StorageManager.cs" />
     <Compile Include="Discord\StoreManager.cs" />
+    <Compile Include="EnableCursorOnEnable.cs" />
     <Compile Include="EventsManager.cs" />
     <Compile Include="EnhancedMovement.cs" />
     <Compile Include="Console.cs" />

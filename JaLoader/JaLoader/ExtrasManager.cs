@@ -232,7 +232,7 @@ namespace JaLoader
         {
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().GlowStop();
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
-            SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(true);
+            SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(false);
         }
 
         public void Fitted(int ID) // make red if cant install, orange if replace
@@ -258,14 +258,19 @@ namespace JaLoader
                 return;
 
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().Action();
+
             if (SceneManager.GetActiveScene().buildIndex == 3)
             {
                 FindObjectOfType<CarPerformanceC>().carExtrasWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;
                 FindObjectOfType<CarPerformanceC>().totalCarWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;
+
             }
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
+
             SpawnedExtras[ID].Item1.transform.GetChild(2).gameObject.SetActive(false);
+
             SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed = true;
+
             SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().CurrentlyInstalledPart = SpawnedExtras[ID].Item2;
         }
 
@@ -503,7 +508,7 @@ namespace JaLoader
 
             particlePrefab = Instantiate(prefab.GetComponent<ExtraComponentC>().particlePrefab, transform);
             particlePrefab.SetActive(false);
-            animTarget = gameObject.transform.GetChild(0).gameObject;
+            animTarget = gameObject.transform.GetChild(1).gameObject;
 
             var original = prefab.GetComponent<ExtraComponentC>().audioOpen;
             AudioClip clonedClip = AudioClip.Create(
