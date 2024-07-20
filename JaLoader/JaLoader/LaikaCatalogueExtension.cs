@@ -587,12 +587,24 @@ namespace JaLoader
         public string itemName;
         private bool isHovering;
         private Transform priceImage;
-        private Transform priceText;
+        public Transform priceText;
 
-        private GameObject sellingItem;
+        public GameObject sellingItem;
 
+        private bool loadedData = false;
         private void Awake()
         {
+            if(!loadedData)
+                LoadData();
+        }
+        
+        public void LoadData()
+        {
+            if (loadedData)
+                return;
+
+            loadedData = true;
+
             priceImage = transform.parent.GetChild(3);
             priceText = transform.parent.GetChild(4);
 

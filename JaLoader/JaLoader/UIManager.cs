@@ -54,8 +54,6 @@ namespace JaLoader
 
         private readonly ModLoader modLoader = ModLoader.Instance;
         private readonly SettingsManager settingsManager = SettingsManager.Instance;
-        private bool resetCursorStatus = false;
-
         public GameObject UICanvas {get; private set;}
         public GameObject modTemplatePrefab { get; private set; }
         public GameObject messageTemplatePrefab { get; private set; }
@@ -191,23 +189,7 @@ namespace JaLoader
             if (inModsOptions && Input.GetMouseButtonDown(0))
                 foreach (RectTransform item in modSettingsScrollViewContent.transform.GetComponentsInChildren<RectTransform>())
                     if (item.gameObject.name == "Dropdown List" && item.parent.gameObject.activeSelf)
-                        RefreshUI();
-
-            if (SceneManager.GetActiveScene().buildIndex == 3)
-            {
-                if (GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.activeSelf && !resetCursorStatus)
-                {
-                    resetCursorStatus = true;
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
-                else if (!GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.activeSelf && resetCursorStatus)
-                {
-                    resetCursorStatus = false;
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                }
-            }
+                        RefreshUI();  
         }
 
         private void OnMenuLoad()
@@ -270,6 +252,8 @@ namespace JaLoader
             optionsSubMenu.GetComponent<UIButton>().onClick.Add(new EventDelegate(SaveDataThenReload));
             
             FixTranslations();
+
+            GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.AddComponent<EnableCursorOnEnable>();
 
             if (gameObject.GetComponent<LoadingScreen>())
                 gameObject.GetComponent<LoadingScreen>().DeleteLoadingScreen();
