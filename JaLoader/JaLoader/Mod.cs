@@ -526,7 +526,6 @@ namespace JaLoader
 
         public void ResetModSettings()
         {
-            // go through each setting and reset it to default, by getting the default from the settingsValues and parsing as int or float
             foreach (var ID in settingsIDS)
             {
                 string type = Regex.Match(ID, @"(.{6})\s*$").ToString();
@@ -546,12 +545,11 @@ namespace JaLoader
                         break;
 
                     case "eybind":
-                        string str = settingsValues[$"{ID}_primary"];
+                        string str = settingsValues[$"{ID}"];
                         // str is formatted as "int|int" so we split it and parse it as int, if there is no |, it will just parse the first part
                         UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)int.Parse(str.Split('|')[0]));
-                        if (settingsValues.ContainsKey($"{ID}_secondary"))
+                        if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().EnableAltKey)
                         {
-                            string _str = settingsValues[$"{ID}_secondary"];
                             UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetSecondaryKey((KeyCode)int.Parse(str.Split('|')[1]));
                         }
                         break;
@@ -562,6 +560,8 @@ namespace JaLoader
             }
 
             SaveModSettings();
+
+            LoadModSettings();
         }
 
         public void LoadModSettings()
