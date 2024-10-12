@@ -53,8 +53,8 @@ namespace JaLoader
                 }
                 catch (Exception ex)
                 {
-                    Console.Log(ex);
-                    Console.Log(asmFile.Name, $"Assembly {asmFile.Name} is not a valid assembly!");
+                    Console.LogError(ex);
+                    Console.LogError(asmFile.Name, $"Assembly {asmFile.Name} is not a valid assembly!");
                     validAsm--;
                     throw;
                 }

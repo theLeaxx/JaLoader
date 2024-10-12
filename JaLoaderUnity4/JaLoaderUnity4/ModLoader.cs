@@ -6,8 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
-namespace JaLoader
+namespace JaLoaderUnity4
 {
     public class ModLoader : MonoBehaviour
     {
@@ -35,7 +36,7 @@ namespace JaLoader
         private int bepinexModsNumber;
         private int modsNeedUpdate;
 
-        public List<Mod> modsInitInGame = new List<Mod>();
+        public List<ModUnity4> modsInitInGame = new List<ModUnity4>();
         private readonly List<MonoBehaviour> modsInitInMenuIncludingBIX = new List<MonoBehaviour>();
         //private readonly List<Mod> modsInitInMenu = new List<Mod>();
 
@@ -81,6 +82,8 @@ namespace JaLoader
             settingsManager = gameObject.AddComponent<SettingsManager>();
             gameObject.AddComponent<ReferencesLoader>();
 
+            Application.LoadLevel(1);
+
             /*if (CheckForMissingDLLs() != "None")
             {
                 CreateImportantNotice("\n\nOne or more required DLLs were not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the files from JaPatcher's directory/Assets/Managed to Jalopy_Data/Managed");
@@ -88,19 +91,20 @@ namespace JaLoader
                 return;
             }
 
-            CheckForCrack();
+            CheckForCrack();*/
 
-            GameObject helperObj = Instantiate(new GameObject());
+            GameObject helperObj = Instantiate(new GameObject()) as GameObject;
             helperObj.name = "JaLoader Modding Helpers";
             helperObj.AddComponent<EventsManager>();
+            helperObj.AddComponent<ModHelper>();
 
             EventsManager.Instance.OnGameLoad += OnGameLoad;
-            EventsManager.Instance.OnGameUnload += OnGameUnload;
-            EventsManager.Instance.OnMenuLoad += OnMenuLoad;
+            //EventsManager.Instance.OnGameUnload += OnGameUnload;
+            //EventsManager.Instance.OnMenuLoad += OnMenuLoad;
 
             DontDestroyOnLoad(helperObj);
 
-            settingsManager = gameObject.AddComponent<SettingsManager>();
+            /*settingsManager = gameObject.AddComponent<SettingsManager>();
             uiManager = gameObject.AddComponent<UIManager>();
 
             GameObject consoleObj = Instantiate(new GameObject());
@@ -133,6 +137,65 @@ namespace JaLoader
             }*/
         }
 
+        private void OnGameLoad()
+        {
+            if (settingsManager.UseExperimentalCharacterController)
+                GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
+
+            if (!reloadMods)
+                return;
+
+            //StartCoroutine(WaitThenReload());
+        }
+
+        private void OnLevelWasLoaded()
+        {
+            if (Application.loadedLevel != 3)
+                return;
+
+            foreach(ModUnity4 mod in modsInitInGame)
+            {
+                if (mod is ModUnity4 modUnity4)
+                {
+                    try
+                    {
+                        modUnity4.EventsDeclaration();
+
+                        modUnity4.SettingsDeclaration();
+
+                        modUnity4.CustomObjectsRegistration();
+
+                        if (modUnity4.settingsIDS.Count > 0)
+                        {
+                            //modUnity4.LoadModSettings();
+                            //modUnity4.SaveModSettings();
+                        }
+
+                        Debug.Log($"Part 2/2 of initialization for mod {modUnity4.ModName} completed");
+
+                        if (!disabledMods.Contains(modUnity4))
+                            modUnity4.gameObject.SetActive(true);
+
+                        Debug.Log($"Loaded mod {modUnity4.ModName}");
+                    }
+                    catch (Exception)
+                    {
+                        modUnity4.gameObject.SetActive(false);
+
+                        Debug.Log($"Part 2/2 of initialization for mod {modUnity4.ModName} failed");
+                        Debug.Log($"Failed to load mod {modUnity4.ModName}. An error occoured while enabling the mod.");
+
+                        //Console.LogError("JaLoader", $"An error occured while trying to load mod \"{modUnity4.ModName}\"");
+
+                        //modsToRemoveAfter.Add(modUnity4);
+
+                        continue;
+                        throw;
+                    }
+                }
+            }
+        }
+
         private void Update()
         {
             if (modsNumber == 0)
@@ -144,7 +207,7 @@ namespace JaLoader
                 {
                     foreach (MonoBehaviour monoBehaviour in modsInitInMenuIncludingBIX)
                     {
-                        if (monoBehaviour is Mod mod)
+                        if (monoBehaviour is ModUnity4 mod)
                         {
                             //CheckForDependencies(mod);
 
@@ -208,8 +271,17 @@ namespace JaLoader
                     return loadedAssembly;
                 }
 
+                Debug.Log("NEW ASSEMBLY RESOLVE!: " + args.Name);
+
+                // unity 4 only has one UnityEngine DLL, so redirect all UnityEngine assemblies to that
+                if (args.Name.StartsWith("UnityEngine"))
+                    return Assembly.LoadFrom(Path.Combine(Application.dataPath, @"Managed\UnityEngine.dll"));
+
                 // try to redirect the bepinex assembly to this assembly
                 if (args.Name.StartsWith("BepInEx"))
+                    return Assembly.GetExecutingAssembly();
+
+                if(args.Name.StartsWith("JaLoader"))
                     return Assembly.GetExecutingAssembly();
 
                 if (args.Name.StartsWith("Harmony"))
@@ -230,17 +302,20 @@ namespace JaLoader
 
                     Type[] allModTypes = modAssembly.GetTypes();
 
-                    Type modType = allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "Mod");
-
-                    GameObject ModObject = (GameObject)Instantiate(new GameObject());
+                    Type modType = allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ModUnity4");
+                    //Type modType = modAssembly.GetType("Jalopy_PaperPlease.ModForUnity4");
+                    GameObject ModObject = Instantiate(new GameObject()) as GameObject;
                     ModObject.transform.parent = null;
                     ModObject.SetActive(false);
                     DontDestroyOnLoad(ModObject);
 
                     Component ModComponent = ModObject.AddComponent(modType);
-                    Mod mod = ModObject.GetComponent<Mod>();
+                    ModUnity4 mod = ModObject.GetComponent<ModUnity4>();
 
-                    //ModObject.name = $"{mod.ModID}_{mod.ModAuthor}_{mod.ModName}";
+                    string finalName = mod.ModID + "_" + mod.ModAuthor + "_" + mod.ModName;
+                    ModObject.name = finalName;
+
+                    mod.AssetsPath = Path.Combine(settingsManager.ModFolderLocation, Path.Combine("Assets", mod.ModID));
 
                     switch (mod.WhenToInit)
                     {

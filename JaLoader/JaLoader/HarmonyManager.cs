@@ -71,7 +71,22 @@ namespace JaLoader
             instance.StopCoroutine(routine);
         }
     }
-    
+
+    [HarmonyPatch(typeof(InventoryLogicC), "Update")]
+    public static class InventoryLogicC_Update_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(InventoryLogicC __instance)
+        {
+            if (__instance.gameObject.name == "Boot")
+            {
+                var inventoryClickBlock = __instance.GetType().GetField("inventoryClickBlock", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (inventoryClickBlock != null)
+                    inventoryClickBlock.SetValue(__instance, false);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(MainMenuC), "SaveInventory")]
     public static class MainMenuC_SaveInventory_Patch
     {

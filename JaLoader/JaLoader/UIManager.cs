@@ -418,6 +418,7 @@ namespace JaLoader
                 modsInputField.onValueChanged.AddListener(delegate { OnInputValueChanged_ModsList(); });
 
                 modSettingsScrollView.transform.Find("SaveButton").GetComponent<Button>().onClick.AddListener(SaveModSettings);
+                modSettingsScrollView.transform.Find("ResetButton").GetComponent<Button>().onClick.AddListener(ResetModSettings);
 
                 modOptionsHolder = modSettingsScrollViewContent.transform.Find("SettingsHolder").gameObject;
                 modOptionsNameTemplate = modSettingsScrollViewContent.transform.Find("ModName").gameObject;
@@ -596,8 +597,8 @@ namespace JaLoader
                     modAuthor = parts[0];
                     modID = parts[1];
 
-                    parts[2].Remove(parts[2].Length - 15);
                     modName = parts[2];
+                    modName = modName.Remove(modName.Length - 15);
 
                     if (modName == string.Empty)
                         modName = modID;
@@ -608,6 +609,45 @@ namespace JaLoader
                     {
                         var modClass = mod as Mod;
                         modClass.SaveModSettings();
+                    }
+                    else if (mod != null && mod is BaseUnityPlugin)
+                    {
+                        var modClass = mod as BaseUnityPlugin;
+                        modClass.SaveBIXPluginSettings();
+                    }
+                }
+            }
+        }
+
+        private void ResetModSettings()
+        {
+            for (int i = 0; i < modSettingsScrollViewContent.transform.childCount; i++)
+            {
+                if (modSettingsScrollViewContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(modSettingsScrollViewContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
+                {
+                    string fullName = modSettingsScrollViewContent.transform.GetChild(i).gameObject.name;
+
+                    string modAuthor = "";
+                    string modID = "";
+                    string modName = "";
+
+                    string[] parts = fullName.Split('_');
+
+                    modAuthor = parts[0];
+                    modID = parts[1];
+
+                    modName = parts[2];
+                    modName = modName.Remove(modName.Length - 15);
+
+                    if (modName == string.Empty)
+                        modName = modID;
+
+                    var mod = modLoader.FindMod(modAuthor, modID, modName);
+
+                    if (mod != null && mod is Mod)
+                    {
+                        var modClass = mod as Mod;
+                        modClass.ResetModSettings();
                     }
                     else if (mod != null && mod is BaseUnityPlugin)
                     {

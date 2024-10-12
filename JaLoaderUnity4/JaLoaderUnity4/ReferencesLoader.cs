@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 
-namespace JaLoader
+namespace JaLoaderUnity4
 {
     public class ReferencesLoader : MonoBehaviour
     {

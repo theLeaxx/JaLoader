@@ -141,6 +141,7 @@ namespace JaLoader
             obj.GetComponent<CustomObjectInfo>().objRegistryName = registryName;
 
             database.Add($"{registryName}", obj);
+            Console.LogDebug("CustomObjectsManager", $"Registered object with the registry key {registryName}!");
             DontDestroyOnLoad(obj);
         }
 
@@ -189,6 +190,8 @@ namespace JaLoader
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
+
+            Console.LogDebug("1 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -240,6 +243,7 @@ namespace JaLoader
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
+            Console.LogDebug("2 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -268,6 +272,8 @@ namespace JaLoader
             spawnedObj.GetComponent<CustomObjectInfo>().SpawnNoRegister = true;
             spawnedObj.SetActive(enableObject);
 
+            Console.LogDebug("CustomObjectsManager", $"Spawned object with the registry key {registryName} without registering!");
+
             return spawnedObj;
         }
 
@@ -292,6 +298,7 @@ namespace JaLoader
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
+            Console.LogDebug("3 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -361,6 +368,7 @@ namespace JaLoader
                     trunkPos = spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt.localPosition;
 
                 json = TupleToString((inEngine, type, parameters.ToArray(), trunkPos));
+                Console.LogWarning(json);
                 StringToTuple(json);
 
                 string name = $"{entry.Item1}_{entry.Item2}";
@@ -369,6 +377,8 @@ namespace JaLoader
             }
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, @"CustomObjectsData.json"), JsonUtility.ToJson(data, true));
+
+            EventsManager.Instance.OnCustomObjectsSave();
         }
 
         public void LoadData(bool full)
@@ -464,6 +474,8 @@ namespace JaLoader
                     }
                 }
             }
+
+            EventsManager.Instance.OnCustomObjectsLoad();
         }
 
         public void DeleteData()
@@ -529,10 +541,9 @@ namespace JaLoader
             float[] floatArrayParam = new float[floatParam.Length];
             Vector3 vector3 = new Vector3(float.Parse(param[3]), float.Parse(param[4]), float.Parse(param[5]));
 
-            for (int i = 0; i < floatParam.Length; i++)
-            {
-                floatArrayParam[i] = float.Parse(floatParam[i]);
-            }
+            if (floatParam[0] != "")
+                for (int i = 0; i < floatParam.Length; i++)
+                    floatArrayParam[i] = float.Parse(floatParam[i]);
 
             return (inEngine, partType, floatArrayParam, vector3);
         }

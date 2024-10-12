@@ -24,6 +24,7 @@ namespace BepInEx
         public BepInPlugin PluginAttribute { get; }
 
         public List<string> BIXPlugin_settingsIDS = new List<string>();
+        private Dictionary<string, string> BIXPlugin_settingsValues = new Dictionary<string, string>();
         [Serializable] class BIXPlugin_SettingsValues : SerializableDictionary<string, float> { }
 
         public Dictionary<IConfigEntry, (string, string)> configEntries = new Dictionary<IConfigEntry, (string, string)>();
@@ -77,6 +78,7 @@ namespace BepInEx
             obj.SetActive(true);
 
             BIXPlugin_settingsIDS.Add($"{ID}_Toggle");
+            BIXPlugin_settingsValues.Add($"{ID}_Toggle", defaultValue ? "1" : "0");
         }
 
         public void AddBIXPluginKeybind(string ID, string name, KeyCode defaultPrimaryKey)
@@ -97,6 +99,7 @@ namespace BepInEx
             AddBIXPluginHeader("Keybinds are not supported yet!");
 
             BIXPlugin_settingsIDS.Add($"{ID}_Keybind");
+            BIXPlugin_settingsValues.Add($"{ID}_Keybind", defaultPrimaryKey.ToString());
         }
 
         public Dropdown GetBIXPluginToggle(string ID)
@@ -173,6 +176,37 @@ namespace BepInEx
             }
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, $@"ModSaves\{PluginAttribute.GUID}\{PluginAttribute.GUID}_save.json"), JsonUtility.ToJson(values, true));
+        }
+
+        public void ResetBIXPluginSettings()
+        {
+            // iterate through settingIDS and reset them to default using the values dictionary
+            foreach (var ID in BIXPlugin_settingsIDS)
+            {
+                string type = Regex.Match(ID, @"(.{6})\s*$").ToString();
+
+                switch (type)
+                {
+                    case "opdown":
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(BIXPlugin_settingsValues[ID]);
+                        break;
+
+                    case "Toggle":
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(BIXPlugin_settingsValues[ID]);
+                        break;
+
+                    case "Slider":
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(BIXPlugin_settingsValues[ID]);
+                        break;
+
+                    case "eybind":
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)Enum.Parse(typeof(KeyCode), BIXPlugin_settingsValues[$"{ID}_primary"]));
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
 
         public void LoadBIXPluginSettings()

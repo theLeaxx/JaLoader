@@ -205,7 +205,19 @@ namespace JaLoader
             renderedTexture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
             RenderTexture.active = null;
             byte[] byteArray = renderedTexture.EncodeToPNG();
-            //Console.Log(entry + ", " + ModID);
+            byte[] existingPhotoBytes = null;
+
+            if(File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png"))
+                existingPhotoBytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png");
+
+            if(byteArray.SequenceEqual(existingPhotoBytes))
+            {
+                Console.LogDebug($"Cached image for {entry} already exists, skipping");
+                CachedItemsCount++;
+                return;
+            }
+
+            Console.LogDebug($"Cached image for {entry}");
             File.WriteAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png", byteArray);
         }
     }

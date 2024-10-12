@@ -63,10 +63,7 @@ namespace JaLoader
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.F5) && settingsManager.DebugMode)
-            {
                 SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
-                Console.Log(FindObjectOfType<MirrorReflection>().m_TextureSize);
-            }
         }
 
         public void SetPlateText(string plateText, LicensePlateStyles style)

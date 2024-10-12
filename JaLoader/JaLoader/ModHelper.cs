@@ -336,6 +336,63 @@ namespace JaLoader
             ob.dimensionZ = box.GetComponent<ObjectPickupC>().dimensionZ;
         }
 
+        public void AddWheelLogic(GameObject obj, int durability, float roadGrip, float wetGrip, float offRoadGrip, int tyreType, int compoundType, GameObject bolt)
+        {
+            if (obj == null)
+            {
+                Console.LogError("The object you're trying to add logic to is null!");
+                return;
+            }
+
+            if (obj.GetComponent<ObjectIdentification>() && obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic)
+                return;
+
+            if (!obj.GetComponent<ObjectPickupC>())
+            {
+                Console.LogError("You need to add basic object logic before adding engine part logic!");
+                return;
+            }
+
+            ObjectPickupC ob = obj.GetComponent<ObjectPickupC>();
+            ob.isEngineComponent = true;
+
+            EngineComponentC ec = obj.AddComponent<EngineComponentC>();
+            ec.loadID = 0;
+            ec._camera = Camera.main.gameObject;
+            ec.weight = ob.rigidMass;
+            ec.durability = durability;
+            ec.carLogic = FindObjectOfType<CarLogicC>().gameObject;
+
+            var identif = obj.GetComponent<ObjectIdentification>();
+            identif.PartIconScaleAdjustment = obj.transform.localScale;
+
+            ec.bolt = new GameObject();
+            ec.roadGrip = roadGrip;
+            ec.wetGrip = wetGrip;
+            ec.offRoadGrip = offRoadGrip;
+            ec.tyreType = tyreType;
+            ec.blowOutAudio = defaultClips[0];
+            ec.wheelDirtTarget = new GameObject();
+            ec.rubberMesh = new GameObject();
+            //ec.rubberLibrary = new GameObject();
+            ec.compoundType = compoundType;
+            ec.compoundTarget = new GameObject();
+            ec.dirtTarget = new GameObject();
+            //ec.dirtLibrary = new GameObject();
+            ec.sprites = new Sprite[0];
+            ec.spriteTarget = new GameObject();
+
+            var template = GameObject.Find("EngineBlock");
+            var template_ec = template.GetComponent<EngineComponentC>();
+            var toCopy = template.transform.Find("DamageSprite");
+
+            ec.sprites = template_ec.sprites;
+            var clone = Instantiate(toCopy, obj.transform);
+            ec.spriteTarget = clone.gameObject;
+
+            obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic = true;
+        }
+
         /// <summary>
         /// Make a custom object be able to be used as an engine part
         /// </summary>
@@ -346,6 +403,12 @@ namespace JaLoader
         /// <param name="canFindInJunkCars">(Not implemented yet) Can this object be found at scrapyards/abandoned cars?</param>
         public void AddEnginePartLogic(GameObject obj, PartTypes type, int durability, bool canBuyInDealership, bool canFindInJunkCars)
         {
+            if(type == PartTypes.Wheel)
+            {
+                Console.LogError("To add wheels, use 'AddWheelLogic'!");
+                return;
+            }
+
             if (obj == null)
             {
                 Console.LogError("The object you're trying to add logic to is null!");
@@ -1036,7 +1099,8 @@ namespace JaLoader
         WaterTank,
         Extra,
         Custom,
-        Default
+        Default,
+        Wheel
     }
 
     public enum BoxSizes

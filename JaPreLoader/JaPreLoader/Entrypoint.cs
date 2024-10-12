@@ -21,7 +21,7 @@ namespace Doorstop
 
             if (unityVersion.StartsWith("4"))
             {
-                MessageBox.Show("JaLoader is currently not compatible with versions of Jalopy prior to v1.1!", "JaLoader", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                MessageBox.Show("JaLoader is not yet fully compatible with versions of Jalopy prior to v1.1!", "JaLoader", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoadUnity4;
             }
             else
@@ -138,7 +138,7 @@ namespace Doorstop
                 }
             }
 
-            Type modLoaderType = assembly.GetType("JaLoader.ModLoader");
+            Type modLoaderType = assembly.GetType("JaLoaderUnity4.ModLoader");
 
             MethodInfo addComponentMethod = typeof(GameObject).GetMethod("AddComponent", new[] { typeof(Type) });
 

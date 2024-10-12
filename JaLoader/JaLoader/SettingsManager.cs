@@ -33,9 +33,9 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        public static readonly string JaLoaderVersion = "3.4.1";
+        public const string JaLoaderVersion = "3.5.0";
         public static readonly bool IsPreReleaseVersion = false;
-        public static readonly string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
+        public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
         public string ModFolderLocation { get; private set; }
 
         public bool SkipLanguage;
