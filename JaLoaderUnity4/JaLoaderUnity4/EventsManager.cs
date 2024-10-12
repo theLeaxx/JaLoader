@@ -1,15 +1,12 @@
-﻿using Steamworks;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Reflection;
-using TMPro;
+using System.Text;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-namespace JaLoader
+namespace JaLoaderUnity4
 {
     public class EventsManager : MonoBehaviour
     {
@@ -27,9 +24,9 @@ namespace JaLoader
                 Instance = this;
             }
 
-            SceneManager.sceneLoaded += OnSceneLoad;
-            SceneManager.sceneUnloaded += OnSceneUnload;
-            Application.logMessageReceived += OnLog;
+            //SceneManager.sceneLoaded += OnSceneLoad;
+            //SceneManager.sceneUnloaded += OnSceneUnload;
+            //Application.logMessageReceived += OnLog;
         }
         #endregion
 
@@ -51,7 +48,7 @@ namespace JaLoader
         public event GameEvents OnUnpause;
         public event GameEvents OnSleep;
         public event LogEvents OnException;
-        
+
         //public event GameEvents OnStoreTransaction;
         //public event GameEvents OnDealershipOrder;
         //public event GameEvents OnMotelCheckIn;
@@ -67,9 +64,9 @@ namespace JaLoader
         public event MiscEvents OnSettingsSaved;
         public event MiscEvents OnCustomObjectsRegisterFinished;
         public event MiscEvents OnUILoadFinished;
-        public event MiscEvents OnCustomObjectsLoaded;
-        public event MiscEvents OnCustomObjectsSaved;
         #endregion
+
+        public bool isInGame = false;
 
         private void Update()
         {
@@ -90,13 +87,13 @@ namespace JaLoader
 
         public void OnPauseGame()
         {
-            Console.LogOnlyToFile("Paused game!");
+            //Console.LogOnlyToFile("Paused game!");
             OnPause?.Invoke();
         }
 
         public void OnUnPauseGame()
         {
-            Console.LogOnlyToFile("Unpaused game!");
+            //Console.LogOnlyToFile("Unpaused game!");
             OnUnpause?.Invoke();
         }
 
@@ -108,84 +105,71 @@ namespace JaLoader
 
         public void OnSettingsSave()
         {
-            Console.LogOnlyToFile("Saved JaLoader settings!");
+            //Console.LogOnlyToFile("Saved JaLoader settings!");
             OnSettingsSaved?.Invoke();
         }
 
         public void OnNewGameStart()
         {
-            Console.LogOnlyToFile("New game started!");
+            //Console.LogOnlyToFile("New game started!");
             OnNewGame?.Invoke();
         }
 
         public void OnCustomObjectsRegisterFinish()
         {
-            Console.LogOnlyToFile("Finished registering custom objects!");
+            //Console.LogOnlyToFile("Finished registering custom objects!");
             OnCustomObjectsRegisterFinished?.Invoke();
-        }
-
-        public void OnCustomObjectsLoad()
-        {
-            Console.LogOnlyToFile("Loaded custom objects!");
-            OnCustomObjectsLoaded?.Invoke();
-        }
-
-        public void OnCustomObjectsSave()
-        {
-            Console.LogOnlyToFile("Saved custom objects!");
-            OnCustomObjectsSaved?.Invoke();
-        }
-
-        public void OnSceneUnload(Scene unloadedScene)
-        {
-            if (OnGameUnload != null && unloadedScene.buildIndex == 3)
-                OnGameUnloadFunc();
         }
 
         public void OnGameUnloadFunc()
         {
+            isInGame = false;
             OnGameUnload();
         }
 
-        public void OnSceneLoad(Scene current, LoadSceneMode mode)
+        private void OnLevelWasLoaded()
         {
-            //Console.Instance?.Log(current.buildIndex);
-
-            if (OnLoadStart != null && current.buildIndex == 2)
+            if(OnLoadStart != null && Application.loadedLevel == 2)
             {
                 OnLoadStart();
                 return;
             }
 
-            if (OnMenuLoad != null && current.buildIndex == 1)
+            if (OnMenuLoad != null && Application.loadedLevel == 1)
             {
                 OnMenuLoad();
                 return;
             }
 
-            if (OnGameLoad != null && current.buildIndex == 3)
-            {      
+            if (OnGameLoad != null && Application.loadedLevel == 3)
+            {
                 OnGameLoadFunc();
                 return;
             }
 
-            if(current.buildIndex == 0 && SettingsManager.Instance.SkipLanguage && SettingsManager.Instance.selectedLanguage)
-            {
-                SceneManager.LoadScene("MainMenu");
-            }                
-        }
+            /*if (Application.loadedLevel == 0 && SettingsManager.Instance.SkipLanguage && SettingsManager.Instance.selectedLanguage)
+             *            {
+             *                           Application.LoadLevel("MainMenu");
+             *                                      }*/
 
+            if(isInGame && (Application.loadedLevel == 1 || Application.loadedLevel == 0))
+            {
+                OnGameUnloadFunc();
+            }
+        }
+    
         public void OnGameLoadFunc(bool addComps = true)
         {
-            if(addComps)
+            if (addComps)
             {
-                FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
-                FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
+                FindObjectOfType<Director>().gameObject.AddComponent<RouteReceiver>();
+                //FindObjectOfType<Wallet>().gameObject.AddComponent<ShopReceiver>();
                 Camera.main.gameObject.AddComponent<MainMenuCReceiver>();
                 Camera.main.gameObject.AddComponent<MotelsReceiver>();
                 //Camera.main.gameObject.AddComponent<HarmonyManager>();
             }
 
+            isInGame = true;
             OnGameLoad();
         }
 
@@ -200,13 +184,13 @@ namespace JaLoader
 
         public void OnLoad()
         {
-            Console.LogOnlyToFile("Loaded save!");
+            //Console.LogOnlyToFile("Loaded save!");
             OnLoadSave?.Invoke();
         }
 
         public void OnSaved()
         {
-            Console.LogOnlyToFile("Saved game!");
+            //Console.LogOnlyToFile("Saved game!");
             OnSave?.Invoke();
         }
 
@@ -238,7 +222,7 @@ namespace JaLoader
         }
     }
 
-    public class ShopReceiver : MonoBehaviour
+    /*public class ShopReceiver : MonoBehaviour
     {
         Dictionary<MotelLogicC, bool> paidMotel = new Dictionary<MotelLogicC, bool>();
 
@@ -293,7 +277,7 @@ namespace JaLoader
 
             Console.Log(motels.Count);
             Console.Log(shops.Count);
-            Console.Log(dealerships.Count);*/
+            Console.Log(dealerships.Count);
         }
 
         public void ChangeMoney()
@@ -317,17 +301,17 @@ namespace JaLoader
                     Console.Log($"paid for dealership");
                     EventsManager.Instance.CallTransaction("laika");
                 }
-            }*/
+            }
         }
 
         IEnumerator WaitForMotelCheck()
         {
-            while (FindObjectOfType<MotelLogicC>() == null)
+            while (FindObjectOfType<MotelLogic>() == null)
                 yield return null;
 
             RefreshList(true);
         }
-    }
+    }*/
 
     public class MainMenuCReceiver : MonoBehaviour
     {
@@ -353,10 +337,10 @@ namespace JaLoader
 
         public void SavedStolenGoods()
         {
-            if (ES3.Exists("savedStolenGoods"))
+            if (ES2.Exists("savedStolenGoods"))
             {
-                if (ES3.LoadBool("savedStolenGoods") == true)
-                    ES3.Save(false, "savedStolenGoods");
+                if (ES2.Load<bool>("savedStolenGoods") == true)
+                    ES2.Save(false, "savedStolenGoods");
             }
         }
     }
@@ -371,16 +355,16 @@ namespace JaLoader
 
     public class RouteReceiver : MonoBehaviour
     {
-        private RouteGeneratorC routeGenerator;
+        private RouteGenerator routeGenerator;
         private bool called;
 
-        private MotelLogicC[] motels;
+        private MotelLogic[] motels;
         private bool slept;
 
         private void Awake()
         {
-            motels = FindObjectsOfType<MotelLogicC>();
-            routeGenerator = FindObjectOfType<RouteGeneratorC>();
+            motels = FindObjectsOfType<MotelLogic>();
+            routeGenerator = FindObjectOfType<RouteGenerator>();
         }
 
         private void Update()
@@ -409,7 +393,7 @@ namespace JaLoader
                 slept = false;
                 called = true;
                 string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
-                if(info.Length > 0 && info[0] != "" && info[0] != string.Empty)
+                if (info.Length > 0 && info[0] != "" && info[0] != string.Empty)
                 {
                     string destination = info[2];
                     string start = info[0];
@@ -417,7 +401,7 @@ namespace JaLoader
                     {
                         destination = "Malko Tarnovo";
                     }
-                    else if(start == "M.")
+                    else if (start == "M.")
                     {
                         start = "Malko Tarnovo";
                         destination = info[3];
@@ -437,7 +421,7 @@ namespace JaLoader
         {
             yield return new WaitForSeconds(5);
 
-            motels = FindObjectsOfType<MotelLogicC>();
+            motels = FindObjectsOfType<MotelLogic>();
         }
     }
 }

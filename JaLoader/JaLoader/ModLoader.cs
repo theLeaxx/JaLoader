@@ -562,8 +562,17 @@ namespace JaLoader
 
                         if (modType == null)
                         {
-                            Console.LogError($"Mod {modFile.Name} does not contain any class derived from Mod or BaseUnityPlugin.");
-                            throw new Exception("No valid mod class found.");
+                            if(allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ModUnity4") != null) 
+                            {
+                                Console.LogWarning($"Mod {modFile.Name} is designed for an older version of Jalopy (1.0) and is not compatible with your current game version.");
+                                throw new Exception($"Mod {modFile.Name} is built for 1.0 and is not compatible with this version of the game.");
+                            }
+                            else
+                            {
+                                Console.LogError($"Mod {modFile.Name} does not contain any class derived from Mod or BaseUnityPlugin.");
+                                throw new Exception($"No valid mod class found for mod {modFile.Name}.");
+                            }
+
                         }
 
                         isBepInExMod = true;
@@ -784,6 +793,9 @@ namespace JaLoader
                     }
                     else
                     {
+                        if (ex.Message.EndsWith("is built for 1.0 and is not compatible with this version of the game."))
+                            continue;
+
                         Console.LogError("/", ex);
                         Debug.Log(ex);
                         Debug.Log("You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");

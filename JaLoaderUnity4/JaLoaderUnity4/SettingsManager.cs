@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace JaLoader
+namespace JaLoaderUnity4
 {
     public class SettingsManager : MonoBehaviour
     {
@@ -31,5 +31,8 @@ namespace JaLoader
         #endregion
 
         public string ModFolderLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Jalopy\Mods");
+
+        public bool DebugMode = true;
+        public bool UseExperimentalCharacterController = true;
     }
 }

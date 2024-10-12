@@ -145,7 +145,13 @@ namespace JaLoader
         /// <returns></returns>
         public int GetExtraIDByRegistryName(string registryName)
         {
-            return Extras.First(x => x.Key.Item1 == registryName).Key.Item2;
+            foreach(var pair in Extras)
+            {
+                if (pair.Key.Item1 == registryName)
+                    return pair.Key.Item2;
+            }
+
+            return -1;
         }
 
         /// <summary>
@@ -171,7 +177,7 @@ namespace JaLoader
             {
                 if (pair.Key.Item1 == registryName)
                 {
-                    Console.Log($"Extra with registry name {registryName} already exists!");
+                    Console.LogError($"Extra with registry name {registryName} already exists!");
                     return;
                 }
             }
@@ -194,7 +200,7 @@ namespace JaLoader
             {
                 if (pair.Key.Item1 == registryName)
                 {
-                    Console.Log($"Extra with registry name {registryName} already exists!");
+                    Console.LogError($"Extra with registry name {registryName} already exists!");
                     return;
                 }
             }
@@ -443,7 +449,12 @@ namespace JaLoader
 
                 foreach (string entry in data.Keys)
                 {
-                    Fitted(GetExtraIDByRegistryName(entry));
+                    int ID = GetExtraIDByRegistryName(entry);
+
+                    if (ID == -1)
+                        continue;
+
+                    Fitted(ID);
                 }
             }
         }

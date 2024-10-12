@@ -30,6 +30,7 @@ namespace JaLoader
         public string AssetsPath { get; set; }
 
         public List<string> settingsIDS = new List<string>();
+        private Dictionary<string, string> settingsValues = new Dictionary<string, string>();
         [Serializable] class SettingsValues : SerializableDictionary<string, float> { }
 
         public virtual void EventsDeclaration() { }
@@ -67,7 +68,7 @@ namespace JaLoader
 
             if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
             {
-                Console.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load asset '{assetName}{fileSuffix}', but it does not exist.");
                 return null;
             }
 
@@ -112,18 +113,37 @@ namespace JaLoader
                 return null;
             }
 
-            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
+            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName} {fileSuffix}")))
             {
-                Console.LogError(ModID, $"Tried to load asset {assetName}{fileSuffix}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load asset '{assetName}{fileSuffix}', but it does not exist.");
                 return null;
             }
 
+            Application.logMessageReceived += (string condition, string stackTrace, LogType type) =>
+            {
+                if (condition.Contains("The file can not be loaded because it was created for another build target that is not compatible with this platform."))
+                    Console.LogError(ModID, $"Asset '{assetName}{fileSuffix}' could not be loaded because it was built for another platform.");
+            };
+
             var ab = AssetBundle.LoadFromFile(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}"));
+
+            if(ab == null)
+            {
+                Console.LogError(ModID, $"An error occured while loading asset '{assetName}{fileSuffix}'.");
+                return null;
+            }
+
+            Application.logMessageReceived -= (string condition, string stackTrace, LogType type) =>
+            {
+                if (condition.Contains("The file can not be loaded because it was created for another build target that is not compatible with this platform."))
+                    Console.LogError(ModID, $"Asset '{assetName}{fileSuffix}' could not be loaded because it was built for another platform.");
+            };
+
             var asset = ab.LoadAsset<T>($"{prefabName}{prefabSuffix}");
 
             if (asset == null)
             {
-                Console.LogError(ModID, $"Tried to load {typeof(T).Name} {prefabName}{prefabSuffix} from asset {assetName}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load {typeof(T).Name} '{prefabName}{prefabSuffix}' from asset '{assetName}{fileSuffix}', but it does not exist.");
                 ab.Unload(true);
                 return null;
             }
@@ -190,9 +210,9 @@ namespace JaLoader
                 Console.LogError(ModID, "Tried to call LoadAssets, but UseAssets is false.");
             }
 
-            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName}{fileSuffix}")))
+            if (!File.Exists(Path.Combine(AssetsPath, $"{assetName} {fileSuffix}")))
             {
-                Console.LogError(ModID, $"Tried to load scene {assetName}{fileSuffix}, but it does not exist.");
+                Console.LogError(ModID, $"Tried to load scene '{assetName}{fileSuffix}', but it does not exist.");
             }
 
             AssetBundle.LoadFromFile($@"{AssetsPath}\{assetName}{fileSuffix}");
@@ -263,6 +283,7 @@ namespace JaLoader
             obj.SetActive(true);
 
             settingsIDS.Add($"{ID}_Dropdown");
+            settingsValues.Add($"{ID}_Dropdown", defaultValue.ToString());
         }
 
         public void AddToggle(string ID, string name, bool defaultValue)
@@ -294,6 +315,7 @@ namespace JaLoader
             obj.SetActive(true);
 
             settingsIDS.Add($"{ID}_Toggle");
+            settingsValues.Add($"{ID}_Toggle", defaultValue ? "0" : "1");
         }
 
         public void AddSlider(string ID, string name, int minValue, int maxValue, int defaultValue, bool wholeNumbers)
@@ -322,6 +344,7 @@ namespace JaLoader
             obj.SetActive(true);
 
             settingsIDS.Add($"{ID}_Slider");
+            settingsValues.Add($"{ID}_Slider", defaultValue.ToString());
         }
 
         public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey)
@@ -350,6 +373,7 @@ namespace JaLoader
             obj.transform.Find("HeaderText").GetComponent<Text>().text = name;
 
             settingsIDS.Add($"{ID}_Keybind");
+            settingsValues.Add($"{ID}_Keybind", ((int)defaultPrimaryKey).ToString() + "|");
         }
 
         public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey, KeyCode defaultSecondaryKey)
@@ -379,6 +403,7 @@ namespace JaLoader
             obj.transform.Find("HeaderText").GetComponent<Text>().text = name;
 
             settingsIDS.Add($"{ID}_Keybind");
+            settingsValues.Add($"{ID}_Keybind", ((int)defaultPrimaryKey).ToString() + "|" + ((int)defaultSecondaryKey).ToString());
         }
 
         public Dropdown GetDropdown(string ID)
@@ -497,6 +522,46 @@ namespace JaLoader
             }
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, $@"ModSaves\{ModID}\{ModID}_save.json"), JsonUtility.ToJson(values, true));
+        }
+
+        public void ResetModSettings()
+        {
+            foreach (var ID in settingsIDS)
+            {
+                string type = Regex.Match(ID, @"(.{6})\s*$").ToString();
+
+                switch (type)
+                {
+                    case "opdown":
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(settingsValues[ID]);
+                        break;
+
+                    case "Toggle":
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(settingsValues[ID]);
+                        break;
+
+                    case "Slider":
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(settingsValues[ID]);
+                        break;
+
+                    case "eybind":
+                        string str = settingsValues[$"{ID}"];
+                        // str is formatted as "int|int" so we split it and parse it as int, if there is no |, it will just parse the first part
+                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)int.Parse(str.Split('|')[0]));
+                        if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().EnableAltKey)
+                        {
+                            UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetSecondaryKey((KeyCode)int.Parse(str.Split('|')[1]));
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+
+            SaveModSettings();
+
+            LoadModSettings();
         }
 
         public void LoadModSettings()
