@@ -307,6 +307,8 @@ namespace JaLoader
                         {
                             CheckForDependencies(mod);
 
+                            CheckForIncompatibilities(mod);
+
                             try
                             {
                                 mod.EventsDeclaration();
@@ -399,6 +401,8 @@ namespace JaLoader
                     {
                         CheckForDependencies(mod);
 
+                        CheckForIncompatibilities(mod);
+
                         try
                         {
                             mod.EventsDeclaration();
@@ -461,6 +465,30 @@ namespace JaLoader
                     InitializedInGameMods = true;
                 }
             }       
+        }
+
+        private void CheckForIncompatibilities(Mod mod)
+        {
+            if (mod.Incompatibilities.Count > 0)
+            {
+                foreach (var incompatibility in mod.Incompatibilities)
+                {
+                    Mod incompatibleMod = FindMod(incompatibility.Item2, incompatibility.Item1);
+                    if (incompatibleMod != null)
+                    {
+                        //version is of format x.y.z-a.b.c, representing a range of versions from x.y.z to a.b.c
+                        // separate it into 2 ints, one for the lower bound and one for the upper bound
+
+                        string[] version = incompatibility.Item3.Split('-');
+                        int lowerBound = int.Parse(version[0].Replace(".", ""));
+                        int upperBound = int.Parse(version[1].Replace(".", ""));
+                        int modVersion = int.Parse(incompatibleMod.ModVersion.Replace(".", ""));
+
+                        if (modVersion >= lowerBound && modVersion <= upperBound)
+                            uiManager.ShowNotice("Incompatibility detected", $"The mod \"{mod.ModName}\" is incompatible with the mod \"{incompatibleMod.ModName}\". The mod may still load, but not function correctly.");
+                    }
+                }
+            }
         }
 
         private void CheckForDependencies(Mod mod)
@@ -1054,6 +1082,8 @@ namespace JaLoader
 
                 CheckForDependencies(mod);
 
+                CheckForIncompatibilities(mod);
+
                 mod.EventsDeclaration();
 
                 mod.SettingsDeclaration();
@@ -1174,6 +1204,8 @@ namespace JaLoader
             uiManager.modTemplateObject = null;
 
             CheckForDependencies(mod);
+
+            CheckForIncompatibilities(mod);
 
             mod.EventsDeclaration();
 

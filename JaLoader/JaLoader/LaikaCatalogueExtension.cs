@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using System;
 using static System.Net.Mime.MediaTypeNames;
 using System.ComponentModel;
+using System.Linq;
 
 namespace JaLoader
 {
@@ -49,17 +50,20 @@ namespace JaLoader
         private IEnumerator DelayThenAddPages()
         {
             yield return new WaitForSeconds(2f);
-            
+
             AddModsPages();
         }
 
         private void AddModsPages()
         {
-            var magazines = FindObjectsOfType<MagazineLogicC>();
+            var magazines = FindObjectsOfType<MagazineLogicC>().Where(m => m.name == "LaikaCatalogue").ToArray();
+
+            if (magazines == null || magazines.Length == 0)
+                return;
 
             foreach (var magazine in magazines)
             {
-                if (!magazine.transform.Find("ModPages") && magazine.name == "LaikaCatalogue")
+                if (!magazine.transform.Find("ModPages"))
                 {
                     var receipt = magazine.transform.Find("Page2_EngineParts").Find("Receipt").gameObject;
                     receipt.transform.parent = magazine.transform;

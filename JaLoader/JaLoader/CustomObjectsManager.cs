@@ -368,7 +368,6 @@ namespace JaLoader
                     trunkPos = spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt.localPosition;
 
                 json = TupleToString((inEngine, type, parameters.ToArray(), trunkPos));
-                Console.LogWarning(json);
                 StringToTuple(json);
 
                 string name = $"{entry.Item1}_{entry.Item2}";
@@ -464,7 +463,7 @@ namespace JaLoader
                             if (bootSlots[i].localPosition == tuple.Item4)
                             {
                                 bootSlots[i].GetComponent<InventoryRelayC>().Occupy();
-                                obj.transform.parent = bootSlots[i].transform;
+                                obj.transform.SetParent(bootSlots[i].transform, false);
                                 obj.GetComponent<ObjectPickupC>().inventoryPlacedAt = bootSlots[i].transform;
                                 obj.transform.localPosition = obj.GetComponent<ObjectPickupC>().inventoryAdjustPosition;
                                 obj.transform.localEulerAngles = obj.GetComponent<ObjectPickupC>().inventoryAdjustRotation;

@@ -166,8 +166,6 @@ namespace JaLoader
                 CrateMed = route.cratePrefabs[4];
                 CrateSmall = route.cratePrefabs[5];
 
-
-
                 OverwriteBoxObjects();
 
                 Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();

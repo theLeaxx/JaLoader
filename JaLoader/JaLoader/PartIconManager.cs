@@ -210,11 +210,14 @@ namespace JaLoader
             if(File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png"))
                 existingPhotoBytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png");
 
-            if(byteArray.SequenceEqual(existingPhotoBytes))
+            if (existingPhotoBytes != null)
             {
-                Console.LogDebug($"Cached image for {entry} already exists, skipping");
-                CachedItemsCount++;
-                return;
+                if (byteArray.SequenceEqual(existingPhotoBytes))
+                {
+                    Console.LogDebug($"Cached image for {entry} already exists, skipping");
+                    CachedItemsCount++;
+                    return;
+                }
             }
 
             Console.LogDebug($"Cached image for {entry}");
