@@ -27,6 +27,8 @@ namespace JaLoader
 
         public virtual List<(string, string, string)> Dependencies { get; set; } = new List<(string, string, string)>();
 
+        public virtual List<(string, string, string)> Incompatibilities { get; set; } = new List<(string, string, string)>();
+
         public string AssetsPath { get; set; }
 
         public List<string> settingsIDS = new List<string>();

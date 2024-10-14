@@ -387,17 +387,29 @@ namespace JaLoader
         {
             if (called)
             {
+                if (motels == null)
+                {
+                    slept = false;
+                    called = true;
+                    return;
+                }
+
+                if (motels.Length == 1)
+                {
+                    slept = false;
+                    called = true;
+                    return;
+                }
+
                 foreach (var motel in motels)
                 {
                     if (!motel.hasSlept)
                     {
                         slept = false;
-                        break;
+                        return;
                     }
                     else
-                    {
                         slept = true;
-                    }
                 }
 
                 if (slept)
@@ -438,6 +450,8 @@ namespace JaLoader
             yield return new WaitForSeconds(5);
 
             motels = FindObjectsOfType<MotelLogicC>();
+
+            yield return null;
         }
     }
 }

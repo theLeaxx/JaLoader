@@ -116,7 +116,7 @@ namespace JalopyModLoader
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
-        private readonly string version = "3.5.0";
+        private readonly string version = "3.5.2";
 
         private bool canClickCustom = false;
 
