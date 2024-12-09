@@ -544,6 +544,7 @@ namespace JaLoader
             FileInfo[] mods = d.GetFiles("*.dll");
 
             int validMods = mods.Length;
+            bool errorOccured = false;
 
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
@@ -783,6 +784,7 @@ namespace JaLoader
                 }
                 catch (Exception ex)
                 {
+                    errorOccured = true;
                     validMods--;
 
                     Debug.Log($"Failed to initialize mod {modFile.Name}");
@@ -840,6 +842,9 @@ namespace JaLoader
                 finally
                 {
                     uiManager.modTemplateObject = null;
+
+                    if(errorOccured)
+                        GetComponent<LoadingScreen>().DeleteLoadingScreen();
                 }
             }
 
@@ -859,7 +864,8 @@ namespace JaLoader
                 UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
             }
 
-            GetComponent<LoadingScreen>().DeleteLoadingScreen();
+            if(!errorOccured)
+                GetComponent<LoadingScreen>().DeleteLoadingScreen();
 
             yield return null;
         }

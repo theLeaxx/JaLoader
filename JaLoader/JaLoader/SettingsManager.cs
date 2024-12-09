@@ -33,7 +33,7 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        public const string JaLoaderVersion = "3.5.2";
+        public const string JaLoaderVersion = "3.5.3";
         public static readonly bool IsPreReleaseVersion = false;
         public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
         public string ModFolderLocation { get; private set; }
@@ -59,6 +59,7 @@ namespace JaLoader
         public bool AskedAboutJaDownloader;
         public bool FixLaikaShopMusic;
         public MirrorDistances MirrorDistances;
+        public CursorMode CursorMode;
 
         public DateTime lastUpdateCheck;
         private bool shouldCheckForUpdates = true;
@@ -330,6 +331,7 @@ namespace JaLoader
             UpdateCheckMode = _settings.UpdateCheckMode;
             FixLaikaShopMusic = _settings.FixLaikaShopMusic;
             MirrorDistances = _settings.MirrorDistances;
+            CursorMode = _settings.CursorMode;
 
             EventsManager.Instance.OnSettingsLoad();
         }
@@ -362,6 +364,7 @@ namespace JaLoader
 
             _settings.FixLaikaShopMusic = FixLaikaShopMusic;
             _settings.MirrorDistances = MirrorDistances;
+            _settings.CursorMode = CursorMode;
 
             if (includeDisabledMods)
             {
@@ -427,6 +430,7 @@ namespace JaLoader
         [SerializeField] public UpdateCheckModes UpdateCheckMode = UpdateCheckModes.Daily;
         [SerializeField] public bool FixLaikaShopMusic = true;
         [SerializeField] public MirrorDistances MirrorDistances = MirrorDistances.m1000;
+        [SerializeField] public CursorMode CursorMode = CursorMode.Default;
     }
 
     public enum UpdateCheckModes
@@ -457,5 +461,12 @@ namespace JaLoader
         m3500,
         m4000,
         m5000
+    }
+
+    public enum CursorMode
+    {
+        Default,
+        Circle,
+        Hidden
     }
 }

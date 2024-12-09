@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace JaLoader
 {
@@ -35,6 +36,11 @@ namespace JaLoader
 
         public bool ResettingPickingUp = false;
 
+        private Texture2D defaultCursorTexture;
+        private Texture2D emptyTexture;
+        private VfCursorManager cursorManager;
+        private VfAnimCursor cursorToChange;
+
         private void OnGameLoad()
         {
             StartCoroutine(OnGameLoadDelay());
@@ -42,6 +48,15 @@ namespace JaLoader
 
         private IEnumerator OnGameLoadDelay()
         {
+            cursorManager = FindObjectOfType<VfCursorManager>();
+            cursorToChange = cursorManager.Cursors[2].GetComponent<VfAnimCursor>();
+
+            defaultCursorTexture = cursorToChange.FrameTextures[0];
+            emptyTexture = new Texture2D(1, 1, TextureFormat.Alpha8, false);
+            emptyTexture.SetPixel(0, 0, Color.clear);
+
+            ChangeCursor(settingsManager.CursorMode);
+
             yield return new WaitForSeconds(3);
             UpdateMirrors();
 
@@ -80,7 +95,37 @@ namespace JaLoader
                 if(!laikabuilding.transform.Find("speakers_shop_01").GetComponent<AudioSource>().isPlaying)
                     laikabuilding.transform.Find("speakers_shop_01").GetComponent<AudioSource>().Play();
             }
-        }   
+        }
+
+        public void ChangeCursor(CursorMode cursorMode)
+        {
+            if (cursorManager == null)
+                return;
+
+            cursorManager.SetCursor(0);
+            cursorToChange.CursorOff();
+
+            switch (cursorMode)
+            {
+                case CursorMode.Default:
+                    cursorToChange.FrameTextures[0] = cursorToChange.FrameTexturesStorage[0] = defaultCursorTexture;
+                    cursorToChange.HotSpot = new Vector2(16, 16);
+                    break;
+
+                case CursorMode.Circle:
+                    cursorToChange.FrameTextures[0] = cursorToChange.FrameTexturesStorage[0] = UIManager.Instance.knobTexture;
+                    cursorToChange.HotSpot = new Vector2(0, 0);
+                    break;
+
+                case CursorMode.Hidden:
+                    cursorToChange.FrameTextures[0] = cursorToChange.FrameTexturesStorage[0] = emptyTexture;
+                    cursorToChange.HotSpot = new Vector2(0, 0);
+                    break;
+            }
+
+            cursorToChange.CursorOn();
+            cursorManager.SetCursor(2);
+        }
 
         public void UpdateMirrors()
         {
@@ -144,9 +189,7 @@ namespace JaLoader
             }
 
             foreach (MirrorReflection mirror in mirrors)
-            {
                 mirror.m_FarClipDistance = distance;
-            }
         }
     }
 }

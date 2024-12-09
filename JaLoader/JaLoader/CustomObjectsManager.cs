@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -321,7 +322,7 @@ namespace JaLoader
                 PartTypes type = PartTypes.Default;
                 bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine;
                 string json = "";
-                Vector3 trunkPos = Vector3.zero;
+                int trunkPos = -1;
                 if (!inEngine && spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt == null)
                     continue;
 
@@ -364,8 +365,15 @@ namespace JaLoader
                     }
                 }
 
-                if(!inEngine)
-                    trunkPos = spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt.localPosition;
+                if (!inEngine)
+                {
+                    for (int i = 0; i < bootSlots.Count; i++)
+                    {
+                        if (bootSlots[i].childCount > 0)
+                            if (bootSlots[i].GetChild(0) == spawnedDatabase[entry].transform)
+                                trunkPos = i;
+                    }
+                }
 
                 json = TupleToString((inEngine, type, parameters.ToArray(), trunkPos));
                 StringToTuple(json);
@@ -402,7 +410,21 @@ namespace JaLoader
                     if (!database.ContainsKey(name))
                         continue;
 
-                    (bool, PartTypes, float[], Vector3) tuple = StringToTuple(data[entry]);
+                    (bool, PartTypes, float[], Vector3) oldTuple;
+                    (bool, PartTypes, float[], int) tuple;
+
+                    Vector3 oldPosition = Vector3.zero;
+                    bool isUsingOldSaveSystem = IsUsingOldSaveSystem(data[entry]);
+
+                    if (isUsingOldSaveSystem)
+                    {
+                        oldTuple = StringToOldTuple(data[entry]);
+                        tuple = (oldTuple.Item1, oldTuple.Item2, oldTuple.Item3, -1);
+                        oldPosition = oldTuple.Item4;
+                    }
+                    else
+                        tuple = StringToTuple(data[entry]);
+
                     GameObject obj = SpawnObject(name, Vector3.zero, Quaternion.identity);
                     obj.GetComponent<Rigidbody>().isKinematic = true;
                     obj.GetComponent<Collider>().isTrigger = true;
@@ -458,16 +480,30 @@ namespace JaLoader
                         if (!full)
                             continue;
 
-                        for (int i = 0; i < bootSlots.Count; i++)
+                        if (isUsingOldSaveSystem)
                         {
-                            if (bootSlots[i].localPosition == tuple.Item4)
+                            for (int i = 0; i < bootSlots.Count; i++)
                             {
-                                bootSlots[i].GetComponent<InventoryRelayC>().Occupy();
-                                obj.transform.SetParent(bootSlots[i].transform, false);
-                                obj.GetComponent<ObjectPickupC>().inventoryPlacedAt = bootSlots[i].transform;
+                                if (bootSlots[i].localPosition == oldPosition)
+                                {
+                                    bootSlots[i].GetComponent<InventoryRelayC>().Occupy();
+                                    obj.transform.SetParent(bootSlots[i].transform, false);
+                                    obj.GetComponent<ObjectPickupC>().inventoryPlacedAt = bootSlots[i].transform;
+                                    obj.transform.localPosition = obj.GetComponent<ObjectPickupC>().inventoryAdjustPosition;
+                                    obj.transform.localEulerAngles = obj.GetComponent<ObjectPickupC>().inventoryAdjustRotation;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (bootSlots.Count >= tuple.Item4)
+                            {
+                                bootSlots[tuple.Item4].GetComponent<InventoryRelayC>().Occupy();
+                                obj.transform.SetParent(bootSlots[tuple.Item4].transform, false);
+                                obj.GetComponent<ObjectPickupC>().inventoryPlacedAt = bootSlots[tuple.Item4].transform;
                                 obj.transform.localPosition = obj.GetComponent<ObjectPickupC>().inventoryAdjustPosition;
                                 obj.transform.localEulerAngles = obj.GetComponent<ObjectPickupC>().inventoryAdjustRotation;
-                                break;
                             }
                         }
                     }
@@ -508,7 +544,7 @@ namespace JaLoader
             obj.SendMessage("SendStatsToCarPerf");
         }
 
-        private static string TupleToString((bool, PartTypes, float[], Vector3) point)
+        private static string TupleToString((bool, PartTypes, float[], int) point)
         {
             string arrayStr = "";
 
@@ -524,13 +560,19 @@ namespace JaLoader
                 }
             }
 
-            string str = $"{point.Item1}|{(int)point.Item2}|{arrayStr}|{point.Item4.x}|{point.Item4.y}|{point.Item4.z}";
+            string str = $"{point.Item1}|{(int)point.Item2}|{arrayStr}|{point.Item4}";
 
             return str;
         }
 
-        // isInEngine (if false then it's in trunk) | PartType | other parameters (condition, fuel level etc) | trunk position
-        private static (bool, PartTypes, float[], Vector3) StringToTuple(string str)
+        private static bool IsUsingOldSaveSystem(string str)
+        {
+            string[] param = str.Split('|');
+            return param.Length == 6;
+        }
+
+        // isInEngine (if false then it's in trunk) | PartType | other parameters (condition, fuel level etc) | trunk child index
+        private static (bool, PartTypes, float[], Vector3) StringToOldTuple(string str)
         {
             string[] param = str.Split('|');
             string[] floatParam = param[2].Split();
@@ -545,6 +587,23 @@ namespace JaLoader
                     floatArrayParam[i] = float.Parse(floatParam[i]);
 
             return (inEngine, partType, floatArrayParam, vector3);
+        }
+
+        private static (bool, PartTypes, float[], int) StringToTuple(string str)
+        {
+            string[] param = str.Split('|');
+            string[] floatParam = param[2].Split();
+
+            bool inEngine = bool.Parse(param[0]);
+            PartTypes partType = (PartTypes)int.Parse(param[1]);
+            float[] floatArrayParam = new float[floatParam.Length];       
+            int trunkIndex = int.Parse(param[3]);
+
+            if (floatParam[0] != "")
+                for (int i = 0; i < floatParam.Length; i++)
+                    floatArrayParam[i] = float.Parse(floatParam[i]);
+
+            return (inEngine, partType, floatArrayParam, trunkIndex);
         }
 
         private IEnumerator WaitUntilLoadFinished()
