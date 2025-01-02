@@ -581,7 +581,7 @@ namespace JaLoader
             {
                 if (!CustomObjectsManager.Instance.ignoreAlreadyExists)
                 {
-                    Console.LogError($"An extra with the registry name {registryName} already exists!");
+                    Console.LogError($"An extra with the registry name {registryName} already exFists!");
                 }
                 else
                 {
@@ -696,7 +696,6 @@ namespace JaLoader
  
             return boxObject;
         }
-
 
         /// <summary>
         /// Adjust a custom part's location, rotation and scale for the part icon

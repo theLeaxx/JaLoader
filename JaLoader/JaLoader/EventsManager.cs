@@ -179,7 +179,7 @@ namespace JaLoader
         {
             if(addComps)
             {
-                FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
+                //FindObjectOfType<DirectorC>().gameObject.AddComponent<RouteReceiver>();
                 FindObjectOfType<WalletC>().gameObject.AddComponent<ShopReceiver>();
                 Camera.main.gameObject.AddComponent<MainMenuCReceiver>();
                 Camera.main.gameObject.AddComponent<MotelsReceiver>();
@@ -366,92 +366,6 @@ namespace JaLoader
         public void Slept()
         {
             EventsManager.Instance.OnSleepTrigger();
-        }
-    }
-
-    public class RouteReceiver : MonoBehaviour
-    {
-        private RouteGeneratorC routeGenerator;
-        private bool called;
-
-        private MotelLogicC[] motels;
-        private bool slept;
-
-        private void Awake()
-        {
-            motels = FindObjectsOfType<MotelLogicC>();
-            routeGenerator = FindObjectOfType<RouteGeneratorC>();
-        }
-
-        private void Update()
-        {
-            if (called)
-            {
-                if (motels == null)
-                {
-                    slept = false;
-                    called = true;
-                    return;
-                }
-
-                if (motels.Length == 1)
-                {
-                    slept = false;
-                    called = true;
-                    return;
-                }
-
-                foreach (var motel in motels)
-                {
-                    if (!motel.hasSlept)
-                    {
-                        slept = false;
-                        return;
-                    }
-                    else
-                        slept = true;
-                }
-
-                if (slept)
-                    called = false;
-            }
-
-            if (routeGenerator.routeGenerated && !called && routeGenerator.routeChosenLength != 0)
-            {
-                slept = false;
-                called = true;
-                string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
-                if(info.Length > 0 && info[0] != "" && info[0] != string.Empty)
-                {
-                    string destination = info[2];
-                    string start = info[0];
-                    if (destination == "M.")
-                    {
-                        destination = "Malko Tarnovo";
-                    }
-                    else if(start == "M.")
-                    {
-                        start = "Malko Tarnovo";
-                        destination = info[3];
-                    }
-                    EventsManager.Instance.CallRoute(start, destination, routeGenerator.routeChosenLength * 70);
-                }
-                else
-                {
-                    EventsManager.Instance.CallRoute("Berlin", "Dresden", routeGenerator.routeChosenLength * 70);
-                }
-
-                StartCoroutine(WaitThenCheck());
-            }
-        }
-
-        private IEnumerator WaitThenCheck()
-        {
-            yield return new WaitForSeconds(5);
-
-            motels = FindObjectsOfType<MotelLogicC>();
-
-            yield return null;
         }
     }
 }

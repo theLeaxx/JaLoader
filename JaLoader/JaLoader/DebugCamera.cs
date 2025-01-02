@@ -208,6 +208,7 @@ namespace JaLoader
             cameraObj.SetActive(true);
             mainCameraObj.GetComponent<Camera>().enabled = !isCameraEnabled;
             mainCameraObj.GetComponent<Camera>().Render();
+            mainCameraObj.transform.GetChild(0).gameObject.SetActive(!isCameraEnabled);
 
             lockedCursor = true;
             Cursor.lockState = CursorLockMode.Locked;
@@ -219,6 +220,7 @@ namespace JaLoader
             isCameraEnabled = false;
             cameraObj.SetActive(true);
             mainCameraObj.GetComponent<Camera>().enabled = !isCameraEnabled;
+            mainCameraObj.transform.GetChild(0).gameObject.SetActive(!isCameraEnabled);
         }
 
         public void Toggle()
@@ -226,6 +228,7 @@ namespace JaLoader
             isCameraEnabled = !isCameraEnabled;
             cameraObj.SetActive(isCameraEnabled);
             mainCameraObj.GetComponent<Camera>().enabled = !isCameraEnabled;
+            mainCameraObj.transform.GetChild(0).gameObject.SetActive(!isCameraEnabled);
 
             if (isCameraEnabled)
             {
