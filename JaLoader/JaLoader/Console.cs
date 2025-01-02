@@ -7,6 +7,7 @@ using UnityEngine;
 using System.IO;
 using System.Diagnostics;
 using System.Linq;
+using UnityEngine.EventSystems;
 
 namespace JaLoader
 {
@@ -95,7 +96,7 @@ namespace JaLoader
         private readonly List<(string, string, string)> queuedLogs = new List<(string, string, string)>();
 
         public bool LogEverythingFromDebug = false;
-
+        
         public bool Visible
         {
             get { return uiManager.modConsole.activeSelf; }
@@ -411,22 +412,22 @@ namespace JaLoader
             switch (color)
             {
                 case "grey":
-                    _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=grey>{sender}: {message}</color>";
+                    _msg.GetComponent<InputField>().text = $"<color=grey>{sender}: {message}</color>";
                     log.Add($"{DateTime.Now} * '{sender}': '{message}'");
                     break;
 
                 case "red":
-                    _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>{sender}</color>: <color=red>{message}</color>";
+                    _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: <color=red>{message}</color>";
                     log.Add($"{DateTime.Now} >!! '{sender}': '{message}'");
                     break;
 
                 case "yellow":
-                    _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>{sender}</color>: <color=yellow>{message}</color>";
+                    _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: <color=yellow>{message}</color>";
                     log.Add($"{DateTime.Now} >! '{sender}': '{message}'");
                     break;
 
                 case "aqua":
-                    _msg.transform.Find("Text").GetComponent<Text>().text = $"<color=aqua>{sender}</color>: {message}";
+                    _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: {message}";
                     log.Add($"{DateTime.Now} > '/': '{message}'");
                     break;
             }

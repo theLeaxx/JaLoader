@@ -530,4 +530,31 @@ namespace JaLoader
             LaikaCatalogueExtension.Instance.currentOpenMagazine = __instance;
         }
     }
+
+    [HarmonyPatch(typeof(RouteGeneratorC), "SetRoadConditions")]
+    public static class RouteGeneratorC_SetRoadConditions_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix(RouteGeneratorC __instance)
+        {
+            string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
+            if (info.Length > 0 && info[0] != "" && info[0] != string.Empty)
+            {
+                string destination = info[2];
+                string start = info[0];
+                if (destination == "M.")
+                {
+                    destination = "Malko Tarnovo";
+                }
+                else if (start == "M.")
+                {
+                    start = "Malko Tarnovo";
+                    destination = info[3];
+                }
+                EventsManager.Instance.CallRoute(start, destination, __instance.routeChosenLength * 70);
+            }
+            else
+                EventsManager.Instance.CallRoute("Berlin", "Dresden", __instance.routeChosenLength * 70);
+        }
+    }
 }

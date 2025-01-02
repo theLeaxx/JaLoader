@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace JaLoader
@@ -79,6 +80,18 @@ namespace JaLoader
         {
             if (settingsManager.FixLaikaShopMusic)
                 Invoke("FixLaikaDealershipSong", 5);
+
+            SceneManager.GetActiveScene().GetRootGameObjects().ToList().ForEach(go =>
+            {
+                if (go.transform.position == Vector3.zero)
+                {
+                    var listOfNames = new List<string> {"EngineBlock", "FuelTank", "Carburettor", "AirFilter", "IgnitionCoil", "Battery", "WaterContainer"};
+
+                    foreach (var name in listOfNames)
+                        if (go.name == name)
+                            go.SetActive(false);
+                }
+            });
         }
 
         private void FixLaikaDealershipSong()
