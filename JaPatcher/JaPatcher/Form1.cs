@@ -11,6 +11,7 @@ using System.Diagnostics;
 using Microsoft.Win32;
 using Application = System.Windows.Forms.Application;
 using System.Drawing.Text;
+using System.Configuration;
 
 namespace JalopyModLoader
 {
@@ -116,7 +117,6 @@ namespace JalopyModLoader
         private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
-        private readonly string version = "3.5.3";
 
         private bool canClickCustom = false;
 
@@ -158,6 +158,26 @@ namespace JalopyModLoader
             documentsModsText.Text = documentsModsPath;
         }
 
+        private int GetJaLoaderFileVersion()
+        {
+            string toReturnString = "";
+            int toReturn = 0;
+
+            foreach(var file in requiredManagedFiles)
+            {
+                if (file == "JaLoader.dll")
+                {
+                    FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Managed", file));
+                    toReturnString = fvi.FileVersion;
+
+                    toReturn = int.Parse(toReturnString.Replace(".", ""));
+                    break;
+                }
+            }
+
+            return toReturn;
+        }
+
         public async void CheckForUpdates()
         {
             var client = new GitHubClient(new ProductHeaderValue("JaLoader-JaPatcher"));
@@ -169,8 +189,7 @@ namespace JalopyModLoader
             if (latest.Contains("Pre-Release")) return;
 
             int tagInt = int.Parse(latest.Replace(".", ""));
-            int currentInt = int.Parse(version.Replace(".", ""));
-
+            int currentInt = GetJaLoaderFileVersion();
             if (tagInt > currentInt)
             {
                 updateButton.Visible = true;
