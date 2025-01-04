@@ -129,6 +129,7 @@ namespace JaLoader
             helperObj.AddComponent<UncleHelper>();
             helperObj.AddComponent<PartIconManager>();
             helperObj.AddComponent<HarmonyManager>();
+            helperObj.AddComponent<ExtrasGarage>();
 
             gameObject.AddComponent<DiscordController>();
 

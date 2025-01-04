@@ -204,5 +204,33 @@ namespace JaLoader
             foreach (MirrorReflection mirror in mirrors)
                 mirror.m_FarClipDistance = distance;
         }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.F9))
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CarCustomDecalStencil - Copy.png");
+
+                Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
+                texture.LoadImage(bytes);
+
+                var allObjects = new GameObject[]
+                {
+                    ModHelper.Instance.carFrame,
+                    ModHelper.Instance.carLeftDoor,
+                    ModHelper.Instance.carRightDoor,
+                    ModHelper.Instance.carHood,
+                    ModHelper.Instance.carTrunk,
+                    ModHelper.Instance.carRoof
+                };
+
+                foreach(var obj in allObjects)
+                {
+                    var meshRenderer = obj.GetComponent<MeshRenderer>();
+
+                    meshRenderer.sharedMaterials[1].mainTexture = texture;
+                }
+            }
+        }
     }
 }

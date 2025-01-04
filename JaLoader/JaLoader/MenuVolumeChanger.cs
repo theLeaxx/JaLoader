@@ -15,16 +15,22 @@ namespace JaLoader
         void Start()
         {
             radioSource = GameObject.Find("RadioFreq").GetComponent<AudioSource>();
+
+            if (volume == 0)
+                volume = 1;
         }
 
         void Update()
         {
+            if (radioSource == null)
+                radioSource = GameObject.Find("RadioFreq").GetComponent<AudioSource>();
+
             if (!radioSource.gameObject.activeSelf)
                 return;
 
             radioSource.volume = volume;
 
-            if (Input.GetKeyDown(KeyCode.F6))
+            if (Input.GetKeyDown(KeyCode.F6) && !SettingsManager.Instance.DebugMode)
                 FindObjectOfType<RadioFreqLogicC>().NextSong();
 
             if (Input.GetKeyDown(KeyCode.F7))

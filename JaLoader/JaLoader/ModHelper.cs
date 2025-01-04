@@ -9,6 +9,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using System.Xml.Linq;
 using System.Data.SqlTypes;
 using System.Linq;
+using System.Collections;
 
 namespace JaLoader
 {
@@ -57,6 +58,13 @@ namespace JaLoader
         public GameObject CrateMed;
         public GameObject CrateSmall;
 
+        public GameObject carLeftDoor;
+        public GameObject carRightDoor;
+        public GameObject carHood;
+        public GameObject carTrunk;
+        public GameObject carRoof;
+        public GameObject carFrame;
+
         public bool patchedEverything = false;
 
         private Material defaultGlowMaterial = new Material(Shader.Find("Legacy Shaders/Transparent/Specular"))
@@ -70,7 +78,7 @@ namespace JaLoader
         {
             RefreshPartHolders();
 
-            laika = GameObject.Find("FrameHolder");
+            GetAllBodyParts();
             laika.AddComponent<LicensePlateCustomizer>();
 
             if (defaultEngineMaterial == null)
@@ -141,6 +149,26 @@ namespace JaLoader
             }
         }
 
+        private void GetAllBodyParts()
+        {
+            laika = GameObject.Find("FrameHolder");
+            carFrame = laika.transform.Find("TweenHolder").Find("Frame").gameObject;
+
+            carLeftDoor = carFrame.transform.Find("L_Door").gameObject;
+            carHood = carFrame.transform.Find("Bonnet").gameObject;
+            carTrunk = carFrame.transform.Find("Boot").gameObject;
+            carRoof = carFrame.transform.Find("Roof").gameObject;
+
+            StartCoroutine(GetRightDoor());
+        }
+
+        private IEnumerator GetRightDoor()
+        {
+            yield return new WaitForSeconds(3);
+
+            carRightDoor = carFrame.transform.Find("DoorHolder/R_Door").gameObject;
+        }
+
         private void OnGameLoad()
         {
             if (SettingsManager.Instance.DebugMode)
@@ -152,7 +180,7 @@ namespace JaLoader
             {
                 Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
                 player = Camera.main.transform.parent.gameObject;
-                laika = GameObject.Find("FrameHolder");
+                GetAllBodyParts();
                 wallet = FindObjectOfType<WalletC>();
                 director = FindObjectOfType<DirectorC>();
                 laika.AddComponent<LicensePlateCustomizer>();
