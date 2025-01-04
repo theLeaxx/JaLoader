@@ -623,7 +623,7 @@ copy of the Program in return for a fee.
                                 NOTICE
 
     JaLoader - A mod loader & manager for Jalopy.
-    Copyright (C) 2024 Leaxx
+    Copyright (C) 2025 Leaxx
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
