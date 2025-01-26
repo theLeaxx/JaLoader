@@ -22,6 +22,7 @@ namespace JaLoader
         public virtual string ModDescription { get; set; }
         public virtual string ModVersion { get; set; }
         public virtual string GitHubLink { get; set; }
+        public virtual string NexusModsLink { get; set; }
         public virtual bool UseAssets { get; set; }
         public virtual WhenToInit WhenToInit { get; set; }
 
@@ -35,6 +36,8 @@ namespace JaLoader
         private Dictionary<string, string> settingsValues = new Dictionary<string, string>();
         [Serializable] class SettingsValues : SerializableDictionary<string, string> { }
 
+        private Dictionary<string, string> valuesAfterLoad = new Dictionary<string, string>();
+
         public virtual void EventsDeclaration() { }
 
         public virtual void SettingsDeclaration() { }
@@ -47,8 +50,12 @@ namespace JaLoader
         public virtual void OnEnable() { }
         public virtual void OnDisable() { }
         public virtual void OnDestroy() { }
-
         public virtual void OnReload() { }
+
+        public virtual void OnSettingsSaved() { }
+        public virtual void OnSettingValueChanged(string ID) { }
+        public virtual void OnSettingsReset() { }
+        public virtual void OnSettingsLoaded() { }
 
 
         /// <summary>
@@ -256,6 +263,21 @@ namespace JaLoader
             obj.SetActive(true);
         }
 
+        public void AddDisclaimer(string text)
+        {
+            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            {
+                Console.LogError(ModID, "Tried adding disclaimer, but settings aren't instantiated!");
+                return;
+            }
+
+            GameObject obj = Instantiate(UIManager.Instance.modOptionsHeaderTemplate);
+            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            obj.GetComponentInChildren<Text>().text = text;
+            obj.GetComponentInChildren<Text>().resizeTextMaxSize = 20;
+            obj.SetActive(true);
+        }
+
         public void AddDropdown(string ID, string name, string[] values, int defaultValue)
         {
             if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
@@ -338,6 +360,8 @@ namespace JaLoader
             obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Slider";
 
+            var scr = obj.GetComponentInChildren<Slider>().gameObject.AddComponent<TooltipOnHover>();
+            scr.slider = obj.GetComponentInChildren<Slider>();
             obj.GetComponentInChildren<Slider>().minValue = minValue;
             obj.GetComponentInChildren<Slider>().maxValue = maxValue;
             obj.GetComponentInChildren<Slider>().value = defaultValue;
@@ -573,6 +597,39 @@ namespace JaLoader
             }
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, $@"ModSaves\{ModID}\{ModID}_save.json"), JsonUtility.ToJson(values, true));
+
+            OnSettingsSaved();
+
+            // compare values with valuesAfterLoad, and if they are different, call OnSettingValueChanged(ID)
+            foreach (var ID in settingsIDS)
+            {
+                if (valuesAfterLoad.ContainsKey(ID))
+                {
+                    if (valuesAfterLoad[ID] != values[ID])
+                    {
+                        Console.Log(ModID, $"Setting {ID} has changed!");
+                        OnSettingValueChanged(ID);
+
+                        valuesAfterLoad[ID] = values[ID];
+                    }
+                }
+                else if (valuesAfterLoad.ContainsKey($"{ID}_primary"))
+                {
+                    if (valuesAfterLoad[$"{ID}_primary"] != values[$"{ID}_primary"])
+                    {
+                        OnSettingValueChanged(ID);
+                        valuesAfterLoad[ID] = values[ID];
+                    }
+                }
+                else if(valuesAfterLoad.ContainsKey($"{ID}_secondary"))
+                {
+                    if (valuesAfterLoad[$"{ID}_secondary"] != values[$"{ID}_secondary"])
+                    {
+                        OnSettingValueChanged(ID);
+                        valuesAfterLoad[ID] = values[ID];
+                    }
+                }
+            }
         }
 
         public void ResetModSettings()
@@ -613,6 +670,8 @@ namespace JaLoader
                         break;
                 }
             }
+
+            OnSettingsReset();
 
             SaveModSettings();
 
@@ -669,10 +728,10 @@ namespace JaLoader
                     }
                 }
             }
-            else
-            {
-                return;
-            }
+
+            valuesAfterLoad = values;
+
+            OnSettingsLoaded();
         }
     } 
 

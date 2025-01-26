@@ -4,7 +4,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-//TODO: implement check so we dont cache everytime
 namespace JaLoader
 {
     public class PartIconManager : MonoBehaviour
@@ -65,15 +64,8 @@ namespace JaLoader
 
             go.transform.position = new Vector3(1000, 1000, 990);
         }
-
         private void OnLoadStart()
         {
-            //Console.Log("Started");
-
-            //FindObjectOfType<LoadLevelManagerC>().enabled = false;
-
-            //camera.enabled = true;
-
             if(cachedItems)
                 return;
 
@@ -88,7 +80,7 @@ namespace JaLoader
                     continue;
 
                 var obj = objectsManager.SpawnObjectWithoutRegistering(entry, new Vector3(1000, 1000, 1000), Vector3.zero, false);
-                ModHelper.RemoveAllComponents(obj, typeof(MeshFilter), typeof(MeshRenderer), /*typeof(ObjectPickupC),*/ typeof(ObjectIdentification));
+                ModHelper.RemoveAllComponents(obj, typeof(MeshFilter), typeof(MeshRenderer), typeof(ObjectIdentification));
 
                 var comp = obj.GetComponent<ObjectIdentification>();
 
@@ -136,8 +128,7 @@ namespace JaLoader
 
                 obj.SetActive(true);
 
-                //var comp = obj.GetComponent<ObjectIdentification>();
-                SaveScreenshot(entry);
+                SaveScreenshot($"{comp.ModID}_{entry}");
 
                 DestroyImmediate(obj);
             }
@@ -148,7 +139,6 @@ namespace JaLoader
                 SceneManager.MoveGameObjectToScene(objToSpawn, SceneManager.GetActiveScene());
                 ModHelper.RemoveAllComponents(objToSpawn, typeof(MeshFilter), typeof(MeshRenderer), typeof(ObjectIdentification));
                 objToSpawn.transform.position = new Vector3(1000, 1000, 1000);
-                //objToSpawn.transform.eulerAngles = new Vector3(90, 0, -90);
                 objToSpawn.layer = 21;
 
                 var comp = objToSpawn.GetComponent<ObjectIdentification>();
@@ -157,7 +147,7 @@ namespace JaLoader
                 objToSpawn.transform.localScale = comp.PartIconScaleAdjustment;
 
                 objToSpawn.SetActive(true);
-                SaveScreenshot(entry);
+                SaveScreenshot($"{comp.ModID}_{entry}");
                 objToSpawn.SetActive(false);
 
                 DestroyImmediate(objToSpawn);

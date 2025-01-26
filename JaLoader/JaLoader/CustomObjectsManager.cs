@@ -144,6 +144,15 @@ namespace JaLoader
             database.Add($"{registryName}", obj);
             Console.LogDebug("CustomObjectsManager", $"Registered object with the registry key {registryName}!");
             DontDestroyOnLoad(obj);
+
+            if (allObjectsRegistered)
+            {
+                // compare debugobjectsspawner.instance.spawnedcustomobjects with the registryNames from databas, and print them to the console
+                
+                foreach(var entry in database)
+                    if (!DebugObjectSpawner.Instance.addedCustomObjects.Contains(entry.Key))
+                        DebugObjectSpawner.Instance.AddObjectToList(entry.Key, "");
+            }
         }
 
         /// <summary>

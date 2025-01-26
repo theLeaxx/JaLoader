@@ -70,51 +70,49 @@ namespace Doorstop
         {
             Debug.Log("JaLoader found!");
 
-            // alternative to
-            // UnityEngine.Application.logMessageReceived += LogMessageReceived;
-            // using reflection, since it doesnt exist in unity 4 and below, but required for unity 5 and above
+            var jaLoaderDll = $"{UnityEngine.Application.dataPath}/Managed/JaLoader.dll";
+            var jaLoaderDllFileVersion = System.Diagnostics.FileVersionInfo.GetVersionInfo(jaLoaderDll).FileVersion;
 
-            Type applicationType = typeof(UnityEngine.Application);
+            Debug.Log($"JaLoader version: {jaLoaderDllFileVersion}");
 
-            logMessageReceivedEvent = applicationType.GetEvent("logMessageReceived");
+            Assembly unityAssembly = Assembly.Load("UnityEngine.CoreModule");
 
-            Type delegateType = logMessageReceivedEvent.EventHandlerType;
+            Type applicationType = unityAssembly.GetType("UnityEngine.SceneManagement.SceneManager", false, true);
 
-            delegateInstance = Delegate.CreateDelegate(delegateType, this, typeof(AddModLoaderComponent).GetMethod("LogMessageReceived"));
+            var sceneLoadedEvent = applicationType.GetEvent("sceneLoaded");
 
-            logMessageReceivedEvent.AddEventHandler(null, delegateInstance);
+            Type delegateType = sceneLoadedEvent.EventHandlerType;
+
+            var delegateInstance = Delegate.CreateDelegate(delegateType, this, typeof(AddModLoaderComponent).GetMethod("LoadModLoader"));
+
+            sceneLoadedEvent.AddEventHandler(null, delegateInstance);
         }
 
-        public void LogMessageReceived(string message, string stack, LogType type)
+        public void LoadModLoader(object scene, object loadSceneMode)
         {
-            if ((message == "Received stats and achievements from Steam\n" && type == LogType.Log) || (message.EndsWith("Is the refresh rate") && type == LogType.Error))
+            GameObject obj = (GameObject)Instantiate(new GameObject());
+
+            // we have to use reflection to add the mod loader component to the object
+            // since we can't reference the JaLoader assembly directly, due to it being built on Unity 5, which separates UnityEngine.dll into multiple assemblies
+            // and Unity 4 and below has UnityEngine.dll as a single assembly
+            // using obj.AddComponent<ModLoader>() would cause this entire script to fail to load on Unity 4 and below
+
+            Assembly assembly = null;
+
+            foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
             {
-                GameObject obj = (GameObject)Instantiate(new GameObject());
-
-                // we have to use reflection to add the mod loader component to the object
-                // since we can't reference the JaLoader assembly directly, due to it being built on Unity 5, which separates UnityEngine.dll into multiple assemblies
-                // and Unity 4 and below has UnityEngine.dll as a single assembly
-                // using obj.AddComponent<ModLoader>() would cause this entire script to fail to load on Unity 4 and below
-
-                Assembly assembly = null;
-
-                foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
+                if (a.GetName().Name == "JaLoader")
                 {
-                    if (a.GetName().Name == "JaLoader")
-                    {
-                        assembly = a;
-                        break;
-                    }
+                    assembly = a;
+                    break;
                 }
-
-                Type modLoaderType = assembly.GetType("JaLoader.ModLoader");
-
-                MethodInfo addComponentMethod = typeof(GameObject).GetMethod("AddComponent", new[] { typeof(Type) });
-
-                addComponentMethod.Invoke(obj, new object[] { modLoaderType });
-
-                logMessageReceivedEvent.RemoveEventHandler(null, delegateInstance);
             }
+
+            Type modLoaderType = assembly.GetType("JaLoader.ModLoader");
+
+            MethodInfo addComponentMethod = typeof(GameObject).GetMethod("AddComponent", new[] { typeof(Type) });
+
+            addComponentMethod.Invoke(obj, new object[] { modLoaderType });
         }
     }
 

@@ -14,7 +14,7 @@ namespace JaLoader
 
         void Start()
         {
-            if (ExtrasGarage.Instance.loadedGarage)
+            if (AdjustmentsEditor.Instance.loadedViewingEditor)
                 return;
 
             GameObject.Find("R_Door").transform.parent = car.transform;
@@ -37,7 +37,7 @@ namespace JaLoader
                 car.transform.Rotate(Vector3.down * speed);
 
 
-            if (ExtrasGarage.Instance.loadedGarage)
+            if (AdjustmentsEditor.Instance.loadedViewingEditor)
                 return;
 
             if (Input.GetKeyDown(KeyCode.R))

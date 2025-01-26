@@ -17,6 +17,11 @@ namespace JaLoader
         private ModLoader modLoader;
         private SettingsManager settingsManager;
 
+        private List<string> loadedReferences = new List<string>();
+        private bool loadedAlready = false;
+
+        public bool canLoadMods = false;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -34,13 +39,30 @@ namespace JaLoader
 
         public IEnumerator LoadAssemblies()
         {
-            Debug.Log("Loading JaLoader assemblies...");
-            gameObject.GetComponent<Stopwatch>().StartCounting();
+            canLoadMods = false;
+            Debug.Log("Loading external mod assemblies...");
+            gameObject.GetComponent<Stopwatch>()?.StartCounting();
+
+            if(!Directory.Exists($@"{settingsManager.ModFolderLocation}\Assemblies"))
+                Directory.CreateDirectory($@"{settingsManager.ModFolderLocation}\Assemblies");
 
             DirectoryInfo d = new DirectoryInfo($@"{settingsManager.ModFolderLocation}\Assemblies");
-            FileInfo[] asm = d.GetFiles("*.dll");
+            List<FileInfo> asm = d.GetFiles("*.dll").ToList();
 
-            int validAsm = asm.Length;
+            for (int i = 0; i < asm.Count; i++)
+            {
+                for (int j = 0; j < loadedReferences.Count; j++)
+                {
+                    if (asm[i].Name == loadedReferences[j])
+                    {
+                        asm.RemoveAt(i);
+                        i--;
+                        break;
+                    }
+                }
+            }
+
+            int validAsm = asm.Count;
             int loadedAsm = 0;
 
             foreach (FileInfo asmFile in asm)
@@ -50,6 +72,9 @@ namespace JaLoader
                     Assembly.LoadFrom(asmFile.FullName);
                     Debug.Log($"Loaded assembly {asmFile.Name}!");
                     loadedAsm++;
+
+                    loadedReferences.Add(asmFile.Name);
+
                 }
                 catch (Exception ex)
                 {
@@ -59,11 +84,17 @@ namespace JaLoader
                     throw;
                 }
             }
+            canLoadMods = true;
+
+            if (loadedAlready)
+                yield break;
 
             if (loadedAsm == 1)
                 Console.LogMessage("JaLoader", $"1 assembly found and loaded!");
             else if (loadedAsm > 1)
                 Console.LogMessage("JaLoader", $"{loadedAsm} assemblies found and loaded!");
+            
+            loadedAlready = true;
 
             gameObject.GetComponent<Stopwatch>().StopCounting();
             Debug.Log($"Loaded JaLoader assemblies! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");

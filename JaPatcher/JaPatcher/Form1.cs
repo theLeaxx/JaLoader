@@ -92,7 +92,7 @@ namespace JalopyModLoader
         private readonly string[] requiredManagedFiles = new string[] {
             "0Harmony.dll",
             "HarmonyXInterop.dll",
-            "NAudio.dll",
+            "NLayer.dll",
             "Mono.Cecil.dll",
             "Mono.Cecil.Mdb.dll",
             "Mono.Cecil.Pdb.dll",
@@ -114,9 +114,29 @@ namespace JalopyModLoader
         private readonly string jaDownloader = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\JaDownloader.exe");
         private readonly string jaDownloaderSetup = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Main\JaDownloaderSetup.exe");
 
-        private readonly string assetBundle = Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required\JaLoader_UI.unity3d");
+        private readonly string[] requiredRequiredFiles = new string[]
+        {
+            "JaLoader_UI.unity3d",
+            "JaLoader_AdjustmentsEditor.unity3d",
+            "defaultPaintjobTexture.png"
+        };
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
+
+        private readonly string[] commonGameLocations = new string[]
+        {
+            @"C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"C:\Program Files\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"D:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"D:\Program Files\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"E:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"E:\Program Files\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"F:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"F:\Program Files\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"D:\SteamLibrary\steamapps\common\Jalopy\Jalopy.exe",
+            @"E:\SteamLibrary\steamapps\common\Jalopy\Jalopy.exe",
+            @"F:\SteamLibrary\steamapps\common\Jalopy\Jalopy.exe"
+        };
 
         private bool canClickCustom = false;
 
@@ -139,7 +159,16 @@ namespace JalopyModLoader
                 }
             }
 
-            if (anyMissing || !File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(assetBundle) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
+            foreach(string file in requiredRequiredFiles)
+            {
+                if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required", file)))
+                {
+                    anyMissing = true;
+                    break;
+                }
+            }
+
+            if (anyMissing || !File.Exists(winhttpDLL) || !File.Exists(doorstopConfig) || !File.Exists(discordDLL) || !File.Exists(jaDownloader) || !File.Exists(jaDownloaderSetup) || !File.Exists(jsonDLL))
             {
                 MessageBox.Show("Please extract all of the contents from the archive!", "DLLs not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Close();
@@ -149,10 +178,17 @@ namespace JalopyModLoader
             CheckForUpdates();
 
             if (ReadSave() != "")
-            {
-                //_save.LastSelectedFolder = ReadString(Path.Combine(Directory.GetCurrentDirectory(), @"save.json"));
-
                 CheckFolder(ReadSave());
+            else
+            {
+                foreach (string location in commonGameLocations)
+                {
+                    if (File.Exists(location))
+                    {
+                        CheckFolder(location);
+                        break;
+                    }
+                }
             }
 
             documentsModsText.Text = documentsModsPath;
@@ -338,7 +374,10 @@ namespace JalopyModLoader
             if (!Directory.Exists(Path.Combine(gamePath, "Songs")))
                 Directory.CreateDirectory(Path.Combine(gamePath, "Songs"));
 
-            File.Copy(assetBundle, Path.Combine(currentModPath, @"Required\JaLoader_UI.unity3d"), true);
+            foreach(string file in requiredRequiredFiles)
+            {
+                File.Copy(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required", file), Path.Combine(currentModPath, @"Required", file), true);
+            }
 
             _settings.ModFolderLocation = currentModPath;
             //File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
@@ -536,7 +575,10 @@ namespace JalopyModLoader
                 Directory.CreateDirectory($@"{documentsModsPath}\Required");
             }
 
-            File.Copy(assetBundle, $@"{documentsModsPath}\Required\JaLoader_UI.unity3d", true);
+            foreach(string file in requiredRequiredFiles)
+            {
+                File.Copy(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required", file), $@"{documentsModsPath}\Required\{file}", true);
+            }
 
             //File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
         }
@@ -561,14 +603,19 @@ namespace JalopyModLoader
                 Directory.CreateDirectory($@"{gameFolderModsPath}\Required");
             }
 
-            File.Copy(assetBundle, $@"{gameFolderModsPath}\Required\JaLoader_UI.unity3d", true);
+            foreach (string file in requiredRequiredFiles)
+            {
+                File.Copy(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required", file), $@"{gameFolderModsPath}\Required\{file}", true);
+            }
 
             //File.WriteAllText(Path.Combine(gamePath, @"ModsLocation.json"), JsonConvert.SerializeObject(_settings, Formatting.Indented));
         }
 
         private void launchButton_Click(object sender, EventArgs e)
         {
-            Process.Start($@"{gamePath}\Jalopy.exe");
+            ProcessStartInfo startInfo = new ProcessStartInfo("steam://launch/446020");
+            startInfo.UseShellExecute = true;
+            Process.Start(startInfo);
         }
 
         private void updateButton_Click(object sender, EventArgs e)
@@ -615,7 +662,10 @@ namespace JalopyModLoader
                     Directory.CreateDirectory($@"{currentModPath}\Required");
                 }
 
-                File.Copy(assetBundle, $@"{currentModPath}\Required\JaLoader_UI.unity3d", true);
+                foreach (string file in requiredRequiredFiles)
+                {
+                    File.Copy(Path.Combine(Directory.GetCurrentDirectory(), @"Assets\Required", file), $@"{currentModPath}\Required\{file}", true);
+                }
             }
         }
     }

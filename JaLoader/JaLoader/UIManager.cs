@@ -4,6 +4,7 @@ using System;
 using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,7 @@ using System.Security.Policy;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -68,6 +70,8 @@ namespace JaLoader
 
         private InputField modsInputField;
         private Transform modsPanelScrollView;
+        
+        public Text modsCountText { get; private set; }
 
         public GameObject modOptionsHolder { get; private set; }
         public GameObject modOptionsNameTemplate { get; private set; }
@@ -96,6 +100,10 @@ namespace JaLoader
         public GameObject tooltipText { get; private set; }
         public Text tooltipTextText { get; private set; }
 
+        private GameObject installButton;
+
+        private Dropdown toggleShowDisabledMods;
+
         public Texture2D knobTexture { get; private set; }
 
         private MainMenuBookC book;
@@ -105,6 +113,7 @@ namespace JaLoader
         private bool isOnOtherPage;
         private bool inOptions;
         private bool inModsOptions;
+        private bool inModsList;
         private bool isObstructing;
         public bool CanCloseMap = true;
 
@@ -134,12 +143,15 @@ namespace JaLoader
         private Dropdown replace0WithBanned;
         private Dropdown mirrorDistance;
         private Dropdown cursorMode;
+        private Dropdown fixItemsFallingBehindShop;
+        private Dropdown fixBorderGuardsFlags;
         #endregion
 
         private GameObject menuMusicPlayer;
 
         private AudioClip buttonClickSound;
         private AudioSource audioSource;
+        private List<string> allNotices = new List<string>();
 
         #endregion
 
@@ -194,7 +206,11 @@ namespace JaLoader
 
             //annoying fix for dropdowns only working once
             if (inOptions && Input.GetMouseButtonDown(0))
-                if (consoleModeDropdown.transform.Find("Dropdown List") || fixLaikaShopMusic.transform.Find("Dropdown List") || replace0WithBanned.transform.Find("Dropdown List") || mirrorDistance.transform.Find("Dropdown List") || cursorMode.transform.Find("Dropdown List") || songsBehaviourDropdown.transform.Find("Dropdown List") || radioAdsDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
+                if (consoleModeDropdown.transform.Find("Dropdown List") || fixLaikaShopMusic.transform.Find("Dropdown List") || replace0WithBanned.transform.Find("Dropdown List") || mirrorDistance.transform.Find("Dropdown List") || cursorMode.transform.Find("Dropdown List") || fixItemsFallingBehindShop.transform.Find("Dropdown List") || fixBorderGuardsFlags.transform.Find("Dropdown List") || songsBehaviourDropdown.transform.Find("Dropdown List") || radioAdsDropdown.transform.Find("Dropdown List") || consolePositionDropdown.transform.Find("Dropdown List") || showModsFolderDropdown.transform.Find("Dropdown List") || debugModeDropdown.transform.Find("Dropdown List") || menuMusicDropdown.transform.Find("Dropdown List") || uncleDropdown.transform.Find("Dropdown List") || songsDropdown.transform.Find("Dropdown List") || skipLanguageSelectionDropdown.transform.Find("Dropdown List") || discordRichPresenceDropdown.transform.Find("Dropdown List") || changeLicensePlateTextDropdown.transform.Find("Dropdown List") || enhancedMovementDropdown.transform.Find("Dropdown List") || showFPSDropdown.transform.Find("Dropdown List") || enableJaDownloaderDropdown.transform.Find("Dropdown List") || updateCheckFreqDropdown.transform.Find("Dropdown List"))
+                    RefreshUI();
+
+            if (inModsList && Input.GetMouseButtonDown(0))
+                if (toggleShowDisabledMods.transform.Find("Dropdown List"))
                     RefreshUI();
 
             if (inModsOptions && Input.GetMouseButtonDown(0))
@@ -395,6 +411,8 @@ namespace JaLoader
                     dialog.SetActive(true);
 
                     settingsManager.updateAvailable = true;
+
+                    MakeWrenchGreen();
                 }
                 else
                     modLoaderText.GetComponent<Text>().text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{settingsManager.GetVersionString()}</color> loaded!";
@@ -419,10 +437,13 @@ namespace JaLoader
                 UICanvas.transform.Find("JLSettingsPanel/Tweaks/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
                 UICanvas.transform.Find("JLSettingsPanel/Accessibility/SaveButton").GetComponent<Button>().onClick.AddListener(SaveValues);
 
-                noticePanel.transform.Find("UnderstandButton").GetComponent<Button>().onClick.AddListener(CloseNotice);
+                noticePanel.transform.Find("UnderstandButton").GetComponent<Button>().onClick.AddListener(delegate { CloseNotice(); });
+                noticePanel.transform.Find("DontShowAgainButton").GetComponent<Button>().onClick.AddListener(delegate { CloseNotice(true); });
 
                 modSettingsScrollView = UICanvas.transform.Find("JLModsPanel/SettingsScrollView").gameObject;
                 modSettingsScrollViewContent = modSettingsScrollView.transform.GetChild(0).GetChild(0).gameObject;
+
+                modsCountText = UICanvas.transform.Find("JLModsPanel/ModsCount").GetComponent<Text>();
 
                 modsPanelScrollView = UICanvas.transform.Find("JLModsPanel/Scroll View/Viewport/Content");
                 modsInputField = UICanvas.transform.Find("JLModsPanel/SearchBar").GetComponent<InputField>();
@@ -459,14 +480,23 @@ namespace JaLoader
                 changeLicensePlateTextDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/ChangeLicensePlate").gameObject.GetComponent<Dropdown>();
                 licensePlateTextField = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row3/LicensePlateText/InputField").gameObject.GetComponent<InputField>();
                 showFPSDropdown = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row4/ShowFPSCounter").gameObject.GetComponent<Dropdown>();
+                cursorMode = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row4/CursorMode").gameObject.GetComponent<Dropdown>();
                 fixLaikaShopMusic = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/FixLaikaShopMusic").gameObject.GetComponent<Dropdown>();
                 replace0WithBanned = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/Replace0WithBanned").gameObject.GetComponent<Dropdown>();
                 mirrorDistance = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/MirrorDistance").gameObject.GetComponent<Dropdown>();
-                cursorMode = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row6/CursorMode").gameObject.GetComponent<Dropdown>();
+                fixItemsFallingBehindShop = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/FixItemsFallingBehindShop").gameObject.GetComponent<Dropdown>();
+                fixBorderGuardsFlags = UICanvas.transform.Find("JLSettingsPanel/Tweaks/Scroll View/Viewport/Content/Row5/FixGuardsFlags").gameObject.GetComponent<Dropdown>();
+
+                installButton = UICanvas.transform.Find("JLModsPanel/InstallButton").gameObject;
+                installButton.GetComponent<Button>().onClick.AddListener(InstallMod);
+                toggleShowDisabledMods = UICanvas.transform.Find("JLModsPanel/ToggleShowDisabledMods/Dropdown").gameObject.GetComponent<Dropdown>();
+
+                toggleShowDisabledMods.onValueChanged.AddListener(delegate { ShowDisabledMods(); });
 
                 UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/SwitchLanguage").gameObject.GetComponent<Button>().onClick.AddListener(SwitchLanguage);
                 UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenModsFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenModsFolder);
                 UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenSavesFolder").gameObject.GetComponent<Button>().onClick.AddListener(OpenSavesFolder);
+                UICanvas.transform.Find("JLSettingsPanel/Accessibility/VerticalLayoutGroup/TopRow/OpenOutputLog").gameObject.GetComponent<Button>().onClick.AddListener(OpenOutputLog);
 
                 fpsText = UICanvas.transform.Find("FPSCounter").gameObject;
                 fpsText.AddComponent<FPSCounter>();
@@ -605,6 +635,48 @@ namespace JaLoader
             }
         }
 
+        public void MakeNutGreen()
+        {
+            var nut = FindObjectOfType<MenuNut>();
+
+            var greenMat = new Material(Shader.Find("Legacy Shaders/Diffuse"))
+            {
+                color = new Color32(120, 255, 85, 255)
+            };
+
+            nut.startMaterial = greenMat;
+
+            var glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
+            {
+                color = greenMat.color
+            };
+
+            nut.glowMaterial = glowMat;
+
+            nut.GetComponent<MeshRenderer>().material = greenMat;
+        }
+
+        public void MakeWrenchGreen()
+        {
+            var wrench = FindObjectOfType<MenuWrench>();
+
+            var greenMat = new Material(Shader.Find("Legacy Shaders/Diffuse"))
+            {
+                color = new Color32(120, 255, 85, 255)
+            };
+
+            wrench.startMaterial = greenMat;
+
+            var glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
+            {
+                color = greenMat.color
+            };
+
+            wrench.glowMaterial = glowMat;
+
+            wrench.GetComponent<MeshRenderer>().material = greenMat;
+        }
+
         private void SaveModSettings()
         {
             for (int i = 0; i < modSettingsScrollViewContent.transform.childCount; i++)
@@ -709,8 +781,15 @@ namespace JaLoader
             mirrorDistance.value = (int)settingsManager.MirrorDistances;
             cursorMode.value = (int)settingsManager.CursorMode;
 
+            fixItemsFallingBehindShop.value = settingsManager.FixItemsFalilngBehindShop ? 0 : 1;
+            fixBorderGuardsFlags.value = settingsManager.FixBorderGuardsFlags ? 0 : 1;
+
+            toggleShowDisabledMods.value = settingsManager.ShowDisabledMods ? 0 : 1;
+
             fpsText.SetActive(settingsManager.ShowFPSCounter);
             debugText.SetActive(settingsManager.DebugMode);
+
+            ShowDisabledMods();
         }
 
         public void UpdateMenuMusic(bool enabled, float volume)
@@ -741,6 +820,15 @@ namespace JaLoader
             PlayClickSound();
 
             Application.OpenURL(settingsManager.ModFolderLocation);
+        }
+
+        private void OpenOutputLog()
+        {
+            PlayClickSound();
+
+            string path = Path.Combine(Application.persistentDataPath, "output_log.txt");
+
+            Process.Start(path);
         }
 
         private void PlayClickSound()
@@ -838,11 +926,13 @@ namespace JaLoader
             modsInputField.Select();
             modsInputField.text = "";
             UICanvas.transform.GetChild(1).gameObject.SetActive(!UICanvas.transform.GetChild(1).gameObject.activeSelf);
+            inModsList = !inModsList;
 
             if (SceneManager.GetActiveScene().buildIndex == 3)
                 TogglePauseMenu(UICanvas.transform.GetChild(1).gameObject.activeSelf);
 
             ToggleObstructRay();
+
         }
 
         public void ToggleModLoaderSettings_Main()
@@ -940,21 +1030,117 @@ namespace JaLoader
             }
         }
 
+        public void AddWarningToMod(GameObject warningIcon, string warningText)
+        {
+            warningIcon.SetActive(true);
+
+            var template = warningIcon.transform.GetChild(0).GetChild(0).GetChild(0);
+
+            var warning = Instantiate(template.gameObject, warningIcon.transform.GetChild(0).GetChild(0));
+            warning.GetComponent<Text>().text = warningText;
+            warning.SetActive(true);
+
+            warningIcon.transform.GetChild(0).GetComponent<VerticalLayoutGroup>().enabled = false;
+            warningIcon.transform.GetChild(0).GetComponent<VerticalLayoutGroup>().enabled = true;
+
+            if(!warning.GetComponent<WarningOnHover>())
+                warningIcon.AddComponent<WarningOnHover>();
+        }
+
+        private void InstallMod()
+        {
+            var modURL = modsInputField.text;
+
+            modURL = modURL.Replace("jaloader://install/", "jaloader://installingame/");
+
+            Process.Start(modURL);
+
+            var author = modURL.Split('/')[3];
+            var repo = modURL.Split('/')[4];
+
+            StartCoroutine(CheckIfModInstalled(author, repo));
+        }
+
+        private IEnumerator CheckIfModInstalled(string author, string repo)
+        {
+            var maximumTime = 60;
+            var currentTime = 0;
+
+            author = author.Replace("\n", "").Replace("\r", "");
+            repo = repo.Replace("\n", "").Replace("\r", "");
+
+            while (!File.Exists(Path.Combine(settingsManager.ModFolderLocation, $"{author}_{repo}_Installed.txt")))
+            {
+                if(maximumTime == currentTime)
+                {
+                    ShowNotice("MOD INSTALLATION FAILED", "The mod installation failed. Please make sure you have the correct URL and that your internet connection is stable.", ignoreObstructRayChange: true);
+                    yield break;
+                }
+
+                currentTime++;
+                yield return new WaitForSeconds(1);
+            }
+
+            var dllName = File.ReadAllText(Path.Combine(settingsManager.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
+            File.Delete(Path.Combine(settingsManager.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
+
+            ShowNotice("MOD INSTALLED", "The mod has been successfully installed. You can now enable it in the mods list.", ignoreObstructRayChange: true);
+
+            ReferencesLoader.Instance.StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
+            
+            modLoader.StartCoroutine(modLoader.InitializeMods(dllName));
+
+            yield return null;
+        }
+
         private void OnInputValueChanged_ModsList()
         {
+            if (modsInputField.text.StartsWith("jaloader://install/") && settingsManager.EnableJaDownloader && SceneManager.GetActiveScene().buildIndex == 3)
+                installButton.SetActive(true);
+            else
+                installButton.SetActive(false);
+
             foreach (Transform child in modsPanelScrollView)
             {
                 if (child.name == "ModTemplate") continue;
 
                 if (child.GetChild(2).GetChild(0).GetComponent<Text>().text.ToLower().Contains(modsInputField.text.ToLower()))
                 {
-                    child.gameObject.SetActive(true);
+                    if (IsModEntryDisabled(child.gameObject) && toggleShowDisabledMods.value == 1)
+                        child.gameObject.SetActive(false);
+                    else
+                        child.gameObject.SetActive(true);
                 }
                 else
-                {
                     child.gameObject.SetActive(false);
-                }
             }
+        }
+
+        private void ShowDisabledMods()
+        {
+            foreach (Transform child in modsPanelScrollView)
+            {
+                if (child.name == "ModTemplate") continue;
+
+                if(IsModEntryDisabled(child.gameObject) && toggleShowDisabledMods.value == 1)
+                    child.gameObject.SetActive(false);
+                else
+                    child.gameObject.SetActive(true);
+            }
+
+            OnInputValueChanged_ModsList();
+
+            SaveValues();
+        }
+
+        private bool IsModEntryDisabled(GameObject obj)
+        {
+            var text = obj.transform.Find("Buttons").Find("ToggleButton").Find("Text").GetComponent<Text>().text;
+
+            if (text == "Enable")
+                return true;
+
+            return false;
         }
 
         private void ToggleObstructRay()
@@ -1037,10 +1223,15 @@ namespace JaLoader
             settingsManager.MirrorDistances = (MirrorDistances)mirrorDistance.value;
             settingsManager.CursorMode = (CursorMode)cursorMode.value;
 
+            settingsManager.FixItemsFalilngBehindShop = !Convert.ToBoolean(fixItemsFallingBehindShop.value);
+            settingsManager.FixBorderGuardsFlags = !Convert.ToBoolean(fixBorderGuardsFlags.value);
+
+            settingsManager.ShowDisabledMods = !Convert.ToBoolean(toggleShowDisabledMods.value);
+
             fpsText.SetActive(settingsManager.ShowFPSCounter);
             debugText.gameObject.SetActive(settingsManager.DebugMode);
 
-            settingsManager.SaveSettings();
+            settingsManager.SaveSettings(false);
 
             if (consoleMode == ConsoleModes.Disabled)
                 Console.Instance.ToggleVisibility(false);
@@ -1066,7 +1257,7 @@ namespace JaLoader
             }
         }
 
-        private List<(string, string)> noticesToShow = new List<(string, string)>();
+        private List<(string, string, bool)> noticesToShow = new List<(string, string, bool)>();
         private bool showingNotice;
 
         private IEnumerator ShowNoticeAfterLoad(string subtitle, string message)
@@ -1098,40 +1289,144 @@ namespace JaLoader
             settingsManager.SaveSettings(false);
         }
 
-        public void ShowNotice(string subtitle, string message)
+        public void ShowNotice(string subtitle, string message, bool enableDontShowAgain = true, bool ignoreObstructRayChange = false)
         {
-            noticesToShow.Add((subtitle, message));
+            allNotices.Add(message);
+            noticesToShow.Add((subtitle, message, ignoreObstructRayChange));
 
-            noticePanel.SetActive(true);
-
-            SetObstructRay(true);
-
-            if (!showingNotice)
+            if (!settingsManager.DontShowAgainNotices.Contains(message))
             {
-                noticePanel.transform.Find("Subtitle").GetComponent<Text>().text = subtitle;
-                noticePanel.transform.Find("Message").GetComponent<Text>().text = message;
-            }
+                noticePanel.SetActive(true);
 
-            showingNotice = true;
+                SetObstructRay(true);
+
+                if (!showingNotice)
+                {
+                    noticePanel.transform.Find("Subtitle").GetComponent<Text>().text = subtitle;
+                    noticePanel.transform.Find("Message").GetComponent<Text>().text = message;
+                }
+
+                showingNotice = true;
+
+                if (!enableDontShowAgain)
+                    noticePanel.transform.Find("DontShowAgainButton").gameObject.SetActive(false);
+                else
+                    noticePanel.transform.Find("DontShowAgainButton").gameObject.SetActive(true);
+            }
         }
 
-        private void CloseNotice()
+        private void CloseNotice(bool dontShowAgain = false)
         {
             PlayClickSound();
 
+            if (settingsManager.DontShowAgainNotices.Contains(noticesToShow[0].Item2) && noticesToShow.Count > 1)
+            {
+                var _ignoreIfLastOne = noticesToShow[0].Item3;
+                noticesToShow.RemoveAt(0);
+
+                for (int i = 0; i < noticesToShow.Count; i++)
+                {
+                    if(settingsManager.DontShowAgainNotices.Contains(noticesToShow[i].Item2))
+                    {
+                        if(noticesToShow.Count == 1)
+                            _ignoreIfLastOne = noticesToShow[0].Item3;
+
+                        noticesToShow.RemoveAt(i);
+                        i--;
+                    }
+                }
+
+                if (noticesToShow.Count == 0)
+                {
+                    if (!_ignoreIfLastOne)
+                        SetObstructRay(false);
+
+                    showingNotice = false;
+                    noticePanel.SetActive(false);
+
+                    RemoveExcessDontShowAgainNotices();
+                }
+            }
+
+            var ignoreIfLastOne = noticesToShow[0].Item3;
             noticesToShow.RemoveAt(0);
 
-            if(noticesToShow.Count == 0) 
+            if (dontShowAgain && !settingsManager.DontShowAgainNotices.Contains(noticePanel.transform.Find("Message").GetComponent<Text>().text))
             {
-                SetObstructRay(false);
+                settingsManager.DontShowAgainNotices.Add(noticePanel.transform.Find("Message").GetComponent<Text>().text);
+                settingsManager.SaveSettings(false);
+            }
+
+            if (noticesToShow.Count == 0) 
+            {
+                if(!ignoreIfLastOne)
+                    SetObstructRay(false);
+
                 showingNotice = false;
                 noticePanel.SetActive(false);
+
+                RemoveExcessDontShowAgainNotices();
             }
             else
             {
                 noticePanel.transform.Find("Subtitle").GetComponent<Text>().text = noticesToShow[0].Item1;
                 noticePanel.transform.Find("Message").GetComponent<Text>().text = noticesToShow[0].Item2;
             }
+        }
+
+        private void RemoveExcessDontShowAgainNotices()
+        {
+            if (allNotices.Count <= settingsManager.DontShowAgainNotices.Count)
+            {
+                var toRemove = settingsManager.DontShowAgainNotices.Except(allNotices).ToList();
+
+                foreach (var item in toRemove)
+                    settingsManager.DontShowAgainNotices.Remove(item);
+
+                settingsManager.SaveSettings(false);
+            }
+        }
+    }
+
+    public class WarningOnHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            gameObject.transform.GetChild(0).gameObject.SetActive(true);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            gameObject.transform.GetChild(0).gameObject.SetActive(false);
+        }
+    }
+
+    public class TooltipOnHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    {
+        public Slider slider;
+        private bool visible;
+        private Text text;
+
+        private void Awake()
+        {
+            text = gameObject.transform.Find("Tooltip/InfoTemplate").GetComponent<Text>();
+        }
+
+        private void Update()
+        {
+            if (visible)
+                text.text = slider.value.ToString();
+        }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            visible = true;
+            gameObject.transform.Find("Tooltip").gameObject.SetActive(visible);
+        }
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            visible = false;
+            gameObject.transform.Find("Tooltip").gameObject.SetActive(visible);
         }
     }
 

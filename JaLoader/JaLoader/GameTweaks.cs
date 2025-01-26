@@ -29,6 +29,7 @@ namespace JaLoader
 
             EventsManager.Instance.OnGameLoad += OnGameLoad;
             EventsManager.Instance.OnRouteGenerated += OnRouteGenerated;
+            EventsManager.Instance.OnSleep += OnSleep;
         }
 
         #endregion
@@ -42,13 +43,30 @@ namespace JaLoader
         private VfCursorManager cursorManager;
         private VfAnimCursor cursorToChange;
 
+        public bool isDialogueActive = false;
+
+        private void OnSleep()
+        {
+            ResetBeds();
+        }
+
         private void OnGameLoad()
         {
             StartCoroutine(OnGameLoadDelay());
         }
+        
+        private void ResetBeds()
+        {
+            var beds = FindObjectsOfType<BedLogicC>();
+
+            foreach (var bed in beds)
+                bed.GetType().GetField("block", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(bed, true);
+        }
 
         private IEnumerator OnGameLoadDelay()
         {
+            ResetBeds();
+            
             cursorManager = FindObjectOfType<VfCursorManager>();
             cursorToChange = cursorManager.Cursors[2].GetComponent<VfAnimCursor>();
 
@@ -60,11 +78,18 @@ namespace JaLoader
 
             yield return new WaitForSeconds(3);
             UpdateMirrors();
+            FixBorderFlags();
 
             if (settingsManager.FixLaikaShopMusic)
             {
                 yield return new WaitForSeconds(2);
                 FixLaikaDealershipSong();
+            }
+
+            if (settingsManager.FixBorderGuardsFlags)
+            {
+                yield return new WaitForSeconds(2);
+                FixBorderGuardsFlags();
             }
 
             yield return null;
@@ -76,10 +101,35 @@ namespace JaLoader
             FindObjectOfType<DragRigidbodyC>().pickingUp = false;
         }
 
+        private void FixBorderFlags()
+        {
+            var hubs = FindObjectsOfType<Hub_CitySpawnC>();
+
+            foreach (var hub in hubs)
+            {
+                switch (hub.countryHUBCode)
+                {
+                    case 1: // Germany
+
+                        // find all objects in hub children called "Hungary_Flag"
+
+                        var flags = hub.GetComponentsInChildren<Transform>().Where(t => t.name == "Hungary_Flag").ToList();
+
+                        flags[2].localPosition = new Vector3(7.3742f, 13, -335.6782f);
+                        flags[3].localPosition = new Vector3(-8.9649f, 13, -334.6782f);
+
+                        break;
+                }
+            }
+        }
+
         private void OnRouteGenerated(string startLocation, string endLocation, int distance)
         {
             if (settingsManager.FixLaikaShopMusic)
                 Invoke("FixLaikaDealershipSong", 5);
+
+            if (settingsManager.FixBorderGuardsFlags)
+                Invoke("FixBorderGuardsFlags", 5);
 
             SceneManager.GetActiveScene().GetRootGameObjects().ToList().ForEach(go =>
             {
@@ -205,32 +255,151 @@ namespace JaLoader
                 mirror.m_FarClipDistance = distance;
         }
 
-        private void Update()
+        public void FixBorderGuardsFlags()
         {
-            if (Input.GetKeyDown(KeyCode.F9))
+            var hubs = FindObjectsOfType<Hub_CitySpawnC>();
+
+            foreach (var hub in hubs)
             {
-                byte[] bytes = System.IO.File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CarCustomDecalStencil - Copy.png");
+                List<SkinnedMeshRenderer> guardsList1 = new List<SkinnedMeshRenderer>();
+                List<SkinnedMeshRenderer> guardsList2 = new List<SkinnedMeshRenderer>();
+                Transform borderReturn;
+                Transform border;
 
-                Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
-                texture.LoadImage(bytes);
-
-                var allObjects = new GameObject[]
+                switch (hub.countryHUBCode)
                 {
-                    ModHelper.Instance.carFrame,
-                    ModHelper.Instance.carLeftDoor,
-                    ModHelper.Instance.carRightDoor,
-                    ModHelper.Instance.carHood,
-                    ModHelper.Instance.carTrunk,
-                    ModHelper.Instance.carRoof
-                };
+                    case 1: // Germany
+                        borderReturn = hub.transform.Find("BorderLogicReturn");
 
-                foreach(var obj in allObjects)
-                {
-                    var meshRenderer = obj.GetComponent<MeshRenderer>();
+                        guardsList1.Add(borderReturn.Find("BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList1.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
 
-                    meshRenderer.sharedMaterials[1].mainTexture = texture;
+                        foreach (var guard in guardsList1)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Germany);
+
+                        break;
+
+                    case 2: // Czechoslovakia
+                        border = hub.transform.Find("BorderLogic");
+                        borderReturn = hub.transform.Find("BorderLogicReturn");
+
+                        guardsList1.Add(border.Find("BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList1.Add(hub.transform.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+
+                        foreach (var guard in guardsList1)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Hungary);
+
+                        break;
+
+                    case 3: // Hungary
+                        border = hub.transform.Find("GameObject/BorderLogic");
+                        borderReturn = hub.transform.Find("GameObject/BorderLogicReturn");
+
+                        guardsList1.Add(border.Find("BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList1.Add(hub.transform.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+
+                        guardsList2.Add(borderReturn.Find("BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList2.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+
+                        foreach (var guard in guardsList1)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Yugoslavia);
+
+                        foreach (var guard in guardsList2)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Hungary);
+
+                        break;
+
+                    case 4: // Yugoslavia
+                        border = hub.transform.Find("BorderLogic");
+                        borderReturn = hub.transform.Find("BorderLogicReturn");
+
+                        guardsList1.Add(border.Find("BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList1.Add(hub.transform.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+
+                        guardsList2.Add(borderReturn.Find("BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList2.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+
+                        foreach (var guard in guardsList1)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Bulgaria);
+
+                        foreach (var guard in guardsList2)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Yugoslavia);
+
+                        break;
+
+                    case 5: // Bulgaria
+                        border = hub.transform.Find("Border");
+                        borderReturn = hub.transform.Find("BorderLogicReturn");
+
+                        guardsList1.Add(border.Find("BorderLogic/BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList1.Add(border.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+
+                        guardsList2.Add(borderReturn.Find("BorderGuard/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+                        guardsList2.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
+
+                        foreach (var guard in guardsList1)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Turkey);
+
+                        foreach (var guard in guardsList2)
+                            guard.materials = NewMaterialsArray(guard.materials, Country.Bulgaria);
+
+                        break;
                 }
             }
+        }
+
+        private Material OffsetFlagsMaterial(Material material, Country country)
+        {
+            var newMat = new Material(material);
+
+            switch (country)
+            {
+                case Country.Germany:
+                    newMat.mainTextureOffset = new Vector2(0, -0.21f);
+                    break;
+
+                case Country.Hungary:
+                    newMat.mainTextureOffset = new Vector2(0.34f, -0.45f);
+                    break;
+
+                case Country.Yugoslavia:
+                    newMat.mainTextureOffset = new Vector2(0.34f, -0.66f);
+                    break;
+
+                case Country.Bulgaria:
+                    newMat.mainTextureOffset = new Vector2(0, -0.63f);
+                    break;
+
+                case Country.Turkey:
+                    newMat.mainTextureOffset = new Vector2(0, -0.42f);
+                    break;
+            }
+
+            return newMat;
+        }
+
+        private Material[] NewMaterialsArray(Material[] materials, Country country)
+        {
+            var mats = materials;
+
+            mats[1] = OffsetFlagsMaterial(mats[1], country);
+
+            return mats;
+        }
+
+        private void Update()
+        {
+            
+        }
+    }
+
+    public class DialogueReceiver : MonoBehaviour
+    {
+        public void TextFinished()
+        {
+            GameTweaks.Instance.isDialogueActive = false;
+
+            Destroy(this);
         }
     }
 }

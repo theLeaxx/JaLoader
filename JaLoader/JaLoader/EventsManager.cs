@@ -69,6 +69,8 @@ namespace JaLoader
         public event MiscEvents OnUILoadFinished;
         public event MiscEvents OnCustomObjectsLoaded;
         public event MiscEvents OnCustomObjectsSaved;
+        public event MiscEvents OnMenuFadeOut;
+        public event MiscEvents OnModsInitialized;
         #endregion
 
         private void Update()
@@ -83,9 +85,19 @@ namespace JaLoader
             OnUILoadFinished?.Invoke();
         }
 
+        public void OnModsInit()
+        {
+            OnModsInitialized?.Invoke();
+        }
+
         public void OnSleepTrigger()
         {
             OnSleep?.Invoke();
+        }
+
+        public void OnMenuFade()
+        {
+            OnMenuFadeOut?.Invoke();
         }
 
         public void OnPauseGame()
@@ -212,9 +224,26 @@ namespace JaLoader
 
         public void CallRoute(string start, string destination, int distance)
         {
-            OnRouteGenerated?.Invoke(start, destination, distance);
+            try
+            {
+                OnRouteGenerated?.Invoke(start, destination, distance);
+            }
+            catch (Exception ex)
+            {
+                var method = ex.TargetSite;
+                var typeName = method?.DeclaringType.FullName;
 
-            //Console.Log(cityName);
+                if(method != null)
+                {
+                    Console.LogError($"Mod {typeName} had an error related to route generation, in method {method.Name}. Route generation may be broken!");
+                    Console.LogError($"Please report this to the mod author.");
+                }
+                else
+                {
+                    Console.LogError(ex.Message);
+                    Console.LogError(ex.StackTrace);
+                }
+            }
         }
 
         public void CallTransaction(string type)
@@ -366,6 +395,7 @@ namespace JaLoader
         public void Slept()
         {
             EventsManager.Instance.OnSleepTrigger();
+            Console.Log("Slept");
         }
     }
 }

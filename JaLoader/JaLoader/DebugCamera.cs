@@ -81,7 +81,7 @@ namespace JaLoader
         private bool postCamera;
         public GameObject cameraObj;
 
-        private GameObject mainCameraObj;
+        public GameObject mainCameraObj;
         private bool createdInGamePPCamera;
         private GameObject cursors;
 
@@ -230,7 +230,7 @@ namespace JaLoader
             cameraObj.SetActive(isCameraEnabled);
             mainCameraObj.GetComponent<Camera>().enabled = !isCameraEnabled;
 
-            if (!ExtrasGarage.Instance.loadedGarage)
+            if (!AdjustmentsEditor.Instance.loadedViewingEditor)
                 mainCameraObj.transform.GetChild(0).gameObject.SetActive(!isCameraEnabled);
 
             if (isCameraEnabled)
@@ -244,7 +244,7 @@ namespace JaLoader
             else
                 Console.Log("JaLoader", "Debug Camera Disabled!");
 
-            if (ExtrasGarage.Instance.loadedGarage)
+            if (AdjustmentsEditor.Instance.loadedViewingEditor)
             {
                 DisablePPCamera();
                 return;

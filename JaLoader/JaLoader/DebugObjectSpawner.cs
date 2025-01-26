@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
 using UnityEngine;
 using UnityEngine.UI;
 using Button = UnityEngine.UI.Button;
@@ -247,6 +246,8 @@ namespace JaLoader
         private string currentlySelected = "0";
         private InputField inputField;
 
+        public List<string> addedCustomObjects = new List<string>();
+
         #region Singleton
         public static DebugObjectSpawner Instance { get; private set; }
         
@@ -274,35 +275,41 @@ namespace JaLoader
             if(ID < 0 || ID > 233) return;
 
             var obj = Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], ModHelper.Instance.player.transform.position, ModHelper.Instance.player.transform.rotation);
-            obj.transform.localScale = obj.GetComponent<ObjectPickupC>().adjustScale;
+            obj.transform.localScale = obj.GetComponent<ObjectPickupC>().adjustScale == Vector3.zero ? obj.transform.localScale : obj.GetComponent<ObjectPickupC>().adjustScale;
         }
 
         public GameObject GetDuplicateVanillaObject(int ID, Transform parent)
         {
             if (ID < 0 || ID > 233) return null;
 
-            return Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], parent);
+            var obj = Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], parent);
+            obj.transform.localScale = obj.GetComponent<ObjectPickupC>().adjustScale == Vector3.zero ? obj.transform.localScale : obj.GetComponent<ObjectPickupC>().adjustScale;
+
+            return obj;
         }
 
         public void SpawnVanillaObject(int ID, Transform parent)
         {
             if (ID < 0 || ID > 233) return;
 
-            Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], parent);
+            var obj = Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], parent);
+            obj.transform.localScale = obj.GetComponent<ObjectPickupC>().adjustScale == Vector3.zero ? obj.transform.localScale : obj.GetComponent<ObjectPickupC>().adjustScale;
         }
 
         public void SpawnVanillaObject(int ID, Vector3 position, Quaternion rotation)
         {
             if (ID < 0 || ID > 233) return;
 
-            Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], position, rotation);
+            var obj = Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], position, rotation);
+            obj.transform.localScale = obj.GetComponent<ObjectPickupC>().adjustScale == Vector3.zero ? obj.transform.localScale : obj.GetComponent<ObjectPickupC>().adjustScale;
         }
 
         public void SpawnVanillaObject(int ID, Vector3 position, Quaternion rotation, Transform parent)
         {
             if (ID < 0 || ID > 233) return;
 
-            Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], position, rotation, parent);
+            var obj = Instantiate(FindObjectOfType<MainMenuC>().objectIDCatalogue[ID], position, rotation, parent);
+            obj.transform.localScale = obj.GetComponent<ObjectPickupC>().adjustScale == Vector3.zero ? obj.transform.localScale : obj.GetComponent<ObjectPickupC>().adjustScale;
         }
 
         public string GetNameOfVanillaObject(int ID)
@@ -342,7 +349,7 @@ namespace JaLoader
             }
         }
 
-        private void AddObjectToList(string id, string name)
+        public void AddObjectToList(string id, string name)
         {
             GameObject _obj = Instantiate(uiManager.objectTemplate);
             _obj.transform.SetParent(uiManager.objectTemplate.transform.parent, false);
@@ -353,6 +360,7 @@ namespace JaLoader
             else
             {
                 _obj.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = $"(Custom) - No ID\n{id}";
+                addedCustomObjects.Add(id);
             }
             _obj.transform.GetChild(0).GetComponent<Button>().onClick.AddListener(delegate { SelectObject(_obj.transform.GetChild(0).GetChild(0).GetComponent<Text>().text); });
             _obj.SetActive(true);

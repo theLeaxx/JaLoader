@@ -19,6 +19,8 @@ namespace JaLoader
         public bool useCircle = true;
         public bool dontDestroyOnLoad = false;
 
+        private int secondsPassed;
+
         public void ShowLoadingScreen()
         {
             GameObject canvasGO = new GameObject("JaLoader Loading Screen Canvas");
@@ -63,6 +65,17 @@ namespace JaLoader
 
             if (dontDestroyOnLoad)
                 DontDestroyOnLoad(canvasGO);
+
+            StartCoroutine(AddSeconds());
+        }
+
+        private IEnumerator AddSeconds()
+        {
+            while (showing)
+            {
+                yield return new WaitForSeconds(1);
+                secondsPassed++;
+            }
         }
 
         public void DeleteLoadingScreen()
@@ -77,13 +90,20 @@ namespace JaLoader
         private void Update()
         {
             if (showing && useCircle)
-            {
                 rt.Rotate(0, 0, -150 * Time.deltaTime);
-            }
+
+            if(secondsPassed >= 30)
+                DeleteLoadingScreen();
+
+            if(Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.R))
+                DeleteLoadingScreen();
         }
 
         private IEnumerator FadeOut()
         {
+            StopCoroutine(AddSeconds());
+
+            EventsManager.Instance.OnMenuFade();
             float elapsedTime = 0;
             float startAlpha = canvasGroup.alpha;
 

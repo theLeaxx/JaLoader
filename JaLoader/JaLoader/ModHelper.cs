@@ -5,11 +5,11 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Networking;
 using System;
 using System.Diagnostics;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 using System.Xml.Linq;
 using System.Data.SqlTypes;
 using System.Linq;
 using System.Collections;
+using Steamworks;
 
 namespace JaLoader
 {
@@ -149,7 +149,7 @@ namespace JaLoader
             }
         }
 
-        private void GetAllBodyParts()
+        public void GetAllBodyParts(bool wait = true)
         {
             laika = GameObject.Find("FrameHolder");
             carFrame = laika.transform.Find("TweenHolder").Find("Frame").gameObject;
@@ -159,12 +159,27 @@ namespace JaLoader
             carTrunk = carFrame.transform.Find("Boot").gameObject;
             carRoof = carFrame.transform.Find("Roof").gameObject;
 
-            StartCoroutine(GetRightDoor());
+            if(wait)
+                StartCoroutine(GetRightDoor());
+            else
+            {
+                if (SceneManager.GetActiveScene().buildIndex != 3)
+                    carRightDoor = laika.transform.Find("R_Door").gameObject;
+
+                carRightDoor = carFrame.transform.Find("DoorHolder/R_Door").gameObject;
+            }
+
         }
 
         private IEnumerator GetRightDoor()
         {
             yield return new WaitForSeconds(3);
+
+            if (SceneManager.GetActiveScene().buildIndex != 3)
+            {
+                carRightDoor = laika.transform.Find("R_Door").gameObject;
+                yield break;
+            }
 
             carRightDoor = carFrame.transform.Find("DoorHolder/R_Door").gameObject;
         }
@@ -330,7 +345,7 @@ namespace JaLoader
             ob._audio = defaultClips;
 
             ob.buyValue = price;
-            ob.sellValue = price;
+            ob.sellValue = (int)(price * 0.8f);
             ob.flavourText = string.Empty;
             ob.componentHeader = string.Empty;
             ob.rigidMass = weight;
@@ -445,10 +460,7 @@ namespace JaLoader
                 return;
 
             if (!obj.GetComponent<ObjectPickupC>())
-            {
-                Console.LogError("You need to add basic object logic before adding engine part logic!");
                 return;
-            }
 
             ObjectPickupC ob = obj.GetComponent<ObjectPickupC>();
             ob.isEngineComponent = true;
@@ -534,6 +546,11 @@ namespace JaLoader
                     obj.AddComponent<ExtraInformation>();
                     break;
 
+                case PartTypes.CustomExtra:
+                    Console.LogError("Custom Extras are not supported yet!");
+                    Console.LogError("Custom extras do not have engine logic! Please use the 'CreateCustomExtraObject' method instead!");
+                    break;
+
                 case PartTypes.Custom:
                     ob.engineString = "";
                     ob.isEngineComponent = false;
@@ -542,6 +559,7 @@ namespace JaLoader
             }
 
             obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic = true;
+
         }
 
         /// <summary>
@@ -624,11 +642,12 @@ namespace JaLoader
             var modName = identif.ModName;
             var version = identif.Version;
 
+            var mod = (Mod)ModLoader.Instance.FindMod(author, modID, modName);
+
             var extraHolder = Instantiate(new GameObject());
             extraHolder.name = $"Extra_{objOnCar.name.Substring(0, objOnCar.name.Length - 7)}_{identif.ModID}_{identif.Author}";
             extraHolder.SetActive(false);
             extraHolder.tag = "Interactor";
-            //extraHolder.transform.parent = ExtrasManager.Instance.ExtrasHolder.transform;
             extraHolder.transform.position = new Vector3(0, -3, 0);
             extraHolder.AddComponent<BoxCollider>();
             extraHolder.GetComponent<BoxCollider>().isTrigger = true;
@@ -703,6 +722,7 @@ namespace JaLoader
 
             DontDestroyOnLoad(extraHolder);
             ExtrasManager.Instance.AddExtraObject(extraHolder, extraHolder.transform.localPosition, registryName, attachTo, blockedBy);
+            ExtrasManager.Instance.AddModExtra(registryName, ExtrasManager.Instance.GetExtraIDByRegistryName(registryName), mod);
 
             var boxObject = Instantiate(new GameObject());
             boxObject.name = extraHolder.name;
@@ -715,6 +735,7 @@ namespace JaLoader
             boxIdentif.IsExtra = true;
             boxIdentif.BoxSize = size;
             boxIdentif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
+            identif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
 
             AddBoxLogic(boxObject, name, description, price, weight);
             AddEnginePartLogic(boxObject, PartTypes.Extra, 3, true, false);
@@ -722,6 +743,48 @@ namespace JaLoader
             DontDestroyOnLoad(boxObject);
             boxesToCreateInGame.Add((boxObject, name, description, price, weight));
  
+            return boxObject;
+        }
+
+        /// <summary>
+        /// Set the time in-game
+        /// </summary>
+        /// <param name="hour">24-hour clock</param>
+        /// <param name="minutes"></param>
+        public void TimeSet(int hour, int minutes = 0)
+        {
+            var script = FindObjectOfType<DNC_DayNight>();
+
+            script._timeInSeconds = hour * 3600 + minutes * 60;
+        }
+
+        public GameObject CreatePaintJobBox(string name, string author, string description, int price, Material material)
+        {
+            var boxObject = Instantiate(new GameObject());
+            boxObject.name = $"UpgradeDecal_{name.Replace(" ", "")}";
+            boxObject.SetActive(false);
+            var boxIdentif = boxObject.AddComponent<ObjectIdentification>();
+            boxIdentif.Author = author;
+            boxIdentif.ModName = name;
+            boxIdentif.IsExtra = true;
+            boxIdentif.BoxSize = BoxSizes.Small;
+            boxIdentif.ExtraID = -2;
+
+            AddBoxLogic(boxObject, name, description, price, 1);
+            AddEnginePartLogic(boxObject, PartTypes.Extra, 3, true, false);
+
+            boxObject.GetComponent<ObjectInteractionsC>().targetObjectStringName = "UpgradeDecal";
+
+            var extraComponent = boxObject.GetComponent<ExtraComponentC_ModExtension>();
+            extraComponent.componentID = -2;
+            extraComponent.isCustomDecal = true;
+            extraComponent.material = material;
+            extraComponent.materialColour = Color.white;
+            extraComponent.ID = -2;
+
+            DontDestroyOnLoad(boxObject);
+            boxesToCreateInGame.Add((boxObject, name, description, price, 1));
+
             return boxObject;
         }
 
@@ -792,7 +855,8 @@ namespace JaLoader
 
                 ConvertToBox(obj, size, box);
                 DestroyImmediate(box.GetComponent<ObjectPickupC>());
-                obj.GetComponent<ExtraComponentC_ModExtension>().componentID = ExtrasManager.Instance.GetExtraID(obj.name);
+                if(obj.GetComponent<ExtraComponentC_ModExtension>().componentID != -2)
+                    obj.GetComponent<ExtraComponentC_ModExtension>().componentID = ExtrasManager.Instance.GetExtraID(obj.name);
 
                 CustomObjectsManager.Instance.OverwriteObject(CustomObjectsManager.Instance.GetRegistryNameByObject(originalObject), obj);
             }
@@ -1123,6 +1187,7 @@ namespace JaLoader
         Battery,
         WaterTank,
         Extra,
+        CustomExtra,
         Custom,
         Default,
         Wheel
@@ -1166,5 +1231,15 @@ namespace JaLoader
     class Release
     {
         public string tag_name = "";
+    }
+
+    public enum Country
+    {
+        Germany,
+        Czechoslovakia,
+        Hungary,
+        Yugoslavia,
+        Bulgaria,
+        Turkey
     }
 }
