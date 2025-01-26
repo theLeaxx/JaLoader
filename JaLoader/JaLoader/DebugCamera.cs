@@ -81,11 +81,12 @@ namespace JaLoader
         private bool postCamera;
         public GameObject cameraObj;
 
-        private GameObject mainCameraObj;
+        public GameObject mainCameraObj;
         private bool createdInGamePPCamera;
         private GameObject cursors;
 
         private bool firstTimeOpening = true;
+        private bool canUsePPCamera = true;
 
         void OnEnable()
         {
@@ -228,7 +229,9 @@ namespace JaLoader
             isCameraEnabled = !isCameraEnabled;
             cameraObj.SetActive(isCameraEnabled);
             mainCameraObj.GetComponent<Camera>().enabled = !isCameraEnabled;
-            mainCameraObj.transform.GetChild(0).gameObject.SetActive(!isCameraEnabled);
+
+            if (!AdjustmentsEditor.Instance.loadedViewingEditor)
+                mainCameraObj.transform.GetChild(0).gameObject.SetActive(!isCameraEnabled);
 
             if (isCameraEnabled)
             {
@@ -241,14 +244,56 @@ namespace JaLoader
             else
                 Console.Log("JaLoader", "Debug Camera Disabled!");
 
-            if (SettingsManager.Instance.UseExperimentalCharacterController)
+            if (AdjustmentsEditor.Instance.loadedViewingEditor)
             {
+                DisablePPCamera();
+                return;
+            }
+
+            if (SettingsManager.Instance.UseExperimentalCharacterController)
                 mainCameraObj.transform.parent.GetComponent<EnhancedMovement>().isDebugCameraEnabled = isCameraEnabled;
+            else
+                mainCameraObj.transform.parent.GetComponent<Rigidbody>().isKinematic = isCameraEnabled;
+        }
+
+        public void DisablePPCamera()
+        {
+            postCamera = false;
+            cameraObj.transform.GetChild(1).gameObject.SetActive(true);
+
+            if (SceneManager.GetActiveScene().buildIndex == 3)
+            {
+                cameraObj.transform.GetChild(0).gameObject.SetActive(postCamera);
+                cameraObj.transform.GetChild(2).gameObject.SetActive(false);
             }
             else
             {
-                mainCameraObj.transform.parent.GetComponent<Rigidbody>().isKinematic = isCameraEnabled;
+                cameraObj.transform.GetChild(2).gameObject.SetActive(postCamera);
+                cameraObj.transform.GetChild(0).gameObject.SetActive(false);
             }
+
+            canUsePPCamera = false;
+        }
+
+        public void ToggleCursor()
+        {
+            lockedCursor = !lockedCursor;
+            Cursor.lockState = lockedCursor ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !lockedCursor;
+        }
+
+        public void EnableCursor()
+        {
+            lockedCursor = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+
+        public void DisableCursor()
+        {
+            lockedCursor = true;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
 
         void Update()
@@ -291,7 +336,7 @@ namespace JaLoader
                 return;
             }
 
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.P))
+            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.P) && canUsePPCamera)
             {
                 postCamera = !postCamera;
                 cameraObj.transform.GetChild(1).gameObject.SetActive(!postCamera);

@@ -33,7 +33,7 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        public const string JaLoaderVersion = "3.5.4";
+        public const string JaLoaderVersion = "4.0.0";
         public static readonly bool IsPreReleaseVersion = false;
         public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
         public string ModFolderLocation { get; private set; }
@@ -60,6 +60,12 @@ namespace JaLoader
         public bool FixLaikaShopMusic;
         public MirrorDistances MirrorDistances;
         public CursorMode CursorMode;
+        public bool ShowDisabledMods;
+        public string AppliedPaintJobName;
+        public bool FixItemsFalilngBehindShop;
+        public bool FixBorderGuardsFlags;
+
+        public List<string> DontShowAgainNotices = new List<string>();
 
         public DateTime lastUpdateCheck;
         private bool shouldCheckForUpdates = true;
@@ -207,7 +213,6 @@ namespace JaLoader
             return "0";
         }
 
-
         public int GetVersion()
         {
             return int.Parse(JaLoaderVersion.Replace(".", ""));
@@ -332,6 +337,12 @@ namespace JaLoader
             FixLaikaShopMusic = _settings.FixLaikaShopMusic;
             MirrorDistances = _settings.MirrorDistances;
             CursorMode = _settings.CursorMode;
+            ShowDisabledMods = _settings.ShowDisabledMods;
+            AppliedPaintJobName = _settings.AppliedPaintJobName;
+            //FixItemsFalilngBehindShop = _settings.FixItemsFalilngBehindShop;
+            FixBorderGuardsFlags = _settings.FixBorderGuardsFlags;
+
+            DontShowAgainNotices = _settings.DontShowAgainNotices;
 
             EventsManager.Instance.OnSettingsLoad();
         }
@@ -365,6 +376,13 @@ namespace JaLoader
             _settings.FixLaikaShopMusic = FixLaikaShopMusic;
             _settings.MirrorDistances = MirrorDistances;
             _settings.CursorMode = CursorMode;
+            _settings.ShowDisabledMods = ShowDisabledMods;
+
+            _settings.AppliedPaintJobName = AppliedPaintJobName;
+            //_settings.FixItemsFalilngBehindShop = FixItemsFalilngBehindShop;
+            _settings.FixBorderGuardsFlags = FixBorderGuardsFlags;
+
+            _settings.DontShowAgainNotices = DontShowAgainNotices;
 
             if (includeDisabledMods)
             {
@@ -431,6 +449,13 @@ namespace JaLoader
         [SerializeField] public bool FixLaikaShopMusic = true;
         [SerializeField] public MirrorDistances MirrorDistances = MirrorDistances.m1000;
         [SerializeField] public CursorMode CursorMode = CursorMode.Default;
+        [SerializeField] public bool ShowDisabledMods = true;
+        //[SerializeField] public bool FixItemsFalilngBehindShop = true;
+        [SerializeField] public bool FixBorderGuardsFlags = true;
+
+        [SerializeField] public string AppliedPaintJobName = "";
+
+        [SerializeField] public List<string> DontShowAgainNotices = new List<string>();
     }
 
     public enum UpdateCheckModes

@@ -40,12 +40,15 @@ namespace JaLoader
         public Dictionary<AttachExtraTo, GameObject> ExtrasHolders = new Dictionary<AttachExtraTo, GameObject>();
         private readonly Dictionary<int, (GameObject, string, Dictionary<string, bool>)> SpawnedExtras = new Dictionary<int, (GameObject, string, Dictionary<string, bool>)>();
         private readonly Dictionary<(string, int), (GameObject, AttachExtraTo, Dictionary<string, bool>)> Extras = new Dictionary<(string, int), (GameObject, AttachExtraTo, Dictionary<string, bool>)>();
+        private readonly Dictionary<(string, int), Mod> ExtraMod = new Dictionary<(string, int), Mod>();
 
         [SerializeField] private ExtrasSave data = new ExtrasSave();
 
         public Color red = new Color32(255, 0, 0, 43);
         public Color def = new Color32(255, 255, 255, 43);
         public Color orange = new Color32(255, 78, 0, 43);
+
+        private GameObject DecalGlow;
 
         private void AddExtrasHolders()
         {
@@ -115,7 +118,71 @@ namespace JaLoader
         /// <returns></returns>
         public GameObject GetHolder(string name)
         {
-            return SpawnedExtras[GetExtraID(name)].Item1;
+            var id = GetExtraID(name);
+
+            if (id == -1)
+            {
+                return null;
+            }
+
+            return SpawnedExtras[id].Item1;
+        }
+
+        internal void AddModExtra(string registryName, int ID, Mod mod)
+        {
+            ExtraMod.Add((registryName, ID), mod);
+        }
+
+        /// <summary>
+        /// Get the extra holder of an extra by its registry name
+        /// </summary>
+        /// <param name="registryName">The registry name of the extra</param>
+        /// <returns></returns>
+        public GameObject GetHolderByRegistryName(string registryName)
+        {
+            var id = GetExtraIDByRegistryName(registryName);
+
+            if (id == -1)
+            {
+                Console.LogError($"Extra with registry name {registryName} does not exist!");
+                return null;
+            }
+
+            return SpawnedExtras[id].Item1;
+        }
+
+        /// <summary>
+        /// Is an extra installed?
+        /// </summary>
+        /// <param name="registryName">The registry name of the extra</param>
+        /// <returns></returns>
+        public bool IsInstalled(string registryName)
+        {
+            var id = GetExtraIDByRegistryName(registryName);
+
+            if (id == -1)
+            {
+                Console.LogError($"Extra with registry name {registryName} does not exist!");
+                return false;
+            }
+
+            return SpawnedExtras[id].Item1.GetComponent<HolderInformation>().Installed;
+        }
+
+        /// <summary>
+        /// Is an extra installed?
+        /// </summary>
+        /// <param name="ID">The ID of the extra</param>
+        /// <returns></returns>
+        public bool IsInstalled(int ID)
+        {
+            if (SpawnedExtras.ContainsKey(ID) == false)
+            {
+                Console.LogError($"Extra with ID {ID} does not exist!");
+                return false;
+            }
+
+            return SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed;
         }
 
         /// <summary>
@@ -125,6 +192,12 @@ namespace JaLoader
         /// <returns></returns>
         public GameObject GetHolder(int ID)
         {
+            if(SpawnedExtras.ContainsKey(ID) == false)
+            {
+                Console.LogError($"Extra with ID {ID} does not exist!");
+                return null;
+            }
+
             return SpawnedExtras[ID].Item1;
         }
 
@@ -135,7 +208,13 @@ namespace JaLoader
         /// <returns></returns>
         public int GetExtraID(string name)
         {
-            return Extras.First(x => x.Value.Item1.name == name).Key.Item2;
+            foreach (var pair in Extras)
+            {
+                if (pair.Value.Item1.name == name)
+                    return pair.Key.Item2;
+            }
+
+            return -1;
         }
 
         /// <summary>
@@ -151,6 +230,7 @@ namespace JaLoader
                     return pair.Key.Item2;
             }
 
+            Console.LogError($"Extra with registry name {registryName} does not exist!");
             return -1;
         }
 
@@ -161,7 +241,14 @@ namespace JaLoader
         /// <returns></returns>
         public string GetExtraRegistryName(int ID)
         {
-            return Extras.First(x => x.Key.Item2 == ID).Key.Item1;
+            foreach(var pair in Extras)
+            {
+                if (pair.Key.Item2 == ID)
+                    return pair.Key.Item1;
+            }
+
+            Console.LogError($"Extra with ID {ID} does not exist!");
+            return "";
         }
 
         /// <summary>
@@ -209,6 +296,20 @@ namespace JaLoader
             Extras.Add((registryName, currentFreeID), (obj, attachTo, blockedBy));
         }
 
+        internal void DeleteExtra(string registryName)
+        {
+            foreach (var pair in Extras)
+            {
+                if (pair.Key.Item1 == registryName)
+                {
+                    Extras.Remove(pair.Key);
+                    return;
+                }
+            }
+
+            currentFreeID--;
+        }
+
         /// <summary>
         /// Does an extra exist already?
         /// </summary>
@@ -229,6 +330,14 @@ namespace JaLoader
 
         public void StartGlow(int ID)
         {
+            if (ID == -2)
+            {
+                DecalGlow.GetComponent<ExtraReceiverC>().GlowDecal();
+                DecalGlow.GetComponent<ExtraReceiverC>().CollisionsOn();
+
+                return;
+            }
+
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().GlowMesh();
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOn();
             SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(true);
@@ -236,6 +345,14 @@ namespace JaLoader
 
         public void StopGlow(int ID)
         {
+            if (ID == -2)
+            {
+                DecalGlow.GetComponent<ExtraReceiverC>().GlowStop();
+                DecalGlow.GetComponent<ExtraReceiverC>().CollisionsOff();
+
+                return;
+            }
+
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().GlowStop();
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
             SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(false);
@@ -243,6 +360,19 @@ namespace JaLoader
 
         public void Fitted(int ID) // make red if cant install, orange if replace
         {
+            if(ID == -2)
+            {
+                var paintJob = PaintJobManager.Instance.GetPaintJobByMaterialName(ModHelper.Instance.carFrame.GetComponent<MeshRenderer>().materials[1].name.Replace(" (Instance)", ""));
+                PaintJobManager.Instance.ApplyPaintjob(paintJob);
+                var comp = FindObjectOfType<ExtraUpgradesC>();
+                comp.installedDecal = paintJob.Material;
+                comp.installedDecalColor = Color.white;
+                DecalGlow.GetComponent<ExtraReceiverC>().CollisionsOff();
+                DecalGlow.GetComponent<ExtraReceiverC>().glowGo = false;
+
+                return;
+            }
+
             bool canInstall = true;
 
             foreach(KeyValuePair<string, bool> pair in GetBlockedBy(ID))
@@ -283,6 +413,12 @@ namespace JaLoader
         public Dictionary<string, bool> GetBlockedBy(int ID)
         {
             var toReturn = new Dictionary<string, bool>();
+
+            if (SpawnedExtras.ContainsKey(ID) == false)
+            {
+                Console.LogError($"Extra with ID {ID} does not exist!");
+                return toReturn;
+            }
 
             if (SpawnedExtras[ID].Item3 != null && SpawnedExtras[ID].Item3.Count > 0)
             {
@@ -363,6 +499,15 @@ namespace JaLoader
 
         private void AddExtras()
         {
+            try
+            {
+                DecalGlow = GameObject.Find("FrameHolder/TweenHolder/Frame/UpgradeHolders/DecalGlow").gameObject;
+            }
+            catch (Exception)
+            {
+
+            }
+
             AddExtrasHolders();
 
             foreach(var extra in Extras)
@@ -451,6 +596,10 @@ namespace JaLoader
                 {
                     int ID = GetExtraIDByRegistryName(entry);
 
+                    if(ExtraMod.ContainsKey((entry, ID)))
+                        if (ModLoader.Instance.disabledMods.Contains(ExtraMod[(entry, ID)]))
+                            continue;
+
                     if (ID == -1)
                         continue;
 
@@ -463,7 +612,6 @@ namespace JaLoader
         {
             File.Delete(Path.Combine(Application.persistentDataPath, @"ExtrasData.json"));
         }
-
     }
 
     [Serializable]
@@ -539,6 +687,10 @@ namespace JaLoader
             Destroy(prefab);
 
             ID = GetComponent<ObjectIdentification>().ExtraID;
+
+            if (ID == -2)
+                return;
+
             registryName = extrasManager.GetExtraRegistryName(ID);
 
             extraInformation = GetComponent<ExtraInformation>();
@@ -601,6 +753,22 @@ namespace JaLoader
 
         public void StartRendering()
         {
+            if (ID == -2)
+            {
+                if (carLogic == null)
+                    return;
+
+                var extraUpgradesC = carLogic.GetComponent<ExtraUpgradesC>();
+                Console.LogDebug("JaLoader", "Extra ID: " + ID);
+
+                extraUpgradesC.decalColour = materialColour; Console.LogDebug("2JaLoader", "Extra ID: " + ID);
+
+                extraUpgradesC.SetDecals(material, applyDecal: false); Console.LogDebug("3JaLoader", "Extra ID: " + ID);
+
+                extraUpgradesC.DecalGlow(); Console.LogDebug("4JaLoader", "Extra ID: " + ID);
+
+            }
+
             bool caseRed = false;
             bool caseOrange = false;
 
@@ -672,12 +840,20 @@ namespace JaLoader
         {
             UIManager.Instance.HideTooltip();
 
+            if (ID == -2)
+            {
+                var extraUpgradesC = carLogic.GetComponent<ExtraUpgradesC>();
+
+                extraUpgradesC.SetDecals(extraUpgradesC.currentDecal);
+                extraUpgradesC.DecalGlowStop();
+            }
+
             ExtrasManager.Instance.StopGlow(componentID);
         }
 
         private void RevertColors()
         {
-            if (extraInformation.BlockedBy.Count > 0)
+            if (extraInformation?.BlockedBy.Count > 0)
             {
                 foreach (var pair in extraInformation.BlockedBy)
                 {

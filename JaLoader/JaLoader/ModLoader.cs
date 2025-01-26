@@ -10,16 +10,14 @@ using System.IO;
 using System.Collections;
 using Application = UnityEngine.Application;
 using Process = System.Diagnostics.Process;
-using NAudio.Midi;
 using System.Text.RegularExpressions;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
 using BepInEx;
 using JaLoader.BepInExWrapper;
 using System.Runtime.CompilerServices;
 using BepInEx.Configuration;
 using static UnityEngine.EventSystems.EventTrigger;
 using System.CodeDom;
-using System.Windows.Forms.VisualStyles;
+using System.IO.Pipes;
 
 namespace JaLoader
 {
@@ -124,11 +122,13 @@ namespace JaLoader
             gameObject.AddComponent<CustomRadioController>();
             gameObject.AddComponent<ExtrasManager>();
             gameObject.AddComponent<GameTweaks>();
+            gameObject.AddComponent<PaintJobManager>();
 
             helperObj.AddComponent<ModHelper>();
             helperObj.AddComponent<UncleHelper>();
             helperObj.AddComponent<PartIconManager>();
             helperObj.AddComponent<HarmonyManager>();
+            helperObj.AddComponent<AdjustmentsEditor>();
 
             gameObject.AddComponent<DiscordController>();
 
@@ -297,6 +297,8 @@ namespace JaLoader
                         message += ")";
                     }
 
+                    uiManager.modsCountText.text = $"{modsNumber} mods installed";
+
                     Console.Log("JaLoader", message);
                     if (settingsManager.UseCustomSongs)
                         Console.Log("JaLoader", $"{CustomRadioController.Instance.loadedSongs.Count} custom songs loaded!");
@@ -443,11 +445,12 @@ namespace JaLoader
                             modsInitInMenuIncludingBIX.Remove(mod);
                     }
 
-                    stopWatch.StopCounting();
+                    stopWatch?.StopCounting();
                     Debug.Log($"Loaded JaLoader mods! ({stopWatch.timePassed}s)");
                     Debug.Log($"JaLoader successfully loaded! ({stopWatch.totalTimePassed}s)");
                     finishedInitializingPartTwoMods = true;
-                    Destroy(stopWatch);
+                    if(stopWatch != null)
+                        Destroy(stopWatch);
 
                     InitializedInMenuMods = true;
                 }
@@ -485,7 +488,10 @@ namespace JaLoader
                         int modVersion = int.Parse(incompatibleMod.ModVersion.Replace(".", ""));
 
                         if (modVersion >= lowerBound && modVersion <= upperBound)
+                        {
                             uiManager.ShowNotice("Incompatibility detected", $"The mod \"{mod.ModName}\" is incompatible with the mod \"{incompatibleMod.ModName}\". The mod may still load, but not function correctly.");
+                            uiManager.AddWarningToMod(modStatusTextRef[mod].transform.parent.parent.parent.Find("WarningIcon").gameObject, $"Incompatible with {incompatibleMod.ModName}!");
+                        }
                     }
                 }
             }
@@ -504,6 +510,8 @@ namespace JaLoader
                         if(settingsManager.GetVersion() < version)
                         {
                             uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires JaLoader version {dependency.Item3} or higher. You are currently using version {settingsManager.GetVersionString()}. The mod may still load, but not function correctly.");
+
+                            uiManager.AddWarningToMod(modStatusTextRef[mod].transform.parent.parent.parent.Find("WarningIcon").gameObject, $"Requires JaLoader >= {dependency.Item3}!");
                         }
                     }
                     else
@@ -513,21 +521,29 @@ namespace JaLoader
                         if (dependentMod == null)
                         {
                             uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be installed. The mod may still load, but not function correctly.");    
+                        
+                            uiManager.AddWarningToMod(modStatusTextRef[mod].transform.parent.parent.parent.Find("WarningIcon").gameObject, $"Requires {dependency.Item1}!");
                         }
                         else
                         {
                             if (dependentMod.ModVersion != dependency.Item3)
                             {
                                 uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be version {dependency.Item3} or higher. You are currently using version {FindMod(dependency.Item2, dependency.Item1).ModVersion}. The mod may still load, but not function correctly.");
+
+                                uiManager.AddWarningToMod(modStatusTextRef[mod].transform.parent.parent.parent.Find("WarningIcon").gameObject, $"Requires {dependency.Item1} >= {dependency.Item3}!");
                             }
 
                             if (modsInitInMenuIncludingBIX.IndexOf(dependentMod) > modsInitInMenuIncludingBIX.IndexOf(mod))
                             {
                                 uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be loaded before it. Adjust its load order in the mods list.");
+
+                                uiManager.AddWarningToMod(modStatusTextRef[mod].transform.parent.parent.parent.Find("WarningIcon").gameObject, $"Requires {dependency.Item1} to be loaded before it!");
                             }
                             else if(modsInitInGame.IndexOf(dependentMod) > modsInitInGame.IndexOf(mod))
                             {
                                 uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be loaded before it. Adjust its load order in the mods list.");
+
+                                uiManager.AddWarningToMod(modStatusTextRef[mod].transform.parent.parent.parent.Find("WarningIcon").gameObject, $"Requires {dependency.Item1} to be loaded before it!");
                             }
                         }
                     }
@@ -535,13 +551,21 @@ namespace JaLoader
             }
         }
 
-        public IEnumerator InitializeMods()
+        public IEnumerator InitializeMods(string certainModFile = "")
         {
+            // wait until ReferencesLoader.canLoadMods = true
+
+            while (!ReferencesLoader.Instance.canLoadMods)
+                yield return null;
+
             Debug.Log("Initializing JaLoader mods...");
-            gameObject.GetComponent<Stopwatch>().StartCounting();
+            gameObject.GetComponent<Stopwatch>()?.StartCounting();
 
             DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
+
+            if(certainModFile != "")
+                mods = new FileInfo[] { new FileInfo(Path.Combine(settingsManager.ModFolderLocation, $"{certainModFile}")) };
 
             int validMods = mods.Length;
             bool errorOccured = false;
@@ -696,6 +720,54 @@ namespace JaLoader
                         modsNumber++;
                         bepinexModsNumber++;
 
+                        if (certainModFile != "")
+                        {
+                            try
+                            {
+                                bix_mod.InstantiateBIXPluginSettings();
+
+                                Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} completed");
+
+                                if (!disabledMods.Contains(bix_mod))
+                                    bix_mod.gameObject.SetActive(true);
+
+                                foreach (IConfigEntry entry in bix_mod.configEntries.Keys)
+                                {
+                                    if (entry is ConfigEntry<bool> boolEntry)
+                                    {
+                                        bool value = boolEntry._typedValue;
+                                        bix_mod.AddBIXPluginToggle(bix_mod.configEntries[entry].Item1, bix_mod.configEntries[entry].Item2, value);
+                                    }
+                                    else if (entry is ConfigEntry<KeyboardShortcut> keyEntry)
+                                    {
+                                        KeyboardShortcut keyboardShortcut = keyEntry._typedValue;
+                                        bix_mod.AddBIXPluginKeybind(bix_mod.configEntries[entry].Item1, bix_mod.configEntries[entry].Item2, keyboardShortcut.Key);
+                                    }
+                                }
+
+                                if (bix_mod.configEntries.Count > 0)
+                                    bix_mod.LoadBIXPluginSettings();
+
+                                Debug.Log($"Loaded BepInEx mod {modInfo.Name}");
+
+                            }
+                            catch (Exception ex)
+                            {
+                                bix_mod.gameObject.SetActive(false);
+
+                                Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} failed");
+                                Debug.Log($"Failed to load BepInEx mod {modInfo.Name}. An error occoured while enabling the mod.");
+                                Debug.Log(ex);
+
+                                Console.LogError("JaLoader", $"An error occured while trying to load BepInEx mod \"{modInfo.name}\"");
+
+                                modsInitInMenuIncludingBIX.Remove(bix_mod);
+
+                                continue;
+                                throw;
+                            }
+                        }
+
                         continue;
                     }
                     #endregion
@@ -711,6 +783,10 @@ namespace JaLoader
                     if (mod.ModID == null || mod.ModName == null || mod.ModAuthor == null || mod.ModVersion == null || mod.ModID == string.Empty || mod.ModName == string.Empty || mod.ModAuthor == string.Empty || mod.ModVersion == string.Empty)
                     {
                         Console.LogError(modFile.Name, $"{modFile.Name} contains no information related to its ID, name, author or version.");
+
+                        var warning = uiManager.modTemplateObject.transform.Find("WarningIcon").gameObject;
+                        uiManager.AddWarningToMod(warning, "Invalid ModID/ModName/ModAuthor/ModVersion!");
+
                         throw new Exception();
                     }
 
@@ -743,6 +819,8 @@ namespace JaLoader
                             modsNeedUpdate++;
                             modVersionText = $"{mod.ModVersion} <color=green>(Latest version: {latestVersion})</color>";
                             modName = $"<color=green>(Update Available!)</color> {modName}";
+
+                            uiManager.MakeNutGreen();
                         }
 
                         uiManager.modTemplateObject.transform.Find("Buttons").Find("GitHubButton").GetComponent<Button>().interactable = true;
@@ -780,6 +858,51 @@ namespace JaLoader
                     Debug.Log($"Part 1/2 of initialization for mod {mod.ModName} completed");
 
                     modsNumber++;
+
+                    if (certainModFile != "")
+                    {
+                        CheckForDependencies(mod);
+
+                        CheckForIncompatibilities(mod);
+
+                        try
+                        {
+                            mod.EventsDeclaration();
+
+                            mod.SettingsDeclaration();
+
+                            mod.CustomObjectsRegistration();
+
+                            if (mod.settingsIDS.Count > 0)
+                            {
+                                mod.LoadModSettings();
+                                mod.SaveModSettings();
+                            }
+
+                            Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
+
+                            if (mod.WhenToInit == WhenToInit.InMenu)
+                            {
+                                mod.gameObject.SetActive(true);
+                                Debug.Log($"Loaded mod {mod.ModName}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            mod.gameObject.SetActive(false);
+
+                            Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} failed");
+                            Debug.Log($"Failed to load mod {mod.ModName}. An error occoured while enabling the mod.");
+                            Debug.Log(ex);
+
+                            Console.LogError("JaLoader", $"An error occured while trying to load mod \"{mod.ModName}\"");
+
+                            modsInitInMenuIncludingBIX.Remove(mod);
+
+                            continue;
+                            throw;
+                        }
+                    }
                     #endregion
                 }
                 catch (Exception ex)
@@ -789,6 +912,11 @@ namespace JaLoader
 
                     Debug.Log($"Failed to initialize mod {modFile.Name}");
                     Console.LogError("JaLoader", $"An error occured while trying to initialize mod \"{modFile.Name}\": ");
+
+                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = new Color32(255, 83, 83, 255);
+
+                    var warning = uiManager.modTemplateObject.transform.Find("WarningIcon").gameObject;
+                    uiManager.AddWarningToMod(warning, "Failed to load mod!");
 
                     uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modFile.Name;
                     uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = "Failed to load mod";
@@ -814,6 +942,8 @@ namespace JaLoader
                             {
                                 string versionNumber = versionSection.Substring(versionIndex + "Version=".Length).Trim();
 
+                                uiManager.AddWarningToMod(warning, $"Missing assembly: {dllName}");
+
                                 string errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}, version {versionNumber}";
                                 Debug.Log(errorMessage);
                                 Console.LogError("JaLoader", errorMessage);
@@ -824,7 +954,11 @@ namespace JaLoader
                     else
                     {
                         if (ex.Message.EndsWith("is built for 1.0 and is not compatible with this version of the game."))
+                        {
+                            uiManager.AddWarningToMod(warning, "Mod is incompatible with this version of the game!");
+
                             continue;
+                        }
 
                         Console.LogError("/", ex);
                         Debug.Log(ex);
@@ -843,7 +977,7 @@ namespace JaLoader
                 {
                     uiManager.modTemplateObject = null;
 
-                    if(errorOccured)
+                    if(errorOccured && certainModFile == "")
                         GetComponent<LoadingScreen>().DeleteLoadingScreen();
                 }
             }
@@ -856,7 +990,7 @@ namespace JaLoader
                 finishedInitializingPartOneMods = true;
             }
 
-            if (modsNumber == 0)
+            if (modsNumber == 0 && certainModFile == "")
             {
                 Console.LogMessage("JaLoader", $"No mods found!");
                 Console.Instance.ToggleVisibility(true);
@@ -864,8 +998,10 @@ namespace JaLoader
                 UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
             }
 
-            if(!errorOccured)
-                GetComponent<LoadingScreen>().DeleteLoadingScreen();
+            if(!errorOccured && certainModFile == "")
+                GetComponent<LoadingScreen>().DeleteLoadingScreen(); 
+
+            EventsManager.Instance.OnModsInit();
 
             yield return null;
         }

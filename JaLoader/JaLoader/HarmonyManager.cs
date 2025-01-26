@@ -111,9 +111,9 @@ namespace JaLoader
     public static class BedLogicC_Later_Patch
     {
         [HarmonyPrefix]
-        public static void Prefix(MainMenuC __instance)
+        public static void Prefix(BedLogicC __instance)
         {
-            __instance.BroadcastMessage("Slept", SendMessageOptions.DontRequireReceiver);
+            GameObject.FindObjectOfType<MotelsReceiver>().Slept();
         }
     }
 
@@ -555,6 +555,51 @@ namespace JaLoader
             }
             else
                 EventsManager.Instance.CallRoute("Berlin", "Dresden", __instance.routeChosenLength * 70);
+        }
+    }
+
+    [HarmonyPatch(typeof(DialogueStuffsC), "StartTypeText")]
+    public static class DialogueStuffsC_StartTypeText_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(DialogueStuffsC __instance, GameObject target1)
+        {
+            if (GameTweaks.Instance.isDialogueActive)
+                return false;
+
+            GameTweaks.Instance.isDialogueActive = true;
+            target1.AddComponent<DialogueReceiver>();
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(DialogueStuffsC), "StopTypeText")]
+    public static class DialogueStuffsC_StopTypeText_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix()
+        {
+            GameTweaks.Instance.isDialogueActive = false;
+
+            if (GameObject.FindObjectOfType<DialogueReceiver>() != null)
+                GameObject.FindObjectOfType<DialogueReceiver>().TextFinished();
+        }
+    }
+
+    [HarmonyPatch(typeof(SpawnContinueC), "SpawnAICars")]
+    public static class SpawnContinueC_SpawnAICars_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            foreach(GameObject car in GameObject.FindGameObjectsWithTag("AICar"))
+            {
+                var transform = car.transform;
+
+                // if localEulerAngles.z > 60, then the car is most likely flipped, so rotate it to 0
+                if (transform.localEulerAngles.z > 60)
+                    transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, 0);
+            }
         }
     }
 }

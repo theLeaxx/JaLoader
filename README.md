@@ -19,7 +19,7 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 ## [Check out the current progress](https://github.com/users/theLeaxx/projects/1)
 
 ## Libraries used
-* [NAudio](https://github.com/naudio/NAudio) (**MIT**)
+* [NLayer](https://github.com/naudio/NLayer) (**MIT**)
 * [Octokit](https://github.com/octokit/octokit.net) (**MIT**)
 * [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop) (**LGPL 2.1**)
 * [Newtonsoft.JSON](https://github.com/JamesNK/Newtonsoft.Json) (**MIT**)

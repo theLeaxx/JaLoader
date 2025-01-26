@@ -654,36 +654,56 @@ namespace JaLoader
 
                 switch (inputWords[0])
                 {
-                    /*case "time":
+                    case "time":
                         if (SceneManager.GetActiveScene().buildIndex != 3)
                         {
                             LogError("/", "This command only works in-game!");
                             break;
                         }
 
-                        if (inputWords[1] == "set")
+                        string time = inputWords[2].ToLower();
+                        int hours = 0, minutes = 0;
+
+                        if(time != "day" && time != "night")
                         {
-                            if (!int.TryParse(inputWords[2], out value))
+                            if (!time.Contains(":"))
                             {
-                                LogError("/", "Invalid value. Enter a valid integer value, between 0 and 24.");
-
-                                return;
+                                LogError("/", "Invalid time. Enter a valid hour:minute.");
+                                break;
                             }
 
-                            if (value >= 0 && value < 24)
+                            string[] timeSplit = time.Split(':');
+
+                            if (!int.TryParse(timeSplit[0], out hours))
                             {
-                                SetTime(value);
+                                LogError("/", "Invalid time. Enter a valid hour.");
+                                break;
                             }
-                            else
+
+                            if (!int.TryParse(timeSplit[1], out minutes))
                             {
-                                LogError("/", "Invalid value. Enter a valid integer value, between 0 and 24.");
+                                LogError("/", "Invalid time. Enter a valid minute.");
+                                break;
                             }
                         }
-                        else
+
+                        if (time == "day")
+                            hours = 12;
+
+                        if(time == "night")
+                            hours = 20;
+
+                        switch (inputWords[1])
                         {
-                            LogError("/", "Invalid command syntax. Usage: 'time set {value}'");
+                            case "set":
+                                ModHelper.Instance.TimeSet(hours, minutes);
+                                Log("/", $"Set time to {hours}:{minutes}!");
+                                break;
+                            default:
+                                LogError("/", "Invalid command syntax. Usage: 'time set {value/day/night}'");
+                                break;
                         }
-                        break;*/
+                        break;
 
                     case "money":
                         if (SceneManager.GetActiveScene().buildIndex != 3)
@@ -759,7 +779,7 @@ namespace JaLoader
             LogMessage("'debug' - Toggle debug messages");
             LogMessage("Cheat commands (only work in-game)", "");
             LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet");
-            //LogMessage("/", "'time set {value}' - Sets the time to the specified hour");
+            LogMessage("/", "'time set {hr:min/day/night}' - Sets the time to the specified hour/day/night");
             LogMessage("'repairkit' - Spawns a repair kit near you");
             LogMessage("'gascan' - Spawns a filled gas can near you");
             LogMessage("'repairall' - Restores every installed part to full condition");

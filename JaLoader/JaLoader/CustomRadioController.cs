@@ -1,4 +1,4 @@
-﻿using NAudio.Wave;
+﻿using NLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,9 +33,8 @@ namespace JaLoader
                 Directory.CreateDirectory(folderPath);
 
             if (SettingsManager.Instance.UseCustomSongs)
-                ConvertSongs();
+                WarnAboutBadFormats();
 
-            EventsManager.Instance.OnLoadStart += OnLoadStart;
             EventsManager.Instance.OnGameLoad += OnGameLoad;
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
             SceneManager.sceneLoaded += OnSceneChanged;
@@ -50,6 +49,7 @@ namespace JaLoader
 
         private readonly string folderPath = $@"{Application.dataPath}\..\Songs";
         public List<AudioClip> loadedSongs = new List<AudioClip>();
+        private int currentIndex = 0;
 
         void Update()
         {
@@ -58,51 +58,46 @@ namespace JaLoader
                     FindObjectOfType<RadioFreqLogicC>().NextSong();
         }
 
-        private void ConvertSongs()
+        private void WarnAboutBadFormats()
         {
             DirectoryInfo dir = new DirectoryInfo(folderPath);
-            FileInfo[] MP3Songs = dir.GetFiles("*.mp3");
+            FileInfo[] Songs = dir.GetFiles("*.wav")
+                .Concat(dir.GetFiles("*.ogg"))
+                .Concat(dir.GetFiles("*.flac"))
+                .Concat(dir.GetFiles("*.aac"))
+                .Concat(dir.GetFiles("*.aiff"))
+                .ToArray();
 
-            foreach (FileInfo file in MP3Songs)
-            {
-                string newName = file.FullName.Replace(".mp3", ".wav");
-
-                Mp3FileReader reader = new Mp3FileReader(file.FullName);
-                WaveStream stream = WaveFormatConversionStream.CreatePcmStream(reader);
-                WaveFileWriter.CreateWaveFile(newName, stream);
-            }
+            foreach (FileInfo file in Songs)
+                Console.LogError($"Song '{file.Name}' couldn't be loaded! Songs must be in .mp3 format!");
 
             StartCoroutine(LoadAudioClips());
-        }
-
-        private void DeleteMP3Files()
-        {
-            DirectoryInfo dir = new DirectoryInfo(folderPath);
-            FileInfo[] MP3Songs = dir.GetFiles("*.mp3");
-
-            foreach (FileInfo file in MP3Songs)
-            {
-                File.Delete(file.FullName);
-            }
         }
 
         private IEnumerator LoadAudioClips()
         {
             DirectoryInfo dir = new DirectoryInfo(folderPath);
 
-            FileInfo[] WAVSongs = dir.GetFiles("*.wav");
+            FileInfo[] MP3Songs = dir.GetFiles("*.mp3");
 
-            foreach (FileInfo file in WAVSongs) 
+            UnityEngine.Debug.Log($"Found {MP3Songs.Length} .mp3 files, loading audio clips!");
+
+            foreach (FileInfo file in MP3Songs) 
             {
-                string path = $"file://{file.FullName}";
+                UnityEngine.Debug.Log($"Loading song {file.Name}!");
 
-                UnityWebRequest req = UnityWebRequestMultimedia.GetAudioClip(path, AudioType.WAV);
+                var mpegFile = new MpegFile(file.FullName);
 
-                yield return req.SendWebRequest();
+                AudioClip clip = AudioClip.Create(System.IO.Path.GetFileNameWithoutExtension(file.FullName),
+                                    (int)(mpegFile.Length / sizeof(float) / mpegFile.Channels),
+                                    mpegFile.Channels,
+                                    44100,
+                                    true,
+                                    data => { int actualReadCount = mpegFile.ReadSamples(data, 0, data.Length); },
+                                    position => { mpegFile = new MpegFile(file.FullName); });
 
-                AudioClip clip = DownloadHandlerAudioClip.GetContent(req);
 
-                if(clip.frequency != 44100)
+                if (clip.frequency != 44100)
                 {
                     Console.LogError($"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
 
@@ -112,7 +107,11 @@ namespace JaLoader
                 clip.name = file.Name;
 
                 loadedSongs.Add(clip);
+
+                UnityEngine.Debug.Log($"Loaded song {file.Name}!");
             }
+
+            UnityEngine.Debug.Log($"Song loading complete ({loadedSongs.Count} songs)!");
 
             while (SceneManager.GetActiveScene().buildIndex != 1)
                 yield return null;
@@ -128,11 +127,6 @@ namespace JaLoader
         private void OnMenuLoad()
         {
             StartCoroutine(AddSongsToRadioWithDelay());
-        }
-
-        private void OnLoadStart()
-        {
-            DeleteMP3Files();
         }
 
         private void AddSongsToRadio()

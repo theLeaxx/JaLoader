@@ -247,7 +247,7 @@ namespace JaLoader
             yield return null;
         }
 
-        private void AddEntry(PartTypes partType, string title, string description, Texture2D image, string price, string registryName)
+        private void AddEntry(PartTypes partType, string title, string description, Texture2D image, string price, string registryName, bool isPaintjob = false)
         {
             var entry = Instantiate(UIManager.Instance.catalogueEntryTemplate, scrollViews[partType].transform.Find("Viewport/Content")).gameObject;
             entry.transform.GetChild(0).GetComponent<Text>().text = title;
@@ -256,6 +256,10 @@ namespace JaLoader
             entry.transform.GetChild(4).GetComponent<Text>().text = price;
             entry.transform.GetChild(2).GetComponent<ModsPageItem>().itemName = registryName;
             entry.SetActive(true);
+
+            if(isPaintjob == true)
+                entry.transform.GetChild(2).GetComponent<RectTransform>().sizeDelta = new Vector2(75, 75);
+
             StartCoroutine(RefreshPage(partType));
         }
 
@@ -307,10 +311,30 @@ namespace JaLoader
                         type = PartTypes.Extra;
                     }
 
-                    //var comp = obj.GetComponent<ObjectIdentification>();
+                    var identif = obj.GetComponent<ObjectIdentification>();
                     var objInfo = obj.GetComponent<CustomObjectInfo>();
-                    Texture2D tex = PartIconManager.Instance.GetTexture(objName);
-                    AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName);
+                    var mod = ModLoader.Instance.FindMod(identif.Author, identif.ModID, identif.ModName);
+
+                    if(ModLoader.Instance.disabledMods.Contains(mod))
+                        continue;
+
+                    Texture2D tex = null;
+                    bool isPaintjob = false;
+                    if (type == PartTypes.Extra)
+                    {
+                        var comp = obj.GetComponent<ExtraComponentC_ModExtension>();
+                        if(comp.ID == -2)
+                        {
+                            var pj = PaintJobManager.Instance.GetPaintJobByMaterial(comp.material);
+                            tex = pj.PreviewIcon;
+                            isPaintjob = true;
+                        }
+                    }
+
+                    if(tex == null)
+                        tex = PartIconManager.Instance.GetTexture(objName);
+
+                    AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName, isPaintjob);
                 }
             }
 
@@ -331,6 +355,14 @@ namespace JaLoader
 
         private bool visible;
         private bool showingMods;
+        private bool modsPagesHidden;
+
+        private GameObject defaultPage;
+        private GameObject modPage;
+        private GameObject modPageBG;
+        private GameObject receipt;
+        private BoxCollider col;
+        private TextMeshPro text;
 
         public void Trigger()
         {
@@ -373,10 +405,23 @@ namespace JaLoader
 
             var magazine = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform;
 
-            var defaultPage = magazine.Find("Page2_EngineParts").gameObject;
-            var modPage = magazine.Find("ModPages").gameObject;
-            var modPageBG = magazine.Find("Page4").gameObject;
-            var receipt = magazine.Find("Receipt").gameObject;
+            if(defaultPage == null)
+                defaultPage = magazine.Find("Page2_EngineParts").gameObject;
+
+            if(modPage == null)
+                modPage = magazine.Find("ModPages").gameObject;
+
+            if (modPageBG == null)
+                modPageBG = magazine.Find("Page4").gameObject;
+
+            if (receipt == null)
+                receipt = magazine.Find("Receipt").gameObject;
+
+            if(col == null)
+                col = GetComponent<BoxCollider>();
+
+            if (text == null)
+                text = GetComponent<TextMeshPro>();
 
             if (LaikaCatalogueExtension.Instance.currentOpenMagazine.isBookOpen)
             {
@@ -384,20 +429,21 @@ namespace JaLoader
 
                 if (!visible)
                 {
-                    GetComponent<BoxCollider>().enabled = false;
-                    GetComponent<TextMeshPro>().text = "";
+                    col.enabled = false;
+                    text.text = "";
                     HideAllModsPages();
                 }
                 else
                 {
-                    GetComponent<BoxCollider>().enabled = true;
+                    col.enabled = true;
                     if (showingMods)
                     {
-                        GetComponent<TextMeshPro>().text = ".................GO BACK";
+                        text.text = ".................GO BACK";
+                        modsPagesHidden = false;
                     }
                     else
                     {
-                        GetComponent<TextMeshPro>().text = ".......................MODS";
+                        text.text = ".......................MODS";
                         HideAllModsPages();
                     }
                 }
@@ -413,6 +459,7 @@ namespace JaLoader
                 else if (showingMods)
                 {
                     visible = true;
+                    modsPagesHidden = false;
                 }
                 else
                 {
@@ -436,11 +483,6 @@ namespace JaLoader
                 return;
 
             var magazine = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform;
-
-            var defaultPage = magazine.Find("Page2_EngineParts").gameObject;
-            var modPage = magazine.Find("ModPages").gameObject;
-            var modPageBG = magazine.Find("Page4").gameObject;
-            var receipt = magazine.Find("Receipt").gameObject;
 
             if (showingMods)
             {
@@ -466,7 +508,12 @@ namespace JaLoader
                 LaikaCatalogueExtension.Instance.currentOpenMagazine.gameObject.GetComponent<Collider>().enabled = true;
                 MainMenuC.Global.restrictPause = false;
                 LaikaCatalogueExtension.Instance.currentOpenMagazine = null;
+                defaultPage = modPage = modPageBG = receipt = null;
+                col = null;
+                text = null;
             }
+
+            MakeAllItemsSellingDisabled();
         }
 
         public void RaycastEnter()
@@ -498,16 +545,29 @@ namespace JaLoader
             LaikaCatalogueExtension.Instance.currentOpenMagazine.gameObject.GetComponent<Collider>().enabled = true;
             MainMenuC.Global.restrictPause = false;
             LaikaCatalogueExtension.Instance.currentOpenMagazine = null;
+            MakeAllItemsSellingDisabled();
         }
 
         public void HideAllModsPages()
         {
+            if(modsPagesHidden)
+                return;
+
+            MakeAllItemsSellingDisabled();
             var pagesHolder = UIManager.Instance.catalogueTemplate.transform.parent.gameObject;
 
             for (int i = 1; i < pagesHolder.transform.childCount; i++)
-            {
                 pagesHolder.transform.GetChild(i).gameObject.SetActive(false);
-            }
+
+            modsPagesHidden = true;
+        }
+
+        public void MakeAllItemsSellingDisabled()
+        {
+            var list = FindObjectsOfType<ModsPageItem>();
+
+            foreach (var item in list)
+                item.sellingItem.SetActive(false);
         }
     }
 
@@ -613,6 +673,7 @@ namespace JaLoader
             priceText = transform.parent.GetChild(4);
 
             sellingItem = CustomObjectsManager.Instance.SpawnObject(itemName);
+            sellingItem.SetActive(false);
             sellingItem.GetComponent<Rigidbody>().isKinematic = true;
 
             sellingItem.GetComponent<EngineComponentC>().Condition = sellingItem.GetComponent<EngineComponentC>().durability;
@@ -636,6 +697,7 @@ namespace JaLoader
             if (LaikaCatalogueExtension.Instance.currentOpenMagazine == null)
                 return;
 
+            sellingItem.SetActive(true);
             var list = LaikaCatalogueExtension.Instance.currentOpenMagazine.transform.Find("Page2_EngineParts").GetComponent<EngineComponentsCataloguePageC>();
             list.AddToShoppingList(sellingItem);
 
