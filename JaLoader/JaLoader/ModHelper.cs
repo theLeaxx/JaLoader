@@ -88,64 +88,61 @@ namespace JaLoader
                 defaultEngineMaterial = go.GetComponent<MeshRenderer>().material;
                 defaultClips = go.GetComponent<ObjectPickupC>()._audio;
 
-                if (SettingsManager.Instance.DebugMode)
+                if (!createdDebugCamera)
                 {
-                    if (!createdDebugCamera)
+                    debugCam = Instantiate(new GameObject());
+                    debugCam.name = "JaLoader Debug Camera";
+                    debugCam.SetActive(false);
+
+                    var effectsCam = Instantiate(new GameObject());
+                    effectsCam.name = "JaLoader Menu Post Processing Camera";
+
+                    var inGameEffectsCam = Instantiate(new GameObject());
+                    inGameEffectsCam.name = "JaLoader In-Game Post Processing Camera";
+
+                    var normalCam = Instantiate(new GameObject());
+                    normalCam.name = "JaLoader Normal Camera";
+
+                    effectsCam.transform.parent = normalCam.transform.parent = inGameEffectsCam.transform.parent = debugCam.transform;
+
+                    var components = Camera.main.GetComponents<MonoBehaviour>().ToList();
+                    components.RemoveAt(components.Count - 1);
+                    components.RemoveAt(components.Count - 1);
+                    components.RemoveAt(components.Count - 1);
+                    components.RemoveAt(0);
+
+                    effectsCam.AddComponent<Camera>();
+                    inGameEffectsCam.AddComponent<Camera>();
+                    normalCam.AddComponent<Camera>();
+
+                    foreach (MonoBehaviour behaviour in components)
                     {
-                        debugCam = Instantiate(new GameObject());
-                        debugCam.name = "JaLoader Debug Camera";
-                        debugCam.SetActive(false);
-
-                        var effectsCam = Instantiate(new GameObject());
-                        effectsCam.name = "JaLoader Menu Post Processing Camera";
-
-                        var inGameEffectsCam = Instantiate(new GameObject());
-                        inGameEffectsCam.name = "JaLoader In-Game Post Processing Camera";
-
-                        var normalCam = Instantiate(new GameObject());
-                        normalCam.name = "JaLoader Normal Camera";
-
-                        effectsCam.transform.parent = normalCam.transform.parent = inGameEffectsCam.transform.parent = debugCam.transform;
-
-                        var components = Camera.main.GetComponents<MonoBehaviour>().ToList();
-                        components.RemoveAt(components.Count - 1);
-                        components.RemoveAt(components.Count - 1);
-                        components.RemoveAt(components.Count - 1);
-                        components.RemoveAt(0);
-
-                        effectsCam.AddComponent<Camera>();
-                        inGameEffectsCam.AddComponent<Camera>();
-                        normalCam.AddComponent<Camera>();
-
-                        foreach (MonoBehaviour behaviour in components)
+                        effectsCam.AddComponent(behaviour.GetType());
+                        FieldInfo[] fields = behaviour.GetType().GetFields();
+                        foreach (FieldInfo field in fields)
                         {
-                            effectsCam.AddComponent(behaviour.GetType());
-                            FieldInfo[] fields = behaviour.GetType().GetFields();
-                            foreach (FieldInfo field in fields)
-                            {
-                                field.SetValue(effectsCam.GetComponent(behaviour.GetType()), field.GetValue(behaviour));
-                            }
+                            field.SetValue(effectsCam.GetComponent(behaviour.GetType()), field.GetValue(behaviour));
                         }
-
-                        effectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
-                        normalCam.GetComponent<Camera>().nearClipPlane = 0.025f;
-                        inGameEffectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
-
-                        effectsCam.GetComponent<Camera>().fieldOfView = 80;
-                        normalCam.GetComponent<Camera>().fieldOfView = 80;
-                        inGameEffectsCam.GetComponent<Camera>().fieldOfView = 80;
-
-                        normalCam.SetActive(false);
-                        inGameEffectsCam.SetActive(false);
-                        debugCam.SetActive(false);
-
-                        DontDestroyOnLoad(debugCam);
-
-                        createdDebugCamera = true;
                     }
 
-                    Camera.main.gameObject.AddComponent<DebugCamera>();   
+                    effectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
+                    normalCam.GetComponent<Camera>().nearClipPlane = 0.025f;
+                    inGameEffectsCam.GetComponent<Camera>().nearClipPlane = 0.025f;
+
+                    effectsCam.GetComponent<Camera>().fieldOfView = 80;
+                    normalCam.GetComponent<Camera>().fieldOfView = 80;
+                    inGameEffectsCam.GetComponent<Camera>().fieldOfView = 80;
+
+                    normalCam.SetActive(false);
+                    inGameEffectsCam.SetActive(false);
+                    debugCam.SetActive(false);
+
+                    DontDestroyOnLoad(debugCam);
+
+                    createdDebugCamera = true;
                 }
+
+                Camera.main.gameObject.AddComponent<DebugCamera>();
             }
         }
 

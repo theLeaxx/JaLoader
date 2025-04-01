@@ -73,7 +73,7 @@ namespace JaLoader
         private string[] requiredDLLs = new string[] {
             "0Harmony.dll",
             "HarmonyXInterop.dll",
-            "NAudio.dll",
+            "NLayer.dll",
             "Mono.Cecil.dll",
             "Mono.Cecil.Mdb.dll",
             "Mono.Cecil.Pdb.dll",

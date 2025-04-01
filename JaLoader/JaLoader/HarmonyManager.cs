@@ -41,6 +41,25 @@ namespace JaLoader
         {
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         }
+
+        public static void SetArgumentsFromScript(ref ObjectEventArgs args, ObjectPickupC script)
+        {
+            args.gameObject = script.gameObject;
+            args.objectName = script.supplyName;
+            args.pickupScript = script;
+            args.objectValue = script.sellValue;
+            args.isEngineComponent = script.gameObject.GetComponent<EngineComponentC>() != null;
+
+            if (script.gameObject.GetComponent<CustomObjectInfo>() == null && script.gameObject.GetComponent<ExtraInformation>() == null)
+                args.objectID = script.objectID.ToString();
+            else
+            {
+                if (script.gameObject.GetComponent<CustomObjectInfo>() != null)
+                    args.objectID = script.gameObject.GetComponent<CustomObjectInfo>().objRegistryName;
+                else
+                    args.objectID = script.gameObject.GetComponent<ExtraInformation>().RegistryName;
+            }
+        }
     }
 
     public class CoroutineManager : MonoBehaviour
@@ -142,6 +161,116 @@ namespace JaLoader
         {
             ModHelper.Instance.wallet.GetComponent<ObjectPickupC>().ThrowLogic();
             EventsManager.Instance.CallTransaction("laika");
+        }
+    }
+
+    [HarmonyPatch(typeof(ObjectPickupC), "PickUp")]
+    public static class ObjectPickupC_PickUp_Patch
+    {
+        private static ObjectEventArgs objectEventArgs;
+
+        [HarmonyPrefix]
+        public static void Prefix(ObjectPickupC __instance)
+        {
+            objectEventArgs = new ObjectEventArgs();
+
+            HarmonyManager.SetArgumentsFromScript(ref objectEventArgs, __instance);
+
+            objectEventArgs.movedFrom = __instance.transform.parent;
+        }
+
+        [HarmonyPostfix]
+        public static void PostFix(ObjectPickupC __instance)
+        {
+            objectEventArgs.movedTo = __instance.transform.parent;
+
+            EventsManager.Instance.OnObjectPickup(objectEventArgs);
+        }
+    }
+
+    [HarmonyPatch(typeof(ObjectPickupC), "ThrowLogic")]
+    public static class ObjectPickupC_ThrowLogic_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(ObjectPickupC __instance)
+        {
+            var objectEventArgs = new ObjectEventArgs();
+
+            HarmonyManager.SetArgumentsFromScript(ref objectEventArgs, __instance);
+
+            EventsManager.Instance.OnObjectDrop(objectEventArgs);
+        }
+    }
+
+    [HarmonyPatch(typeof(ObjectPickupC), "MoveToSlot1")]
+    public static class ObjectPickupC_MoveToSlot1_Patch
+    {
+        private static ObjectEventArgs objectEventArgs;
+
+        [HarmonyPrefix]
+        public static void Prefix(ObjectPickupC __instance)
+        {
+            objectEventArgs = new ObjectEventArgs();
+
+            HarmonyManager.SetArgumentsFromScript(ref objectEventArgs, __instance);
+
+            objectEventArgs.movedFrom = __instance.transform.parent;
+        }
+
+        [HarmonyPostfix]
+        public static void PostFix(ObjectPickupC __instance)
+        {
+            objectEventArgs.movedTo = GameObject.FindObjectOfType<DragRigidbodyC>().holdingParent1;
+         
+            EventsManager.Instance.OnHeldObjectPositionChange(objectEventArgs);
+        }
+    }
+
+    [HarmonyPatch(typeof(ObjectPickupC), "MoveToSlot2")]
+    public static class ObjectPickupC_MoveToSlot2_Patch
+    {
+        private static ObjectEventArgs objectEventArgs;
+
+        [HarmonyPrefix]
+        public static void Prefix(ObjectPickupC __instance)
+        {
+            objectEventArgs = new ObjectEventArgs();
+
+            HarmonyManager.SetArgumentsFromScript(ref objectEventArgs, __instance);
+
+            objectEventArgs.movedFrom = __instance.transform.parent;
+        }
+
+        [HarmonyPostfix]
+        public static void PostFix(ObjectPickupC __instance)
+        {
+            objectEventArgs.movedTo = GameObject.FindObjectOfType<DragRigidbodyC>().holdingParent2;
+
+            EventsManager.Instance.OnHeldObjectPositionChange(objectEventArgs);
+        }
+    }
+
+    [HarmonyPatch(typeof(ObjectPickupC), "MoveToSlot3")]
+    public static class ObjectPickupC_MoveToSlot3_Patch
+    {
+        private static ObjectEventArgs objectEventArgs;
+
+        [HarmonyPrefix]
+        public static void Prefix(ObjectPickupC __instance)
+        {
+            objectEventArgs = new ObjectEventArgs();
+
+            HarmonyManager.SetArgumentsFromScript(ref objectEventArgs, __instance);
+
+            objectEventArgs.movedFrom = __instance.transform.parent;
+        }
+
+        [HarmonyPostfix]
+        public static void PostFix(ObjectPickupC __instance)
+        {
+            objectEventArgs.movedTo = GameObject.FindObjectOfType<DragRigidbodyC>().holdingParent3;
+
+            EventsManager.Instance.OnHeldObjectPositionChange(objectEventArgs);
         }
     }
 
@@ -592,6 +721,8 @@ namespace JaLoader
         [HarmonyPostfix]
         public static void Postfix()
         {
+            Console.Log("test:");
+
             foreach(GameObject car in GameObject.FindGameObjectsWithTag("AICar"))
             {
                 var transform = car.transform;

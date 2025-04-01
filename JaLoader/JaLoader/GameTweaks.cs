@@ -125,6 +125,8 @@ namespace JaLoader
 
         private void OnRouteGenerated(string startLocation, string endLocation, int distance)
         {
+            FixBorderFlags();
+
             if (settingsManager.FixLaikaShopMusic)
                 Invoke("FixLaikaDealershipSong", 5);
 

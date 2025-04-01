@@ -332,7 +332,7 @@ namespace JaLoader
                     }
 
                     if(tex == null)
-                        tex = PartIconManager.Instance.GetTexture(objName);
+                        tex = PartIconManager.Instance.GetTexture($"{identif.ModID}_{objName}");
 
                     AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName, isPaintjob);
                 }

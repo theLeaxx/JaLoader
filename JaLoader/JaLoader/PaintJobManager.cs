@@ -49,7 +49,7 @@ namespace JaLoader
                 Console.LogDebug($"Loaded paintjob: {paintJob.Name}");
             }
 
-            Console.Log($"Loaded {PaintJobs.Count} paintjobs!");
+            Console.Log("JaLoader", $"Loaded {PaintJobs.Count} paintjobs!");
 
             emptyPaintjobMaterial = CreateEmptyMaterial();
         }
