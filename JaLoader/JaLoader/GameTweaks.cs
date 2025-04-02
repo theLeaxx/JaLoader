@@ -44,7 +44,6 @@ namespace JaLoader
         private VfAnimCursor cursorToChange;
 
         public bool isDialogueActive = false;
-
         private void OnSleep()
         {
             ResetBeds();
@@ -387,11 +386,6 @@ namespace JaLoader
             mats[1] = OffsetFlagsMaterial(mats[1], country);
 
             return mats;
-        }
-
-        private void Update()
-        {
-            
         }
     }
 

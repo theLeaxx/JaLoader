@@ -74,16 +74,14 @@ namespace JaLoader
         public event MiscEvents OnModsInitialized;
 
         public event ObjectEvents OnObjectPickedUp;
-        public event ObjectEvents OnObjectPlaced;
+        //public event ObjectEvents OnObjectPlaced; later update
         public event ObjectEvents OnHeldObjectPositionChanged;
         public event ObjectEvents OnObjectDropped;
         #endregion
 
         private void Update()
         {
-            //CatalogueBuyButtonC
-
-            //ShopC      
+             
         }
 
         public void OnUILoadFinish()
@@ -101,14 +99,16 @@ namespace JaLoader
             OnObjectPickedUp?.Invoke(args);
         }
 
-        public void OnObjectPlace(ObjectEventArgs args)
-        {
-            OnObjectPlaced?.Invoke(args);
-        }
+        //public void OnObjectPlace(ObjectEventArgs args)
+        //{
+            //OnObjectPlaced?.Invoke(args);
+        //}
 
         public void OnObjectDrop(ObjectEventArgs args)
         {
             OnObjectDropped?.Invoke(args);
+
+            Console.Log(args.gameObjectName);
         }
 
         public void OnHeldObjectPositionChange(ObjectEventArgs args)
@@ -430,7 +430,7 @@ namespace JaLoader
     public struct ObjectEventArgs
     {
         public GameObject gameObject;
-        public string objectName;
+        public string gameObjectName;
         public string objectID;
         public float objectValue;
         public bool isEngineComponent;

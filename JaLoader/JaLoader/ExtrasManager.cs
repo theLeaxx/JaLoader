@@ -410,6 +410,46 @@ namespace JaLoader
             SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().CurrentlyInstalledPart = SpawnedExtras[ID].Item2;
         }
 
+        /*public void Uninstall(int ID)
+        {
+            if (SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed == false)
+                return;
+
+            var extraObj = SpawnedExtras[ID].Item1;
+            extraObj.transform.Find("Mesh").gameObject.SetActive(false);
+            var clone = extraObj.transform.Find("MeshReceiverClone");
+            var newReceiver = Instantiate(clone, clone.transform.parent);
+            Destroy(clone.transform.parent.Find("MeshReceiver").gameObject);
+            newReceiver.name = "MeshReceiver";
+
+            newReceiver.position = clone.position;
+            newReceiver.rotation = clone.rotation;
+            newReceiver.localScale = clone.localScale;
+
+            List<GameObject> children = new List<GameObject>();
+
+            foreach (Transform child in newReceiver.transform)
+                children.Add(child.gameObject);
+
+            newReceiver.gameObject.SetActive(true);
+
+            newReceiver.transform.parent.GetComponent<ExtraReceiverC>().glowMesh = children.ToArray();
+            newReceiver.transform.parent.GetComponent<ExtraReceiverC>().stopGlow = false;
+            newReceiver.transform.parent.GetComponent<HolderInformation>().Installed = false;
+            newReceiver.transform.parent.GetComponent<HolderInformation>().CurrentlyInstalledPart = "";
+
+            FindObjectOfType<CarPerformanceC>().carExtrasWeight -= extraObj.GetComponent<HolderInformation>().Weight;
+            FindObjectOfType<CarPerformanceC>().totalCarWeight -= extraObj.GetComponent<HolderInformation>().Weight;
+
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().Action();
+
+            SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
+            SpawnedExtras[ID].Item1.transform.GetChild(2).gameObject.SetActive(false);
+            SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed = true;
+            SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().CurrentlyInstalledPart = SpawnedExtras[ID].Item2;
+            SpawnedExtras[ID].Item1.transform.Find(SpawnedExtras[ID].Item1.name).gameObject.SetActive(false);
+        }*/
+
         public Dictionary<string, bool> GetBlockedBy(int ID)
         {
             var toReturn = new Dictionary<string, bool>();

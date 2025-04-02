@@ -45,7 +45,7 @@ namespace JaLoader
         public static void SetArgumentsFromScript(ref ObjectEventArgs args, ObjectPickupC script)
         {
             args.gameObject = script.gameObject;
-            args.objectName = script.supplyName;
+            args.gameObjectName = script.gameObject.name;
             args.pickupScript = script;
             args.objectValue = script.sellValue;
             args.isEngineComponent = script.gameObject.GetComponent<EngineComponentC>() != null;
@@ -721,9 +721,23 @@ namespace JaLoader
         [HarmonyPostfix]
         public static void Postfix()
         {
-            Console.Log("test:");
-
             foreach(GameObject car in GameObject.FindGameObjectsWithTag("AICar"))
+            {
+                var transform = car.transform;
+
+                // if localEulerAngles.z > 60, then the car is most likely flipped, so rotate it to 0
+                if (transform.localEulerAngles.z > 60)
+                    transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, transform.localEulerAngles.y, 0);
+            }
+
+            CoroutineManager.StartStaticCoroutine(CheckCarsAfter10Seconds());
+        }
+
+        public static IEnumerator CheckCarsAfter10Seconds()
+        {
+            yield return new WaitForSeconds(10);
+
+            foreach (GameObject car in GameObject.FindGameObjectsWithTag("AICar"))
             {
                 var transform = car.transform;
 
