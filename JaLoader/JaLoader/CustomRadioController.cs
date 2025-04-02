@@ -49,7 +49,6 @@ namespace JaLoader
 
         private readonly string folderPath = $@"{Application.dataPath}\..\Songs";
         public List<AudioClip> loadedSongs = new List<AudioClip>();
-        private int currentIndex = 0;
 
         void Update()
         {

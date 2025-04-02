@@ -38,6 +38,7 @@ namespace JaLoader
         public delegate void GameEvents();
         public delegate void LogEvents(string message, string stack);
         public delegate void TravelEvents(string startLocation, string endLocation, int distance);
+        public delegate void ObjectEvents(ObjectEventArgs args);
 
         public event GameEvents OnMenuLoad;
         public event GameEvents OnLoadStart;
@@ -71,13 +72,16 @@ namespace JaLoader
         public event MiscEvents OnCustomObjectsSaved;
         public event MiscEvents OnMenuFadeOut;
         public event MiscEvents OnModsInitialized;
+
+        public event ObjectEvents OnObjectPickedUp;
+        //public event ObjectEvents OnObjectPlaced; later update
+        public event ObjectEvents OnHeldObjectPositionChanged;
+        public event ObjectEvents OnObjectDropped;
         #endregion
 
         private void Update()
         {
-            //CatalogueBuyButtonC
-
-            //ShopC      
+             
         }
 
         public void OnUILoadFinish()
@@ -88,6 +92,28 @@ namespace JaLoader
         public void OnModsInit()
         {
             OnModsInitialized?.Invoke();
+        }
+
+        public void OnObjectPickup(ObjectEventArgs args)
+        {
+            OnObjectPickedUp?.Invoke(args);
+        }
+
+        //public void OnObjectPlace(ObjectEventArgs args)
+        //{
+            //OnObjectPlaced?.Invoke(args);
+        //}
+
+        public void OnObjectDrop(ObjectEventArgs args)
+        {
+            OnObjectDropped?.Invoke(args);
+
+            Console.Log(args.gameObjectName);
+        }
+
+        public void OnHeldObjectPositionChange(ObjectEventArgs args)
+        {
+            OnHeldObjectPositionChanged?.Invoke(args);
         }
 
         public void OnSleepTrigger()
@@ -235,6 +261,9 @@ namespace JaLoader
 
                 if(method != null)
                 {
+                    if (typeName.Contains("UnityEngine"))
+                        return;
+
                     Console.LogError($"Mod {typeName} had an error related to route generation, in method {method.Name}. Route generation may be broken!");
                     Console.LogError($"Please report this to the mod author.");
                 }
@@ -395,7 +424,18 @@ namespace JaLoader
         public void Slept()
         {
             EventsManager.Instance.OnSleepTrigger();
-            Console.Log("Slept");
         }
+    }
+
+    public struct ObjectEventArgs
+    {
+        public GameObject gameObject;
+        public string gameObjectName;
+        public string objectID;
+        public float objectValue;
+        public bool isEngineComponent;
+        public ObjectPickupC pickupScript;
+        public Transform movedFrom;
+        public Transform movedTo;
     }
 }

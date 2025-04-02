@@ -111,7 +111,7 @@ namespace JaLoader
             m_TargetCameraState.SetFromTransform(cameraObj.transform);
         }
 
-        private void TeleportPlayerToCam()
+        public void TeleportPlayerToCam()
         {
             GameObject.Find("First Person Controller").transform.position = cameraObj.transform.position;
         }
@@ -298,7 +298,7 @@ namespace JaLoader
 
         void Update()
         {
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.C))
+            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.C) && SettingsManager.Instance.DebugMode)
             {
                 if (SceneManager.GetActiveScene().buildIndex == 3 && firstTimeOpening)
                 {
@@ -336,7 +336,7 @@ namespace JaLoader
                 return;
             }
 
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.P) && canUsePPCamera)
+            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.P) && canUsePPCamera && SettingsManager.Instance.DebugMode)
             {
                 postCamera = !postCamera;
                 cameraObj.transform.GetChild(1).gameObject.SetActive(!postCamera);
@@ -353,7 +353,7 @@ namespace JaLoader
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.F7))
+            if (Input.GetKeyDown(KeyCode.F7) && SettingsManager.Instance.DebugMode)
             {
                 if (SceneManager.GetActiveScene().buildIndex == 3)
                 {

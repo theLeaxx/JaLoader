@@ -33,7 +33,7 @@ namespace JaLoader
 
         [SerializeField] private Settings _settings = new Settings();
 
-        public const string JaLoaderVersion = "4.0.0";
+        public const string JaLoaderVersion = "4.0.2";
         public static readonly bool IsPreReleaseVersion = false;
         public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
         public string ModFolderLocation { get; private set; }

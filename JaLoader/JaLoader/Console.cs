@@ -582,6 +582,20 @@ namespace JaLoader
                         SpawnGasCan();
                         break;
 
+                    case "freecam":
+                        FindObjectOfType<DebugCamera>().Toggle();
+                        break;
+
+                    case "tofreecam":
+                        if (SceneManager.GetActiveScene().buildIndex != 3)
+                        {
+                            LogError("/", "This command only works in-game!");
+                            break;
+                        }
+                        FindObjectOfType<DebugCamera>().TeleportPlayerToCam();
+                        Log("/", "Teleported player to freecam");
+                        break;
+
                     case "repairall":
                         if (SceneManager.GetActiveScene().buildIndex != 3)
                         {
@@ -785,12 +799,19 @@ namespace JaLoader
             LogMessage("'repairall' - Restores every installed part to full condition");
             LogMessage("/", "'laika' - Teleports the Laika in front of you");
             LogMessage("/", "'tolaika' - Teleports you to the Laika");
+            LogMessage("Debug commands", "");
+            LogMessage("/", "`freecam` - Toggles freecam");
+            LogMessage("/", "`tofreecam` - Teleports the player to the freecam's position");
 
             LogMessage("Mods commands", "");
             foreach ((string, string, string) pair in customCommands.Keys)
             {
                 LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
             }
+
+            float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
+
+            UpdateConsole(_value);
         }
 
         private void SpawnRepairKit()
