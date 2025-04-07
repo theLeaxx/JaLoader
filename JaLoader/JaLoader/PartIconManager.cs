@@ -39,6 +39,10 @@ namespace JaLoader
 
         private bool cachedItems = false;
 
+        public Texture2D DefaultExtraTexture;
+
+        public Dictionary<string, Texture2D> extrasCustomIcons = new Dictionary<string, Texture2D>();
+
         private void Start()
         {
             var go = Instantiate(new GameObject());
@@ -66,6 +70,16 @@ namespace JaLoader
         }
         private void OnLoadStart()
         {
+            if(DefaultExtraTexture == null)
+            {
+                byte[] bytes = File.ReadAllBytes(Path.Combine(SettingsManager.Instance.ModFolderLocation, @"Required\defaultExtraTexture.png"));
+
+                Texture2D texture = new Texture2D(128, 128, TextureFormat.ARGB32, false);
+                texture.LoadImage(bytes);
+
+                DefaultExtraTexture = texture;
+            }
+
             if(cachedItems)
                 return;
 
@@ -164,17 +178,30 @@ namespace JaLoader
             lightComponent.enabled = false;
         }
 
+        public void SetExtraToUseDefaultIcon(string registryName)
+        {
+            extrasCustomIcons.Add(registryName, null);
+        }
+
+        public void AddExtraCustomIcon(string registryName, Texture2D texture)
+        {
+            extrasCustomIcons.Add(registryName, texture);
+        }
+
         public Texture2D GetTexture(string name)
         {
             if (File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png") == false)
             {
+                if (extrasCustomIcons.ContainsKey(name.Split('_')[1]))
+                {
+                    if (extrasCustomIcons[name.Split('_')[1]] == null)
+                        return DefaultExtraTexture;
+
+                    return extrasCustomIcons[name.Split('_')[1]];
+                }
+
                 Console.LogError($"Texture {name} does not exist!");
-
-                Texture2D defaulTexture = new Texture2D(1, 1);
-                defaulTexture.SetPixel(0, 0, Color.white);
-                defaulTexture.Apply();
-
-                return defaulTexture;
+                return DefaultExtraTexture;
             }
 
             byte[] bytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png");

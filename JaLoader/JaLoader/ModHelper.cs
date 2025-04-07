@@ -543,11 +543,6 @@ namespace JaLoader
                     obj.AddComponent<ExtraInformation>();
                     break;
 
-                case PartTypes.CustomExtra:
-                    Console.LogError("Custom Extras are not supported yet!");
-                    Console.LogError("Custom extras do not have engine logic! Please use the 'CreateCustomExtraObject' method instead!");
-                    break;
-
                 case PartTypes.Custom:
                     ob.engineString = "";
                     ob.isEngineComponent = false;
@@ -584,6 +579,134 @@ namespace JaLoader
 
             DontDestroyOnLoad(duplicate);
             PartIconManager.Instance.extraParts.Add(registryName, duplicate);
+        }
+
+        public void SetExtraToUseDefaultIcon(string registryName)
+        {
+            if (CustomObjectsManager.Instance.ignoreAlreadyExists)
+                return;
+
+            PartIconManager.Instance.SetExtraToUseDefaultIcon(registryName);
+        }
+
+        public void SetExtraToUseCustomIcon(string registryName, Texture2D texture)
+        {
+            if (CustomObjectsManager.Instance.ignoreAlreadyExists)
+                return;
+
+            PartIconManager.Instance.AddExtraCustomIcon(registryName, texture);
+        }
+
+        public GameObject CreateCustomExtraObject(BoxSizes size, string name, string description, int price, int weight, string registryName, AttachExtraTo attachTo, Mod mod)
+        {
+            return CreateCustomExtraObject(size, name, description, price, weight, registryName, attachTo, mod, null);
+        }
+
+        public GameObject CreateCustomExtraObject(BoxSizes size, string name, string description, int price, int weight, string registryName, AttachExtraTo attachTo, Mod mod, Dictionary<string, bool> blockedBy = null)
+        {
+            blockedBy = blockedBy ?? new Dictionary<string, bool>();
+
+            if (ExtrasManager.Instance.ExtraExists(registryName))
+            {
+                if (!CustomObjectsManager.Instance.ignoreAlreadyExists)
+                    Console.LogError($"An extra with the registry name {registryName} already exists!");
+                return null;
+            }
+
+            var objOnCar = new GameObject();
+            objOnCar.AddComponent<ObjectIdentification>();
+
+            var identif = objOnCar.GetComponent<ObjectIdentification>();
+            var modID = mod.ModID;
+            var author = mod.ModAuthor;
+            var modName = mod.ModName;
+
+            identif.ModID = modID;
+            identif.Author = author;
+            identif.ModName = modName;
+
+            var extraHolder = Instantiate(new GameObject());
+            extraHolder.name = $"Extra_{name}_{identif.ModID}_{identif.Author}";
+            extraHolder.SetActive(false);
+            extraHolder.tag = "Interactor";
+            extraHolder.transform.position = new Vector3(0, -3, 0);
+            extraHolder.AddComponent<BoxCollider>();
+            extraHolder.GetComponent<BoxCollider>().isTrigger = true;
+            extraHolder.AddComponent<BoxCollider>().enabled = false;
+            var receiver = extraHolder.AddComponent<ExtraReceiverC>();
+            var info = extraHolder.AddComponent<HolderInformation>();
+            info.Weight = weight;
+
+            objOnCar.transform.SetParent(extraHolder.transform, false);
+            objOnCar.name = "Mesh";
+            objOnCar.SetActive(false);
+
+            var meshesHolder = Instantiate(new GameObject());
+            meshesHolder.name = "MeshReceiver";
+            meshesHolder.transform.SetParent(extraHolder.transform, true);
+            meshesHolder.transform.localPosition = Vector3.zero;
+
+            var emptyGO = new GameObject();
+            emptyGO.AddComponent<MeshRenderer>();
+            var material = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"));
+            emptyGO.GetComponent<MeshRenderer>().material = GetGlowMaterial(material);
+            DontDestroyOnLoad(emptyGO);
+
+            var array = new GameObject[]
+            {
+                emptyGO
+            };
+            receiver.glowMesh = array;
+            receiver.extraComponent = objOnCar;
+
+            var colliderObj = new GameObject();
+            colliderObj.name = extraHolder.name;
+            colliderObj.transform.SetParent(extraHolder.transform, false);
+            colliderObj.transform.localPosition = Vector3.zero;
+            var collider = colliderObj.AddComponent<BoxCollider>();
+            collider.isTrigger = true;
+            collider.center = new Vector3(1, 0, 0);
+            collider.size = new Vector3(15, 5, 7);
+            collider.tag = "Interactor";
+            var interactions = colliderObj.AddComponent<ObjectInteractionsC>();
+            interactions.targetObjectStringName = extraHolder.name;
+            interactions.handInteractive = false;
+            colliderObj.SetActive(false);
+
+            var copy = Instantiate(meshesHolder, meshesHolder.transform.parent);
+            copy.name = "MeshReceiverClone";
+            copy.SetActive(false);
+            copy.transform.position = meshesHolder.transform.position;
+            copy.transform.rotation = meshesHolder.transform.rotation;
+            copy.transform.localScale = meshesHolder.transform.localScale;
+
+            DontDestroyOnLoad(extraHolder);
+            ExtrasManager.Instance.AddExtraObject(extraHolder, extraHolder.transform.localPosition, registryName, attachTo, blockedBy);
+            ExtrasManager.Instance.AddModExtra(registryName, ExtrasManager.Instance.GetExtraIDByRegistryName(registryName), mod);
+
+            var boxObject = Instantiate(new GameObject());
+            boxObject.name = extraHolder.name;
+            boxObject.SetActive(false);
+            var boxIdentif = boxObject.AddComponent<ObjectIdentification>();
+            boxIdentif.ModID = modID;
+            boxIdentif.Author = author;
+            boxIdentif.ModName = modName;
+            boxIdentif.IsExtra = true;
+            boxIdentif.BoxSize = size;
+            boxIdentif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
+            identif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
+
+            AddBoxLogic(boxObject, name, description, price, ConvertToPositive(weight));
+            AddEnginePartLogic(boxObject, PartTypes.Extra, 3, true, false);
+
+            DontDestroyOnLoad(boxObject);
+            boxesToCreateInGame.Add((boxObject, name, description, price, ConvertToPositive(weight)));
+
+            return boxObject;
+        }
+        public static int ConvertToPositive(int i)
+        {
+            return (i + (i >> 31)) ^ (i >> 31);
         }
 
         /// <summary>
@@ -624,7 +747,7 @@ namespace JaLoader
             {
                 if (!CustomObjectsManager.Instance.ignoreAlreadyExists)
                 {
-                    Console.LogError($"An extra with the registry name {registryName} already exFists!");
+                    Console.LogError($"An extra with the registry name {registryName} already exists!");
                 }
                 else
                 {

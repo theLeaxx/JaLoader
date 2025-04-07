@@ -9,7 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.SceneManagement; 
 using UnityEngine.UI;
 
 namespace JaLoader
@@ -39,9 +39,7 @@ namespace JaLoader
         private Dictionary<string, string> valuesAfterLoad = new Dictionary<string, string>();
 
         public virtual void EventsDeclaration() { }
-
         public virtual void SettingsDeclaration() { }
-
         public virtual void CustomObjectsRegistration() { }
 
         public virtual void Update() { }
@@ -57,6 +55,7 @@ namespace JaLoader
         public virtual void OnSettingsReset() { }
         public virtual void OnSettingsLoaded() { }
 
+        public virtual void OnExtraAttached(string extraName) {}
 
         /// <summary>
         /// (Deprecated, use LoadAsset<![CDATA[<T>]]>())
@@ -607,7 +606,7 @@ namespace JaLoader
                 {
                     if (valuesAfterLoad[ID] != values[ID])
                     {
-                        Console.Log(ModID, $"Setting {ID} has changed!");
+                        Console.LogDebug(ModID, $"Setting {ID} has changed!");
                         OnSettingValueChanged(ID);
 
                         valuesAfterLoad[ID] = values[ID];
