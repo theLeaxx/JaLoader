@@ -247,7 +247,7 @@ namespace JaLoader
             yield return null;
         }
 
-        private void AddEntry(PartTypes partType, string title, string description, Texture2D image, string price, string registryName, bool isPaintjob = false)
+        private void AddEntry(PartTypes partType, string title, string description, Texture2D image, string price, string registryName, bool useSquareImage = false)
         {
             var entry = Instantiate(UIManager.Instance.catalogueEntryTemplate, scrollViews[partType].transform.Find("Viewport/Content")).gameObject;
             entry.transform.GetChild(0).GetComponent<Text>().text = title;
@@ -257,7 +257,7 @@ namespace JaLoader
             entry.transform.GetChild(2).GetComponent<ModsPageItem>().itemName = registryName;
             entry.SetActive(true);
 
-            if(isPaintjob == true)
+            if(useSquareImage == true)
                 entry.transform.GetChild(2).GetComponent<RectTransform>().sizeDelta = new Vector2(75, 75);
 
             StartCoroutine(RefreshPage(partType));
@@ -319,7 +319,7 @@ namespace JaLoader
                         continue;
 
                     Texture2D tex = null;
-                    bool isPaintjob = false;
+                    bool useSquareImage = false;
                     if (type == PartTypes.Extra)
                     {
                         var comp = obj.GetComponent<ExtraComponentC_ModExtension>();
@@ -327,14 +327,17 @@ namespace JaLoader
                         {
                             var pj = PaintJobManager.Instance.GetPaintJobByMaterial(comp.material);
                             tex = pj.PreviewIcon;
-                            isPaintjob = true;
+                            useSquareImage = true;
                         }
                     }
 
                     if(tex == null)
                         tex = PartIconManager.Instance.GetTexture($"{identif.ModID}_{objName}");
 
-                    AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName, isPaintjob);
+                    if((tex.width == tex.height) && tex.width == 128)
+                        useSquareImage = true;
+
+                    AddEntry(type, objInfo.objName, objInfo.objDescription, tex, obj.GetComponent<ObjectPickupC>().buyValue.ToString(), objName, useSquareImage);
                 }
             }
 

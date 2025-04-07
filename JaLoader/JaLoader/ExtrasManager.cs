@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -399,15 +400,17 @@ namespace JaLoader
             {
                 FindObjectOfType<CarPerformanceC>().carExtrasWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;
                 FindObjectOfType<CarPerformanceC>().totalCarWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;
-
             }
+
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().CollisionsOff();
-
             SpawnedExtras[ID].Item1.transform.GetChild(2).gameObject.SetActive(false);
-
             SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed = true;
 
             SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().CurrentlyInstalledPart = SpawnedExtras[ID].Item2;
+
+            var objIdentif = SpawnedExtras[ID].Item1.transform.Find("Mesh").GetComponent<ObjectIdentification>();
+            Mod mod = (Mod)ModLoader.Instance.FindMod(objIdentif.Author, objIdentif.ModID, objIdentif.ModName);
+            mod.OnExtraAttached(SpawnedExtras[ID].Item2);
         }
 
         /*public void Uninstall(int ID)
@@ -515,6 +518,17 @@ namespace JaLoader
                 foreach (Transform child in newReceiver.transform)
                     children.Add(child.gameObject);
 
+                if (children.Count == 0)
+                {
+                    var emptyGO = new GameObject();
+                    emptyGO.AddComponent<MeshRenderer>();
+                    var material = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"));
+                    emptyGO.GetComponent<MeshRenderer>().material = ModHelper.Instance.GetGlowMaterial(material);
+                    DontDestroyOnLoad(emptyGO);
+
+                    children.Add(emptyGO);
+                }
+
                 newReceiver.gameObject.SetActive(true);
 
                 newReceiver.transform.parent.GetComponent<ExtraReceiverC>().glowMesh = children.ToArray();
@@ -564,7 +578,7 @@ namespace JaLoader
 
                 if (SceneManager.GetActiveScene().buildIndex == 1)
                 {
-                    ModHelper.RemoveAllComponents(spawnedHolder.transform.GetChild(0).gameObject, typeof(MeshFilter), typeof(MeshRenderer));
+                    ModHelper.RemoveAllComponents(spawnedHolder.transform.GetChild(0).gameObject, typeof(MeshFilter), typeof(MeshRenderer), typeof(ObjectIdentification));
                 }
 
                 spawnedHolder.SetActive(true);
