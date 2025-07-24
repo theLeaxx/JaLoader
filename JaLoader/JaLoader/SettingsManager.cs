@@ -5,6 +5,7 @@ using Microsoft.Win32;
 using System;
 using BepInEx;
 using JaLoader.BepInExWrapper;
+using System.Reflection;
 
 namespace JaLoader
 {
@@ -15,6 +16,8 @@ namespace JaLoader
             ReadSettings();
             SetVersionRegistryKey();
             GetUpdateCheckRegistryKey();
+
+            CompareAssemblyVersion();
         }
 
         [SerializeField] private static Settings _settings = new Settings();
@@ -62,6 +65,20 @@ namespace JaLoader
         public static bool selectedLanguage;
 
         public static List<string> DisabledMods = new List<string>();
+
+        internal static void CompareAssemblyVersion()
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            Version version = assembly.GetName().Version;
+
+            string dllVersion = $"{version.Major}.{version.Minor}.{version.Build}";
+
+            if (version.ToString() != JaLoaderVersion)
+            {
+                Debug.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {version}");
+                Console.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {version}");
+            }
+        }
 
         public static int GetLatestUpdateVersion(string URL, int version)
         {

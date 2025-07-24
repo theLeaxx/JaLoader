@@ -2,33 +2,39 @@
 using Timer = System.Timers.Timer;
 using Microsoft.Win32;
 
-// this will only work with releases 1.1.0 and above, as the zip file contents have been rearranged
+var currentDir = Directory.GetCurrentDirectory();
+var file = "https://github.com/theLeaxx/JaLoader/releases/latest/download/JaPatcher.zip";
+var extractLocation = "";
+
+if (args.Length == 0)
+{
+    Console.WriteLine("Running this program will download JaPatcher and extract it to a directory here. Continue? (Y/N)");
+    var input = Console.ReadLine();
+    if (input == null || input.ToLower() != "y")
+    {
+        Console.WriteLine("Exiting...");
+        Environment.Exit(0);
+        return;
+    }
+
+    var dir = Directory.CreateDirectory($@"{currentDir}\JaPatcher");
+    DownloadFile(file, dir.FullName);
+
+    Console.WriteLine("JaPatcher downloaded successfully! You can now run JaPatcher.exe in the zip file inside the JaPatcher folder to install JaLoader.");
+
+    return;
+}
+    // this will only work with releases 1.1.0 and above, as the zip file contents have been rearranged
 Console.WriteLine("Downloading update...");
 if (args.Length == 2)
 {
-    var file = "https://github.com/theLeaxx/JaLoader/releases/latest/download/JaPatcher.zip";
-    var currentDir = Directory.GetCurrentDirectory();
     var filesPath = $@"{currentDir}\Files";
 
-    var extractLocation = "";
     if (args[0].Contains("\"")) extractLocation = args[0].Replace("\"", "");
     else extractLocation = args[0];
     var type = args[1];
 
-    using var client = new HttpClient();
-    using var s = client.GetStreamAsync(file);
-    using var fs = new FileStream($@"{currentDir}\JaPatcher.zip", FileMode.OpenOrCreate);
-    
-    if (s.IsCanceled || s.IsFaulted)
-    {
-        Console.WriteLine("Failed to download update! Are you connected to the internet?");
-        return;
-    }
-
-    s.Result.CopyTo(fs);
-    fs.Dispose();
-    s.Dispose();
-    client.Dispose();
+    DownloadFile(file, currentDir);
 
     Console.WriteLine("Update downloaded successfully!");
 
@@ -70,7 +76,6 @@ if (args.Length == 2)
 #pragma warning restore CA1416
 #pragma warning restore CS8602
 #pragma warning restore CS8600
-
 
     switch (type)
     {
@@ -174,4 +179,22 @@ timer.Elapsed += (s, e) =>
 };
 
 Console.ReadLine();
+
+void DownloadFile(string url, string destination)
+{
+    using var client = new HttpClient();
+    using var s = client.GetStreamAsync(file);
+    using var fs = new FileStream($@"{destination}\JaPatcher.zip", FileMode.OpenOrCreate);
+
+    if (s.IsCanceled || s.IsFaulted)
+    {
+        Console.WriteLine("Failed to download update! Are you connected to the internet?");
+        return;
+    }
+
+    s.Result.CopyTo(fs);
+    fs.Dispose();
+    s.Dispose();
+    client.Dispose();
+}
 
