@@ -32,7 +32,7 @@ namespace JaLoader
             if (!Directory.Exists(folderPath))
                 Directory.CreateDirectory(folderPath);
 
-            if (SettingsManager.Instance.UseCustomSongs)
+            if (SettingsManager.UseCustomSongs)
                 WarnAboutBadFormats();
 
             EventsManager.Instance.OnGameLoad += OnGameLoad;
@@ -52,7 +52,7 @@ namespace JaLoader
 
         void Update()
         {
-            if(SettingsManager.Instance.DebugMode)
+            if(SettingsManager.DebugMode)
                 if (Input.GetKeyDown(KeyCode.F6))
                     FindObjectOfType<RadioFreqLogicC>().NextSong();
         }
@@ -85,27 +85,39 @@ namespace JaLoader
             {
                 UnityEngine.Debug.Log($"Loading song {file.Name}!");
 
-                var mpegFile = new MpegFile(file.FullName);
-
-                AudioClip clip = AudioClip.Create(System.IO.Path.GetFileNameWithoutExtension(file.FullName),
-                                    (int)(mpegFile.Length / sizeof(float) / mpegFile.Channels),
-                                    mpegFile.Channels,
-                                    44100,
-                                    true,
-                                    data => { int actualReadCount = mpegFile.ReadSamples(data, 0, data.Length); },
-                                    position => { mpegFile = new MpegFile(file.FullName); });
-
-
-                if (clip.frequency != 44100)
+                try
                 {
-                    Console.LogError($"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
+                    var mpegFile = new MpegFile(file.FullName);
+
+                    AudioClip clip = AudioClip.Create(Path.GetFileNameWithoutExtension(file.FullName),
+                                        (int)(mpegFile.Length / sizeof(float) / mpegFile.Channels),
+                                        mpegFile.Channels,
+                                        44100,
+                                        true,
+                                        data => { int actualReadCount = mpegFile.ReadSamples(data, 0, data.Length); },
+                                        position => { mpegFile = new MpegFile(file.FullName); });
+
+                    if (clip.frequency != 44100)
+                    {
+                        Console.LogError($"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
+
+                        continue;
+                    }
+
+                    clip.name = file.Name;
+
+                    loadedSongs.Add(clip);
+                }
+                catch (Exception ex)
+                {
+                    Console.LogError($"Failed to load song '{file.Name}'! A common cause is the song being too long.");
+                    Console.LogError(ex);
+
+                    UnityEngine.Debug.LogError($"Failed to load song {file.Name}!");
+                    UnityEngine.Debug.LogError(ex.Message);
 
                     continue;
                 }
-
-                clip.name = file.Name;
-
-                loadedSongs.Add(clip);
 
                 UnityEngine.Debug.Log($"Loaded song {file.Name}!");
             }
@@ -123,9 +135,12 @@ namespace JaLoader
             AddSongsToRadio();
         }
 
+        [Obsolete]
         private void OnMenuLoad()
         {
             StartCoroutine(AddSongsToRadioWithDelay());
+
+            Console.Log("JaLoader", $"{loadedSongs.Count} custom songs loaded!");
         }
 
         private void AddSongsToRadio()
@@ -137,7 +152,7 @@ namespace JaLoader
 
             radio.enabled = false;
 
-            if (SettingsManager.Instance.CustomSongsBehaviour == CustomSongsBehaviour.Add)
+            if (SettingsManager.CustomSongsBehaviour == CustomSongsBehaviour.Add)
             {
                 var songListings = radio.songListings.ToList();
 

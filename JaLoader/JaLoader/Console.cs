@@ -45,8 +45,6 @@ namespace JaLoader
                 Instance = this;
             }
 
-            settingsManager = SettingsManager.Instance;
-            uiManager = UIManager.Instance;
             Application.logMessageReceived += HandleLog;
         }
 
@@ -81,7 +79,7 @@ namespace JaLoader
         #endregion
 
         private InputField inputField;
-        private SettingsManager settingsManager;
+        
         private UIManager uiManager;
         private RectTransform consoleRectTransform;
 
@@ -105,10 +103,12 @@ namespace JaLoader
         
         public void Init()
         {
+            uiManager = UIManager.Instance;
+
             inputField = uiManager.modConsole.transform.GetChild(2).GetComponent<InputField>();
             consoleRectTransform = uiManager.modConsole.GetComponent<RectTransform>();
 
-            SetPosition(settingsManager.ConsolePosition);
+            SetPosition(SettingsManager.ConsolePosition);
 
             init = true;
 
@@ -295,7 +295,7 @@ namespace JaLoader
 
         public void ToggleVisibility(bool visible)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled)
+            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
             {
                 uiManager.modConsole.SetActive(false);
                 return;
@@ -337,7 +337,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogMessage(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode != ConsoleModes.Default)
+            if (SettingsManager.ConsoleMode != ConsoleModes.Default)
                 return;
 
             Instance.LogMessage("/", message, "aqua");
@@ -350,7 +350,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogMessage(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode != ConsoleModes.Default)
+            if (SettingsManager.ConsoleMode != ConsoleModes.Default)
                 return;
 
             Instance.LogMessage(sender, message, "aqua");
@@ -445,7 +445,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogWarning(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || SettingsManager.Instance.ConsoleMode == ConsoleModes.Errors)
+            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || SettingsManager.ConsoleMode == ConsoleModes.Errors)
                 return;
 
             Instance.LogMessage(sender, message, "yellow");
@@ -457,7 +457,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogWarning(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || SettingsManager.Instance.ConsoleMode == ConsoleModes.Errors)
+            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || SettingsManager.ConsoleMode == ConsoleModes.Errors)
                 return;
 
             Instance.LogMessage("/", message, "yellow");
@@ -470,7 +470,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogError(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled)
+            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
                 return;
 
             Instance.LogMessage(sender, message, "red");
@@ -482,7 +482,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogError(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled)
+            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
                 return;
 
             Instance.LogMessage("/", message, "red");
@@ -495,7 +495,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogDebug(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.Instance.DebugMode)
+            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.DebugMode)
                 return;
 
             Instance.LogMessage(sender, message, "grey");
@@ -507,7 +507,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogDebug(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.Instance.DebugMode)
+            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.DebugMode)
                 return;
 
             Instance.LogMessage("/", message, "grey");
@@ -864,11 +864,11 @@ namespace JaLoader
 
         private void ToggleDebug()
         {
-            settingsManager.DebugMode = !settingsManager.DebugMode;
-            settingsManager.SaveSettings();
+            SettingsManager.DebugMode = !SettingsManager.DebugMode;
+            SettingsManager.SaveSettings();
             uiManager.SetOptionsValues();
 
-            switch (settingsManager.DebugMode)
+            switch (SettingsManager.DebugMode)
             {
                 case true:
                     LogMessage("/", "Any future debug messages sent from now on will be <i>shown.</i>");
@@ -892,12 +892,12 @@ namespace JaLoader
 
         private void SendPath()
         {
-            LogMessage("/", settingsManager.ModFolderLocation);
+            LogMessage("/", SettingsManager.ModFolderLocation);
         }
 
         private void SendVersion()
         {
-            LogMessage("/", $"a_{settingsManager.GetVersionString()}");
+            LogMessage("/", $"a_{SettingsManager.GetVersionString()}");
         }
 
         private void Clear()

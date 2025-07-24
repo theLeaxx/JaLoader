@@ -40,7 +40,6 @@ namespace JaLoader
 
         #endregion
 
-        private SettingsManager settingsManager;
         private UIManager uiManager;
 
         public int modsNumber;
@@ -63,52 +62,25 @@ namespace JaLoader
         private bool skippedIntro;
         private bool reloadMods;
 
-        public bool IsCrackedVersion { get; private set; }
-
-        Stopwatch stopWatch;
-
         Color32 defaultWhiteColor = new Color32(255, 255, 255, 255);
         Color32 defaultGrayColor = new Color32(120, 120, 120, 255);
 
-        private string[] requiredDLLs = new string[] {
-            "0Harmony.dll",
-            "HarmonyXInterop.dll",
-            "NLayer.dll",
-            "Mono.Cecil.dll",
-            "Mono.Cecil.Mdb.dll",
-            "Mono.Cecil.Pdb.dll",
-            "Mono.Cecil.Rocks.dll",
-            "MonoMod.Backports.dll",
-            "MonoMod.RuntimeDetour.dll",
-            "MonoMod.Utils.dll",
-            "MonoMod.ILHelpers.dll"
-        };
-
         private void Start()
         {
-            DontDestroyOnLoad(gameObject);
-            gameObject.name = "JaLoader";
+            EventsManager.Instance.OnGameLoad += OnGameLoad;
+            EventsManager.Instance.OnGameUnload += OnGameUnload;
+            EventsManager.Instance.OnMenuLoad += OnMenuLoad;
 
-            if(CheckForMissingDLLs() != "None")
-            {   
-                CreateImportantNotice("\n\nOne or more required DLLs were not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the files from JaPatcher's directory/Assets/Managed to Jalopy_Data/Managed");
-                SceneManager.LoadScene("MainMenu");
-                return;
-            }
+            uiManager = UIManager.Instance;
 
-            CheckForCrack();
+            return;
 
             GameObject helperObj = Instantiate(new GameObject());
             helperObj.name = "JaLoader Modding Helpers";
             helperObj.AddComponent<EventsManager>();
 
-            EventsManager.Instance.OnGameLoad += OnGameLoad;
-            EventsManager.Instance.OnGameUnload += OnGameUnload;
-            EventsManager.Instance.OnMenuLoad += OnMenuLoad;
-
             DontDestroyOnLoad(helperObj);
 
-            settingsManager = gameObject.AddComponent<SettingsManager>();
             uiManager = gameObject.AddComponent<UIManager>();
 
             GameObject consoleObj = Instantiate(new GameObject());
@@ -132,34 +104,21 @@ namespace JaLoader
 
             gameObject.AddComponent<DiscordController>();
 
-            stopWatch = gameObject.AddComponent<Stopwatch>();
+            Stopwatch.Instance = gameObject.AddComponent<Stopwatch>();
 
             Debug.Log("JaLoader initialized!");
 
-            if (settingsManager.SkipLanguage && !skippedIntro)
+            if (SettingsManager.SkipLanguage && !skippedIntro)
             {
                 skippedIntro = true;
-                settingsManager.selectedLanguage = true;
+                SettingsManager.selectedLanguage = true;
                 SceneManager.LoadScene("MainMenu");
             }
         }
 
-        private string CheckForMissingDLLs()
-        {
-            var path = $@"{Application.dataPath}\Managed";
-
-            foreach (string dll in requiredDLLs)
-            {
-                if (!File.Exists($@"{path}\{dll}"))
-                    return dll;
-            }
-
-            return "None";
-        }
-
         private void OnGameLoad()
         {
-            if (settingsManager.UseExperimentalCharacterController)
+            if (SettingsManager.UseExperimentalCharacterController)
                 GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
 
             if (!reloadMods)
@@ -215,12 +174,12 @@ namespace JaLoader
 
             if (finishedInitializingPartOneMods && !reloadMods)
             {
-                if (!LoadedDisabledMods && settingsManager.DisabledMods.Count != 0)
+                if (!LoadedDisabledMods && SettingsManager.DisabledMods.Count != 0)
                 {
                     for (int i = 0; i < modsInitInGame.Count; i++)
                     {
                         string reference = $"{modsInitInGame.ToArray()[i].ModAuthor}_{modsInitInGame.ToArray()[i].ModID}_{modsInitInGame.ToArray()[i].ModName}";
-                        if (settingsManager.DisabledMods.Contains(reference))
+                        if (SettingsManager.DisabledMods.Contains(reference))
                         {
                             disabledMods.Add(modsInitInGame.ToArray()[i]);
                         }
@@ -231,7 +190,7 @@ namespace JaLoader
                         if (modsInitInMenuIncludingBIX.ToArray()[i] is Mod mod)
                         {
                             string reference = $"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}";
-                            if (settingsManager.DisabledMods.Contains(reference))
+                            if (SettingsManager.DisabledMods.Contains(reference))
                             {
                                 disabledMods.Add(mod);
                             }
@@ -241,7 +200,7 @@ namespace JaLoader
                             ModInfo modInfo = bix_mod.gameObject.GetComponent<ModInfo>();
 
                             string reference = $"BepInEx_CompatLayer_{modInfo.GUID}";
-                            if (settingsManager.DisabledMods.Contains(reference))
+                            if (SettingsManager.DisabledMods.Contains(reference))
                             {
                                 disabledMods.Add(bix_mod);
                             }
@@ -300,8 +259,6 @@ namespace JaLoader
                     uiManager.modsCountText.text = $"{modsNumber} mods installed";
 
                     Console.Log("JaLoader", message);
-                    if (settingsManager.UseCustomSongs)
-                        Console.Log("JaLoader", $"{CustomRadioController.Instance.loadedSongs.Count} custom songs loaded!");
 
                     foreach (MonoBehaviour monoBehaviour in modsInitInMenuIncludingBIX)
                     {
@@ -445,12 +402,12 @@ namespace JaLoader
                             modsInitInMenuIncludingBIX.Remove(mod);
                     }
 
-                    stopWatch?.StopCounting();
-                    Debug.Log($"Loaded JaLoader mods! ({stopWatch.timePassed}s)");
-                    Debug.Log($"JaLoader successfully loaded! ({stopWatch.totalTimePassed}s)");
+                    Stopwatch.Instance.StopCounting();
+                    Debug.Log($"Loaded JaLoader mods! ({Stopwatch.Instance.timePassed}s)");
+                    Debug.Log($"JaLoader successfully loaded! ({Stopwatch.Instance.totalTimePassed}s)");
                     finishedInitializingPartTwoMods = true;
-                    if(stopWatch != null)
-                        Destroy(stopWatch);
+                    if(Stopwatch.Instance != null)
+                        Destroy(Stopwatch.Instance);
 
                     InitializedInMenuMods = true;
                 }
@@ -507,9 +464,9 @@ namespace JaLoader
 
                     if (dependency.Item1 == "JaLoader" && dependency.Item2 == "Leaxx")
                     {
-                        if(settingsManager.GetVersion() < version)
+                        if(SettingsManager.GetVersion() < version)
                         {
-                            uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires JaLoader version {dependency.Item3} or higher. You are currently using version {settingsManager.GetVersionString()}. The mod may still load, but not function correctly.");
+                            uiManager.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires JaLoader version {dependency.Item3} or higher. You are currently using version {SettingsManager.GetVersionString()}. The mod may still load, but not function correctly.");
 
                             uiManager.AddWarningToMod(modStatusTextRef[mod].transform.parent.parent.parent.Find("WarningIcon").gameObject, $"Requires JaLoader >= {dependency.Item3}!");
                         }
@@ -559,13 +516,13 @@ namespace JaLoader
                 yield return null;
 
             Debug.Log("Initializing JaLoader mods...");
-            gameObject.GetComponent<Stopwatch>()?.StartCounting();
+            Stopwatch.Instance.StartCounting();
 
-            DirectoryInfo d = new DirectoryInfo(settingsManager.ModFolderLocation);
+            DirectoryInfo d = new DirectoryInfo(SettingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
 
             if(certainModFile != "")
-                mods = new FileInfo[] { new FileInfo(Path.Combine(settingsManager.ModFolderLocation, $"{certainModFile}")) };
+                mods = new FileInfo[] { new FileInfo(Path.Combine(SettingsManager.ModFolderLocation, $"{certainModFile}")) };
 
             int validMods = mods.Length;
             bool errorOccured = false;
@@ -685,7 +642,7 @@ namespace JaLoader
                         uiManager.modTemplateObject.name = $"BepInEx_CompatLayer_{ModID}_Mod";
 
                         string bix_modVersionText = ModVersion;
-                        string bix_modName = settingsManager.DebugMode ? $"{ModID} - BepInEx" : ModName;
+                        string bix_modName = SettingsManager.DebugMode ? $"{ModID} - BepInEx" : ModName;
 
                         string pattern = @"^[a-zA-Z]+(\.[a-zA-Z]+)+$";
                         string authorName = "BepInEx";
@@ -795,14 +752,14 @@ namespace JaLoader
 
                     if (mod.UseAssets)
                     {
-                        mod.AssetsPath = $@"{settingsManager.ModFolderLocation}\Assets\{mod.ModID}";
+                        mod.AssetsPath = $@"{SettingsManager.ModFolderLocation}\Assets\{mod.ModID}";
 
                         if (!Directory.Exists(mod.AssetsPath))
                             Directory.CreateDirectory(mod.AssetsPath);
                     }
 
                     string modVersionText = mod.ModVersion;
-                    string modName = settingsManager.DebugMode ? mod.ModID : mod.ModName;
+                    string modName = SettingsManager.DebugMode ? mod.ModID : mod.ModName;
 
                     if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
                     {
@@ -812,7 +769,7 @@ namespace JaLoader
 
                         int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
 
-                        string latestVersion = settingsManager.GetLatestUpdateVersionString(URL, currentVersion);
+                        string latestVersion = SettingsManager.GetLatestUpdateVersionString(URL, currentVersion);
 
                         if (int.Parse(latestVersion.Replace(".", "")) > currentVersion)
                         {
@@ -995,6 +952,7 @@ namespace JaLoader
                 Console.LogMessage("JaLoader", $"No mods found!");
                 Console.Instance.ToggleVisibility(true);
 
+                uiManager.modsCountText.text = "No mods installed";
                 UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
             }
 
@@ -1179,10 +1137,10 @@ namespace JaLoader
                 uiManager.modTemplateObject.name = $"{mod.ModID}_{mod.ModAuthor}_{mod.ModName}_Mod";
 
                 if (mod.UseAssets)
-                    mod.AssetsPath = $@"{settingsManager.ModFolderLocation}\Assets\{mod.ModID}";
+                    mod.AssetsPath = $@"{SettingsManager.ModFolderLocation}\Assets\{mod.ModID}";
 
                 string modVersionText = mod.ModVersion;
-                string modName = settingsManager.DebugMode ? mod.ModID : mod.ModName;
+                string modName = SettingsManager.DebugMode ? mod.ModID : mod.ModName;
 
                 if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
                 {
@@ -1299,11 +1257,11 @@ namespace JaLoader
 
             if (mod.UseAssets)
             {
-                mod.AssetsPath = $@"{settingsManager.ModFolderLocation}\Assets\{mod.ModID}";
+                mod.AssetsPath = $@"{SettingsManager.ModFolderLocation}\Assets\{mod.ModID}";
             }
 
             string modVersionText = mod.ModVersion;
-            string modName = settingsManager.DebugMode ? mod.ModID : mod.ModName;
+            string modName = SettingsManager.DebugMode ? mod.ModID : mod.ModName;
 
             if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
             {
@@ -1404,7 +1362,7 @@ namespace JaLoader
                 }
             }
 
-            settingsManager.SaveSettings();
+            SettingsManager.SaveSettings();
         }
 
         /// <summary>
@@ -1478,85 +1436,6 @@ namespace JaLoader
             }
 
             return inGameMod ?? inMenuMod;
-        }
-
-        private void CheckForCrack()
-        {
-            var mainGameFolder = $@"{Application.dataPath}\..";
-
-            List<string> commonCrackFiles = new List<string>()
-            {
-                "codex64.dll",
-                "steam_api64.cdx",
-                "steamclient64.dll",
-                "steam_emu.ini",
-                "SmartSteamEmu.dll",
-                "SmartSteamEmu64.dll",
-                "Launcher.exe",
-                "Launcher_x64.exe",
-            };
-
-            foreach (var file in commonCrackFiles)
-            {
-                if (File.Exists($@"{mainGameFolder}\{file}") || Directory.Exists($@"{mainGameFolder}\SmartSteamEmu"))
-                {
-                    IsCrackedVersion = true;
-                    break;
-                }
-            }
-        }
-
-        public void CreateImportantNotice(string issue, string possibleFixes)
-        {
-            if (SceneManager.GetActiveScene().buildIndex == 1)
-            {
-                Debug.Log("JaLoader encounted an error!");
-                Debug.Log($"JaLoader: {issue} {possibleFixes}");
-
-                FindObjectOfType<MenuMouseInteractionsC>().enabled = false;
-
-                GameObject notice = Instantiate(GameObject.Find("UI Root").transform.Find("Notice").gameObject);
-                notice.name = "Error";
-                notice.transform.parent = GameObject.Find("UI Root").transform;
-                notice.transform.localPosition = Vector3.zero;
-                notice.transform.position = new Vector3(notice.transform.position.x, notice.transform.position.y - 0.15f, notice.transform.position.z);
-                notice.transform.localRotation = Quaternion.identity;
-                notice.transform.localScale = Vector3.one;
-                notice.SetActive(true);
-
-                notice.transform.GetChild(5).gameObject.SetActive(false);
-                notice.transform.GetChild(1).GetComponent<UITexture>().height = 600;
-                notice.transform.GetChild(1).position = new Vector3(notice.transform.GetChild(1).position.x, notice.transform.GetChild(1).position.y + 0.2f, notice.transform.GetChild(1).position.z);
-                notice.transform.GetChild(0).GetComponent<UILabel>().text = "JaLoader encountered an error!";
-                notice.transform.GetChild(0).GetComponent<UILabel>().ProcessText();
-                notice.transform.GetChild(3).GetComponent<UILabel>().text = "\nWHAT WENT WRONG";
-                notice.transform.GetChild(3).GetComponent<UILabel>().ProcessText();
-                notice.transform.GetChild(2).GetComponent<UILabel>().text = issue;
-                notice.transform.GetChild(2).GetComponent<UILabel>().height = 550;
-                notice.transform.GetChild(2).GetComponent<UILabel>().ProcessText();
-                notice.transform.GetChild(4).GetComponent<UILabel>().text = possibleFixes;
-                notice.transform.GetChild(4).GetComponent<UILabel>().fontSize = 24;
-                notice.transform.GetChild(4).GetComponent<UILabel>().ProcessText();
-                return;
-            }
-
-            StartCoroutine(WaitUntilMenuNotice(issue, possibleFixes));
-        }
-
-        public void StartUpdate()
-        {
-            Process.Start($@"{Application.dataPath}\..\JaUpdater.exe", $"{settingsManager.ModFolderLocation} Jalopy");
-            Process.GetCurrentProcess().Kill();
-        }
-
-        private IEnumerator WaitUntilMenuNotice(string issue, string possibleFixes)
-        {
-            while (SceneManager.GetActiveScene().buildIndex != 1)
-                yield return null;
-
-            CreateImportantNotice(issue, possibleFixes);
-
-            yield return null;
         }
     }
 }

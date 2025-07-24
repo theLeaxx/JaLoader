@@ -183,7 +183,7 @@ namespace JaLoader
 
         private void OnGameLoad()
         {
-            if (SettingsManager.Instance.DebugMode)
+            if (SettingsManager.DebugMode)
                 Camera.main.gameObject.AddComponent<DebugCamera>();
 
             RefreshPartHolders();
@@ -696,16 +696,19 @@ namespace JaLoader
             boxIdentif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
             identif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
 
-            AddBoxLogic(boxObject, name, description, price, ConvertToPositive(weight));
+            AddBoxLogic(boxObject, name, description, price, ConvertToPositiveOrNonNull(weight));
             AddEnginePartLogic(boxObject, PartTypes.Extra, 3, true, false);
 
             DontDestroyOnLoad(boxObject);
-            boxesToCreateInGame.Add((boxObject, name, description, price, ConvertToPositive(weight)));
+            boxesToCreateInGame.Add((boxObject, name, description, price, ConvertToPositiveOrNonNull(weight)));
 
             return boxObject;
         }
-        public static int ConvertToPositive(int i)
+        public static int ConvertToPositiveOrNonNull(int i)
         {
+            if (i == 0)
+                return 1;
+
             return (i + (i >> 31)) ^ (i >> 31);
         }
 

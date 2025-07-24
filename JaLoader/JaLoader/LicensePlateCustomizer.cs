@@ -12,7 +12,6 @@ namespace JaLoader
     public class LicensePlateCustomizer : MonoBehaviour
     {
         private ModHelper modHelper = ModHelper.Instance;
-        private SettingsManager settingsManager = SettingsManager.Instance;
 
         private GameObject rearText;
         private GameObject frontText;
@@ -44,10 +43,10 @@ namespace JaLoader
 
             EventsManager.Instance.OnSettingsSaved += OnSettingsSave;
 
-            if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
+            if (SettingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
                 return;
 
-            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+            SetPlateText(SettingsManager.LicensePlateText, SettingsManager.ChangeLicensePlateText);
         }
 
         private void OnDestroy()
@@ -57,13 +56,13 @@ namespace JaLoader
 
         private void OnSettingsSave()
         {
-            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+            SetPlateText(SettingsManager.LicensePlateText, SettingsManager.ChangeLicensePlateText);
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F5) && settingsManager.DebugMode)
-                SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+            if (Input.GetKeyDown(KeyCode.F5) && SettingsManager.DebugMode)
+                SetPlateText(SettingsManager.LicensePlateText, SettingsManager.ChangeLicensePlateText);
         }
 
         public void SetPlateText(string plateText, LicensePlateStyles style)

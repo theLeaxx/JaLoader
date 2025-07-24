@@ -46,6 +46,7 @@ namespace JaLoader
         public virtual void Start() { }
         public virtual void Awake() { }
         public virtual void OnEnable() { }
+        public virtual void RunOnPreloader() { }
         public virtual void OnDisable() { }
         public virtual void OnDestroy() { }
         public virtual void OnReload() { }

@@ -19,7 +19,7 @@ namespace JaLoader
             EventsManager.Instance.OnGameLoad += OnGameLoad;
         }
 
-        public bool UncleEnabled = !SettingsManager.Instance.DisableUncle;
+        public bool UncleEnabled = !SettingsManager.DisableUncle;
         public UncleLogicC Uncle;
 
         public void OnGameLoad()
@@ -32,7 +32,7 @@ namespace JaLoader
         public void DisableUncle()
         {
             UncleEnabled = false;
-            SettingsManager.Instance.DisableUncle = true;
+            SettingsManager.DisableUncle = true;
 
             Uncle.uncleGoneForever = true;
         }
@@ -40,7 +40,7 @@ namespace JaLoader
         public void EnableUncle()
         {
             UncleEnabled = transform;
-            SettingsManager.Instance.DisableUncle = false;
+            SettingsManager.DisableUncle = false;
 
             Uncle.uncleGoneForever = false;
         }

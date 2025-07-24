@@ -14,9 +14,6 @@ namespace JaLoader
     {
         public static ReferencesLoader Instance { get; private set; }
 
-        private ModLoader modLoader;
-        private SettingsManager settingsManager;
-
         private List<string> loadedReferences = new List<string>();
         private bool loadedAlready = false;
 
@@ -32,21 +29,18 @@ namespace JaLoader
             {
                 Instance = this;
             }
-
-            modLoader = ModLoader.Instance;
-            settingsManager = SettingsManager.Instance;
         }
 
         public IEnumerator LoadAssemblies()
         {
             canLoadMods = false;
             Debug.Log("Loading external mod assemblies...");
-            gameObject.GetComponent<Stopwatch>()?.StartCounting();
+            Stopwatch.Instance.StartCounting();
 
-            if(!Directory.Exists($@"{settingsManager.ModFolderLocation}\Assemblies"))
-                Directory.CreateDirectory($@"{settingsManager.ModFolderLocation}\Assemblies");
+            if(!Directory.Exists($@"{SettingsManager.ModFolderLocation}\Assemblies"))
+                Directory.CreateDirectory($@"{SettingsManager.ModFolderLocation}\Assemblies");
 
-            DirectoryInfo d = new DirectoryInfo($@"{settingsManager.ModFolderLocation}\Assemblies");
+            DirectoryInfo d = new DirectoryInfo($@"{SettingsManager.ModFolderLocation}\Assemblies");
             List<FileInfo> asm = d.GetFiles("*.dll").ToList();
 
             for (int i = 0; i < asm.Count; i++)
@@ -96,10 +90,10 @@ namespace JaLoader
             
             loadedAlready = true;
 
-            gameObject.GetComponent<Stopwatch>().StopCounting();
-            Debug.Log($"Loaded JaLoader assemblies! ({gameObject.GetComponent<Stopwatch>().timePassed}s)");
+            Stopwatch.Instance.StopCounting();
+            Debug.Log($"Loaded JaLoader assemblies! ({Stopwatch.Instance.timePassed}s)");
 
-            StartCoroutine(modLoader.InitializeMods());
+            StartCoroutine(ModLoader.Instance.InitializeMods());
             yield return null;
         }
     }

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Instrumentation;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
@@ -8,6 +11,13 @@ namespace JaLoader
 {
     public class Stopwatch : MonoBehaviour
     {
+        internal static Stopwatch Instance;
+
+        private void Awake()
+        {
+            Instance = this;
+        }
+
         bool counting = false;
         float timePassedRaw = 0;
 
@@ -33,9 +43,7 @@ namespace JaLoader
         void Update()
         {
             if (counting)
-            {
                 timePassedRaw += Time.deltaTime;
-            }
         }
     }
 }

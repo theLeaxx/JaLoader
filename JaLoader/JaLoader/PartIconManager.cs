@@ -30,7 +30,6 @@ namespace JaLoader
         public int CachedItemsCount { get; private set; }
 
         private CustomObjectsManager objectsManager = CustomObjectsManager.Instance;
-        private SettingsManager settingsManager = SettingsManager.Instance;
 
         private Camera camera;
         private Light lightComponent;
@@ -72,7 +71,7 @@ namespace JaLoader
         {
             if(DefaultExtraTexture == null)
             {
-                byte[] bytes = File.ReadAllBytes(Path.Combine(SettingsManager.Instance.ModFolderLocation, @"Required\defaultExtraTexture.png"));
+                byte[] bytes = File.ReadAllBytes(Path.Combine(SettingsManager.ModFolderLocation, @"Required\defaultExtraTexture.png"));
 
                 Texture2D texture = new Texture2D(128, 128, TextureFormat.ARGB32, false);
                 texture.LoadImage(bytes);
@@ -83,8 +82,8 @@ namespace JaLoader
             if(cachedItems)
                 return;
 
-            if (!Directory.Exists($@"{settingsManager.ModFolderLocation}\CachedImages"))
-                Directory.CreateDirectory($@"{settingsManager.ModFolderLocation}\CachedImages");
+            if (!Directory.Exists($@"{SettingsManager.ModFolderLocation}\CachedImages"))
+                Directory.CreateDirectory($@"{SettingsManager.ModFolderLocation}\CachedImages");
 
             lightComponent.enabled = true;
 
@@ -190,7 +189,7 @@ namespace JaLoader
 
         public Texture2D GetTexture(string name)
         {
-            if (File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png") == false)
+            if (File.Exists($@"{SettingsManager.ModFolderLocation}\CachedImages\{name}.png") == false)
             {
                 if (extrasCustomIcons.ContainsKey(name.Split('_')[1]))
                 {
@@ -204,7 +203,7 @@ namespace JaLoader
                 return DefaultExtraTexture;
             }
 
-            byte[] bytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png");
+            byte[] bytes = File.ReadAllBytes($@"{SettingsManager.ModFolderLocation}\CachedImages\{name}.png");
 
             Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
             texture.LoadImage(bytes);
@@ -224,8 +223,8 @@ namespace JaLoader
             byte[] byteArray = renderedTexture.EncodeToPNG();
             byte[] existingPhotoBytes = null;
 
-            if(File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png"))
-                existingPhotoBytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png");
+            if(File.Exists($@"{SettingsManager.ModFolderLocation}\CachedImages\{entry}.png"))
+                existingPhotoBytes = File.ReadAllBytes($@"{SettingsManager.ModFolderLocation}\CachedImages\{entry}.png");
 
             if (existingPhotoBytes != null)
             {
@@ -238,7 +237,7 @@ namespace JaLoader
             }
 
             Console.LogDebug($"Cached image for {entry}");
-            File.WriteAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png", byteArray);
+            File.WriteAllBytes($@"{SettingsManager.ModFolderLocation}\CachedImages\{entry}.png", byteArray);
         }
     }
 }

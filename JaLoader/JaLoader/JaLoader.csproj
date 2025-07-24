@@ -192,6 +192,7 @@
     <Compile Include="DebugCamera.cs" />
     <Compile Include="DebugObjectSpawner.cs" />
     <Compile Include="DebugInfo.cs" />
+    <Compile Include="DebugUtils.cs" />
     <Compile Include="DiscordController.cs" />
     <Compile Include="Discord\ActivityManager.cs" />
     <Compile Include="Discord\Constants.cs" />
@@ -206,11 +207,13 @@
     <Compile Include="Console.cs" />
     <Compile Include="AdjustmentsEditor.cs" />
     <Compile Include="GameTweaks.cs" />
+    <Compile Include="GameUtils.cs" />
     <Compile Include="HarmonyManager.cs" />
     <Compile Include="DragRigidbodyC_ModExtension.cs" />
     <Compile Include="CustomObjectInfo.cs" />
     <Compile Include="ExtrasManager.cs" />
     <Compile Include="FPSCounter.cs" />
+    <Compile Include="JaLoaderCore.cs" />
     <Compile Include="LaikaCatalogueExtension.cs" />
     <Compile Include="LicensePlateCustomizer.cs" />
     <Compile Include="LoadingScreen.cs" />
@@ -219,6 +222,7 @@
     <Compile Include="Mod.cs" />
     <Compile Include="ModLoader.cs" />
     <Compile Include="ModHelper.cs" />
+    <Compile Include="ModManager.cs" />
     <Compile Include="ObjectIdentification.cs" />
     <Compile Include="PaintJobManager.cs" />
     <Compile Include="PartIconManager.cs" />
@@ -230,6 +234,7 @@
     <Compile Include="Stopwatch.cs" />
     <Compile Include="UIManager.cs" />
     <Compile Include="UncleHelper.cs" />
+    <Compile Include="UpdateUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig">

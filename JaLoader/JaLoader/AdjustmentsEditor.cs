@@ -15,8 +15,6 @@ namespace JaLoader
     {
         public static AdjustmentsEditor Instance;
 
-        private SettingsManager settingsManager;
-
         public bool loadedViewingEditor { get; private set; }
         private DebugCamera debugCamera;
         private float arrowOffset = 0.3f;
@@ -117,14 +115,9 @@ namespace JaLoader
                 Destroy(gameObject);
         }
 
-        private void Start()
-        {
-            settingsManager = SettingsManager.Instance;
-        }
-
         private void Update()
         {
-            if (!settingsManager.DebugMode || !ModLoader.Instance.finishedInitializingPartOneMods || SceneManager.GetActiveScene().buildIndex == 3 || SceneManager.GetActiveScene().buildIndex == 2)
+            if (!SettingsManager.DebugMode || !ModLoader.Instance.finishedInitializingPartOneMods || SceneManager.GetActiveScene().buildIndex == 3 || SceneManager.GetActiveScene().buildIndex == 2)
                 return;
 
             if (!loadedViewingEditor)
@@ -399,11 +392,12 @@ namespace JaLoader
 
         private IEnumerator LoadGarage()
         {
-            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(settingsManager.ModFolderLocation, @"Required\JaLoader_AdjustmentsEditor.unity3d"));
+            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(SettingsManager.ModFolderLocation, @"Required\JaLoader_AdjustmentsEditor.unity3d"));
 
             yield return bundleLoadReq;
 
             AssetBundle ab = bundleLoadReq.assetBundle;
+            yield return null;
 
             if (ab == null)
             {
@@ -414,6 +408,8 @@ namespace JaLoader
 
             carPrefab = Instantiate(ModHelper.Instance.laika);
             DontDestroyOnLoad(carPrefab);
+
+            yield return null;
 
             Console.LogWarning("Loading Adjustments Editor...");
 

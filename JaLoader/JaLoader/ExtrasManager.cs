@@ -589,7 +589,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (!SettingsManager.Instance.DebugMode)
+            if (!SettingsManager.DebugMode)
                 return;
 
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))

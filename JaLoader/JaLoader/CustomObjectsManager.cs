@@ -43,12 +43,11 @@ namespace JaLoader
         private int currentFreeID = 0;
         private bool allObjectsRegistered;
 
-        private SettingsManager settingsManager = SettingsManager.Instance;
         public bool ignoreAlreadyExists;
 
         private void Update()
         {
-            if (!settingsManager.DebugMode)
+            if (!SettingsManager.DebugMode)
                 return;
 
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))

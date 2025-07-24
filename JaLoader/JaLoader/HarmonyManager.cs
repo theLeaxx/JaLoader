@@ -588,16 +588,18 @@ namespace JaLoader
         {
             bool radioAds = false;
 
-            Transform[] allObjects = GameObject.FindObjectsOfType<Transform>();
+            radioAds = SettingsManager.RadioAds;
+            /*Transform[] allObjects = GameObject.FindObjectsOfType<Transform>();
 
             foreach (Transform obj in allObjects)
             {
                 if (obj.name == "JaLoader" && obj.gameObject.layer == 0 && obj.tag == "Untagged" && obj.transform.parent == null)
                 {
-                    var component = obj.GetComponents<MonoBehaviour>()[1];
+                    var utilitiesObj = obj.transform.Find("JaLoader Utilities");
+                    var component = utilitiesObj.GetComponents<MonoBehaviour>()[1];
                     radioAds = (bool)component.GetType().GetField("RadioAds", BindingFlags.Instance | BindingFlags.Public).GetValue(component);
                 }
-            }
+            }*/
 
             if (!radioAds)
             {

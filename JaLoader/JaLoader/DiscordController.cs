@@ -17,12 +17,10 @@ namespace JaLoader
         private string State;
         private string Details;
         private string LargeText;
-
-        private SettingsManager settings = SettingsManager.Instance;
         
         void Start()
         {
-            if (!settings.UseDiscordRichPresence)
+            if (!SettingsManager.UseDiscordRichPresence)
             {
                 Destroy(this);
                 return;
@@ -93,7 +91,7 @@ namespace JaLoader
                         LargeImage = "jalopy",
                         LargeText = LargeText,
                         SmallImage = "wrenchright",
-                        SmallText = $"JaLoader {SettingsManager.Instance.GetVersionString()} - {ModLoader.Instance.modsNumber} mods loaded"
+                        SmallText = $"JaLoader {SettingsManager.GetVersionString()} - {ModLoader.Instance.modsNumber} mods loaded"
                     },
                     Timestamps =
                     {
@@ -103,7 +101,7 @@ namespace JaLoader
 
                 activityManager.UpdateActivity(activity, (res) =>
                 {
-                    if (res != Result.Ok && SettingsManager.Instance.DebugMode)
+                    if (res != Result.Ok && SettingsManager.DebugMode)
                         Console.LogError("Failed connecting to Discord!");
                 });
             }

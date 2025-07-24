@@ -117,7 +117,7 @@ namespace JaLoader
             canvasGroup.alpha = 0;
             isFading = false;
 
-            SettingsManager.Instance.loadedFirstTime = true;
+            SettingsManager.loadedFirstTime = true;
 
             Destroy(GameObject.Find("JaLoader Loading Screen Canvas"));
             Destroy(gameObject.GetComponent<LoadingScreen>());

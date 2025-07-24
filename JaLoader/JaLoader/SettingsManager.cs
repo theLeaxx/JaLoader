@@ -8,78 +8,62 @@ using JaLoader.BepInExWrapper;
 
 namespace JaLoader
 {
-    public class SettingsManager : MonoBehaviour
+    public static class SettingsManager
     {
-        #region Singleton & ReadSettings on Awake
-        public static SettingsManager Instance { get; private set; }
-
-        private void Awake()
+        internal static void Initialize()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-            }
-            else
-            {
-                Instance = this;
-            }
-
             ReadSettings();
             SetVersionRegistryKey();
             GetUpdateCheckRegistryKey();
         }
 
-        #endregion
+        [SerializeField] private static Settings _settings = new Settings();
 
-        [SerializeField] private Settings _settings = new Settings();
-
-        public const string JaLoaderVersion = "4.0.3";
+        public const string JaLoaderVersion = "5.0.0";
         public static readonly bool IsPreReleaseVersion = false;
         public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
-        public string ModFolderLocation { get; private set; }
+        public static string ModFolderLocation { get; private set; }
 
-        public bool SkipLanguage;
-        public bool DebugMode;
-        public bool DisableUncle;
-        public bool HideModFolderLocation;
-        public bool DisableMenuMusic;
-        public int MenuMusicVolume;
-        public bool UseExperimentalCharacterController;
-        public bool UseCustomSongs;
-        public CustomSongsBehaviour CustomSongsBehaviour;
-        public bool RadioAds;
-        public ConsolePositions ConsolePosition;
-        public ConsoleModes ConsoleMode;
-        public LicensePlateStyles ChangeLicensePlateText;
-        public bool UseDiscordRichPresence;
-        public string LicensePlateText;
-        public bool ShowFPSCounter;
-        public UpdateCheckModes UpdateCheckMode;
-        public bool EnableJaDownloader;
-        public bool AskedAboutJaDownloader;
-        public bool FixLaikaShopMusic;
-        public MirrorDistances MirrorDistances;
-        public CursorMode CursorMode;
-        public bool ShowDisabledMods;
-        public string AppliedPaintJobName;
-        public bool FixItemsFalilngBehindShop;
-        public bool FixBorderGuardsFlags;
+        public static bool SkipLanguage;
+        public static bool DebugMode;
+        public static bool DisableUncle;
+        public static bool HideModFolderLocation;
+        public static bool DisableMenuMusic;
+        public static int MenuMusicVolume;
+        public static bool UseExperimentalCharacterController;
+        public static bool UseCustomSongs;
+        public static CustomSongsBehaviour CustomSongsBehaviour;
+        public static bool RadioAds;
+        public static ConsolePositions ConsolePosition;
+        public static ConsoleModes ConsoleMode;
+        public static LicensePlateStyles ChangeLicensePlateText;
+        public static bool UseDiscordRichPresence;
+        public static string LicensePlateText;
+        public static bool ShowFPSCounter;
+        public static UpdateCheckModes UpdateCheckMode;
+        public static bool EnableJaDownloader;
+        public static bool AskedAboutJaDownloader;
+        public static bool FixLaikaShopMusic;
+        public static MirrorDistances MirrorDistances;
+        public static CursorMode CursorMode;
+        public static bool ShowDisabledMods;
+        public static string AppliedPaintJobName;
+        public static bool FixItemsFalilngBehindShop;
+        public static bool FixBorderGuardsFlags;
 
-        public List<string> DontShowAgainNotices = new List<string>();
+        public static List<string> DontShowAgainNotices = new List<string>();
 
-        public DateTime lastUpdateCheck;
-        private bool shouldCheckForUpdates = true;
+        public static DateTime lastUpdateCheck;
+        private static bool shouldCheckForUpdates = true;
 
-        public bool updateAvailable;
+        public static bool updateAvailable;
 
-        public bool loadedFirstTime;
-        public bool selectedLanguage;
+        public static bool loadedFirstTime;
+        public static bool selectedLanguage;
 
-        public List<string> DisabledMods = new List<string>();
+        public static List<string> DisabledMods = new List<string>();
 
-        private readonly ModLoader modLoaderReference = ModLoader.Instance;
-
-        public int GetLatestUpdateVersion(string URL, int version)
+        public static int GetLatestUpdateVersion(string URL, int version)
         {
             if(!shouldCheckForUpdates)
             {
@@ -146,7 +130,7 @@ namespace JaLoader
             return 0;
         }
 
-        public string GetLatestUpdateVersionString(string URL, int version)
+        public static string GetLatestUpdateVersionString(string URL, int version)
         {
             if (!shouldCheckForUpdates)
             {
@@ -213,12 +197,12 @@ namespace JaLoader
             return "0";
         }
 
-        public int GetVersion()
+        public static int GetVersion()
         {
             return int.Parse(JaLoaderVersion.Replace(".", ""));
         }
 
-        public string GetVersionString()
+        public static string GetVersionString()
         {
             if (IsPreReleaseVersion)
                 return $"Pre-Release {JaLoaderVersion}";
@@ -226,7 +210,7 @@ namespace JaLoader
             return JaLoaderVersion;
         }
 
-        public bool IsNewerThan(string version)
+        public static bool IsNewerThan(string version)
         {
             var versionSpecified = int.Parse(version.Replace(".", ""));
             var currentVersion = int.Parse(GetVersionString().Replace("Pre-Release ", "").Replace(".", ""));
@@ -235,7 +219,7 @@ namespace JaLoader
             else return false;
         }
 
-        private void SetVersionRegistryKey()
+        private static void SetVersionRegistryKey()
         {
             RegistryKey parentKey = Registry.CurrentUser;
 
@@ -246,7 +230,7 @@ namespace JaLoader
             jalopyKey?.SetValue("JaLoaderVersion", GetVersion().ToString(), RegistryValueKind.String);
         }
 
-        private void SetUpdateCheckRegistryKey()
+        private static void SetUpdateCheckRegistryKey()
         {
             RegistryKey parentKey = Registry.CurrentUser;
 
@@ -257,7 +241,7 @@ namespace JaLoader
             jalopyKey?.SetValue("LastUpdateCheck", DateTime.Now.ToString(), RegistryValueKind.String);
         }
 
-        private void GetUpdateCheckRegistryKey()
+        private static void GetUpdateCheckRegistryKey()
         {
             RegistryKey parentKey = Registry.CurrentUser;
 
@@ -276,7 +260,7 @@ namespace JaLoader
             }
         }
 
-        private void ReadSettings()
+        internal static void ReadSettings()
         {
             RegistryKey parentKey = Registry.CurrentUser;
 
@@ -311,7 +295,7 @@ namespace JaLoader
             }
         }
 
-        private void Load()
+        private static void Load()
         {
             ConsolePosition = _settings.ConsolePosition;
             ConsoleMode = _settings.ConsoleMode;
@@ -347,7 +331,7 @@ namespace JaLoader
             EventsManager.Instance.OnSettingsLoad();
         }
 
-        public void SaveSettings(bool includeDisabledMods = true)
+        public static void SaveSettings(bool includeDisabledMods = true)
         {
             if (includeDisabledMods)
                 DisabledMods.Clear();
@@ -386,9 +370,9 @@ namespace JaLoader
 
             if (includeDisabledMods)
             {
-                for (int i = 0; i < modLoaderReference.disabledMods.ToArray().Length; i++)
+                for (int i = 0; i < ModLoader.Instance.disabledMods.ToArray().Length; i++)
                 {
-                    var mod = modLoaderReference.disabledMods.ToArray()[i];
+                    var mod = ModLoader.Instance.disabledMods.ToArray()[i];
 
                     if (mod is Mod)
                     {
@@ -411,14 +395,6 @@ namespace JaLoader
             File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
 
             EventsManager.Instance.OnSettingsSave();
-        }
-
-        private void Update()
-        {
-            if (!DebugMode) return;
-
-            if (Input.GetKeyDown(KeyCode.F5))
-                ReadSettings();
         }
     }
 
@@ -450,7 +426,7 @@ namespace JaLoader
         [SerializeField] public MirrorDistances MirrorDistances = MirrorDistances.m1000;
         [SerializeField] public CursorMode CursorMode = CursorMode.Default;
         [SerializeField] public bool ShowDisabledMods = true;
-        //[SerializeField] public bool FixItemsFalilngBehindShop = true;
+        //[SerializeField] public static bool FixItemsFalilngBehindShop = true;
         [SerializeField] public bool FixBorderGuardsFlags = true;
 
         [SerializeField] public string AppliedPaintJobName = "";

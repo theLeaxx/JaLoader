@@ -21,7 +21,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if(!SettingsManager.Instance.DebugMode)
+            if(!SettingsManager.DebugMode)
                 return;
 
             if(Input.GetKeyDown(KeyCode.F3))

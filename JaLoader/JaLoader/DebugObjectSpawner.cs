@@ -343,7 +343,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (SettingsManager.Instance.DebugMode && Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.S))
+            if (SettingsManager.DebugMode && Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.S))
             {
                 uiManager.objectsList.transform.parent.gameObject.SetActive(!uiManager.objectsList.transform.parent.gameObject.activeSelf);
             }

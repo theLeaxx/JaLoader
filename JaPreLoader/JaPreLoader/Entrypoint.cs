@@ -108,7 +108,7 @@ namespace Doorstop
                 }
             }
 
-            Type modLoaderType = assembly.GetType("JaLoader.ModLoader");
+            Type modLoaderType = assembly.GetType("JaLoader.JaLoaderCore");
 
             MethodInfo addComponentMethod = typeof(GameObject).GetMethod("AddComponent", new[] { typeof(Type) });
 

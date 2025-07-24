@@ -207,7 +207,7 @@ namespace JaLoader
                 return;
             }
 
-            if(current.buildIndex == 0 && SettingsManager.Instance.SkipLanguage && SettingsManager.Instance.selectedLanguage)
+            if(current.buildIndex == 0 && SettingsManager.SkipLanguage && SettingsManager.selectedLanguage)
             {
                 SceneManager.LoadScene("MainMenu");
             }                
