@@ -21,6 +21,7 @@ if (args.Length == 0)
     DownloadFile(file, dir.FullName);
 
     Console.WriteLine("JaPatcher downloaded successfully! You can now run JaPatcher.exe in the zip file inside the JaPatcher folder to install JaLoader.");
+    Console.ReadLine();
 
     return;
 }
