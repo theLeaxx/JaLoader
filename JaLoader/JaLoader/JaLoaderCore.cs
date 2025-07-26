@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Experimental.UIElements;
 using UnityEngine.SceneManagement;
 
 namespace JaLoader
@@ -68,9 +69,9 @@ namespace JaLoader
             gameObject.AddComponent<HarmonyManager>();
             gameObject.AddComponent<EventsManager>();
             SettingsManager.Initialize();
+            ModManager.Initialize();
             gameObject.AddComponent<ReferencesLoader>();
             gameObject.AddComponent<UIManager>();
-            gameObject.AddComponent<ModManager>();
             gameObject.AddComponent<ModLoader>();
             gameObject.AddComponent<CustomObjectsManager>();
             gameObject.AddComponent<ExtrasManager>();
@@ -78,6 +79,7 @@ namespace JaLoader
             utilities.AddComponent<ModHelper>();
             utilities.AddComponent<UncleHelper>();
             utilities.AddComponent<CustomRadioController>();
+            utilities.AddComponent<DebugObjectSpawner>();
             utilities.AddComponent<PaintJobManager>();
             utilities.AddComponent<PartIconManager>();
             utilities.AddComponent<DiscordController>();

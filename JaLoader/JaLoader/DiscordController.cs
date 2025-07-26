@@ -91,7 +91,7 @@ namespace JaLoader
                         LargeImage = "jalopy",
                         LargeText = LargeText,
                         SmallImage = "wrenchright",
-                        SmallText = $"JaLoader {SettingsManager.GetVersionString()} - {ModLoader.Instance.modsNumber} mods loaded"
+                        SmallText = $"JaLoader {SettingsManager.GetVersionString()} - {ModManager.Mods.Count} mods loaded"
                     },
                     Timestamps =
                     {

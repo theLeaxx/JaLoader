@@ -50,6 +50,9 @@ namespace JaLoader
         private void OnGameLoad()
         {
             StartCoroutine(OnGameLoadDelay());
+
+            if (SettingsManager.UseExperimentalCharacterController)
+                GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
         }
         
         internal void SkipLanguage()

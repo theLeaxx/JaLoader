@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -86,7 +87,7 @@ namespace JaLoader
         public Text currentlySelectedText { get; private set; }
         
         private GameObject noticePanel;
-        public GameObject modTemplateObject;
+        public GameObject modTemplateOfbject;
 
         public GameObject catalogueTemplate { get; private set; }
         public GameObject catalogueEntryTemplate { get; private set; }
@@ -151,6 +152,8 @@ namespace JaLoader
         private AudioClip buttonClickSound;
         private AudioSource audioSource;
         private List<string> allNotices = new List<string>();
+
+        internal Dictionary<GenericModData, GameObject> modEntries = new Dictionary<GenericModData, GameObject>();
 
         #endregion
 
@@ -537,8 +540,6 @@ namespace JaLoader
             }
             finally
             {
-                StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
-
                 if (GameUtils.IsCrackedGame)
                     ShowNotice("PIRATED GAME DETECTED", "You are using a pirated version of Jalopy.\r\n\r\nYou may encounter issues with certain mods, as well as more bugs in general.\r\n\r\nIf you encounter any game-breaking bugs, feel free to submit them to the official GitHub for JaLoader. Remember to mark them with the \"pirated\" tag!\r\n\r\nHave fun!");
 
@@ -547,10 +548,6 @@ namespace JaLoader
 
                 if (!SettingsManager.AskedAboutJaDownloader && !SettingsManager.EnableJaDownloader)
                     ShowJaDownloaderNotice();
-
-                //var knob = ab.LoadAsset<Sprite>("knob.png");
-                //var texture = new Texture2D((int)knob.rect.width, (int)knob.rect.height, knob.texture.format, true);
-                //Graphics.CopyTexture(knob.texture, texture);
 
                 var texture = ab.LoadAsset<Texture2D>("knob.png");
 
@@ -563,6 +560,60 @@ namespace JaLoader
 
             var clickers = GameObject.Find("UI Root").transform.Find("Options/OptionsGameplay/Back").GetComponent<MainMenuClickersC>();
             buttonClickSound = clickers.audioClip;
+        }
+
+        internal Text CreateModEntryReturnText(GenericModData modData)
+        {   
+            var newEntry = Instantiate(modTemplatePrefab);
+            newEntry.transform.SetParent(UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform, false);
+            newEntry.SetActive(true);
+
+            if (modData.IsBepInExMod)
+            {
+                modData.ModDescription += "\n\nThis mod was made using BepInEx. Some features might not work as intended.";
+                newEntry.name = $"BepInEx_CompatLayer_{modData.ModID}_Mod";
+            }
+            else
+                newEntry.name = $"{modData.ModID}_{modData.ModAuthor}_{modData.ModName}_Mod";
+
+            if(modData.GitHubLink != null && modData.GitHubLink != string.Empty)
+            {
+                newEntry.transform.Find("Buttons/GitHubButton").GetComponent<Button>().onClick.AddListener(() => Application.OpenURL(modData.GitHubLink));
+                newEntry.transform.Find("Buttons/GitHubButton").gameObject.SetActive(true);
+            }
+
+            newEntry.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modData.ModName;
+            newEntry.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = modData.ModAuthor;
+
+            newEntry.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleMoreInfo(modData.ModName, modData.ModAuthor, modData.ModVersion, modData.ModDescription); });
+
+            if(modData.IsBepInExMod)
+                newEntry.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleSettings($"BepInEx_CompatLayer_{modData.ModID}-SettingsHolder"); });
+            else
+                newEntry.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleSettings($"{modData.ModAuthor}_{modData.ModID}_{modData.ModName}-SettingsHolder"); });
+
+            Text text = newEntry.transform.Find("Buttons").Find("ToggleButton").Find("Text").GetComponent<Text>();
+
+            if (modData.Mod == null)
+                return text;
+
+            newEntry.transform.Find("LoadOrderButtons").Find("MoveUpButton").GetComponent<Button>().onClick.AddListener(delegate { ModManager.MoveModOrderUp(modData.Mod, newEntry); });
+            newEntry.transform.Find("LoadOrderButtons").Find("MoveDownButton").GetComponent<Button>().onClick.AddListener(delegate { ModManager.MoveModOrderDown(modData.Mod, newEntry); });
+            newEntry.transform.Find("LoadOrderButtons").Find("MoveTopButton").GetComponent<Button>().onClick.AddListener(delegate { ModManager.MoveModOrderTop(modData.Mod, newEntry); });
+            newEntry.transform.Find("LoadOrderButtons").Find("MoveBottomButton").GetComponent<Button>().onClick.AddListener(delegate { ModManager.MoveModOrderBottom(modData.Mod, newEntry); });
+
+            newEntry.transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().onClick.AddListener(delegate { ModManager.ToggleMod(modData); });
+
+            modEntries.Add(modData, newEntry);
+
+            return text;
+        }
+
+        internal GameObject CreateModEntryReturnEntry(GenericModData modData)
+        {
+            var text = CreateModEntryReturnText(modData);
+
+            return text.transform.parent.parent.parent.gameObject;
         }
 
         private void AddObjectShortcuts()
@@ -705,7 +756,7 @@ namespace JaLoader
                     if (modName == string.Empty)
                         modName = modID;
 
-                    var mod = modLoader.FindMod(modAuthor, modID, modName);
+                    var mod = ModManager.FindMod(modAuthor, modID, modName);
 
                     if(mod != null && mod is Mod)
                     {
@@ -744,7 +795,7 @@ namespace JaLoader
                     if (modName == string.Empty)
                         modName = modID;
 
-                    var mod = modLoader.FindMod(modAuthor, modID, modName);
+                    var mod = ModManager.FindMod(modAuthor, modID, modName);
 
                     if (mod != null && mod is Mod)
                     {
@@ -1035,8 +1086,12 @@ namespace JaLoader
             }
         }
 
-        public void AddWarningToMod(GameObject warningIcon, string warningText)
+        public void AddWarningToMod(GameObject entry, string warningText, bool blockLoadOrder = false)
         {
+            entry.transform.Find("BasicInfo/ModName").GetComponent<Text>().color = CommonColors.ErrorRed;
+
+            var warningIcon = entry.transform.Find("WarningIcon").gameObject;
+
             warningIcon.SetActive(true);
 
             var template = warningIcon.transform.GetChild(0).GetChild(0).GetChild(0);
@@ -1050,6 +1105,14 @@ namespace JaLoader
 
             if(!warning.GetComponent<WarningOnHover>())
                 warningIcon.AddComponent<WarningOnHover>();
+
+            if (blockLoadOrder)
+            {
+                entry.transform.Find("LoadOrderButtons").Find("MoveUpButton").GetComponent<Button>().interactable = false;
+                entry.transform.Find("LoadOrderButtons").Find("MoveDownButton").GetComponent<Button>().interactable = false;
+                entry.transform.Find("LoadOrderButtons").Find("MoveTopButton").GetComponent<Button>().interactable = false;
+                entry.transform.Find("LoadOrderButtons").Find("MoveBottomButton").GetComponent<Button>().interactable = false;
+            }
         }
 
         private void InstallMod()

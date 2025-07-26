@@ -117,7 +117,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (!SettingsManager.DebugMode || !ModLoader.Instance.finishedInitializingPartOneMods || SceneManager.GetActiveScene().buildIndex == 3 || SceneManager.GetActiveScene().buildIndex == 2)
+            if (!SettingsManager.DebugMode || !ModManager.FinishedLoadingMenuMods || SceneManager.GetActiveScene().buildIndex == 3 || SceneManager.GetActiveScene().buildIndex == 2)
                 return;
 
             if (!loadedViewingEditor)

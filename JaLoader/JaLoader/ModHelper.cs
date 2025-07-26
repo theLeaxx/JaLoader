@@ -190,7 +190,6 @@ namespace JaLoader
 
             if (!addedExtensions)
             {
-                Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
                 player = Camera.main.transform.parent.gameObject;
                 GetAllBodyParts();
                 wallet = FindObjectOfType<WalletC>();
@@ -301,8 +300,8 @@ namespace JaLoader
 
             ob.buyValue = price;
             ob.sellValue = price;
-            ob.flavourText = string.Empty;
-            ob.componentHeader = string.Empty;
+            ob.flavourText = "MOD_" + objDescription;
+            ob.componentHeader = "MOD_" + objName;
             ob.rigidMass = weight;
 
             CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
@@ -343,8 +342,8 @@ namespace JaLoader
 
             ob.buyValue = price;
             ob.sellValue = (int)(price * 0.8f);
-            ob.flavourText = string.Empty;
-            ob.componentHeader = string.Empty;
+            ob.flavourText = "MOD_" + objDescription;
+            ob.componentHeader = "MOD_" + objName;
             ob.rigidMass = weight;
 
             CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
@@ -457,7 +456,10 @@ namespace JaLoader
                 return;
 
             if (!obj.GetComponent<ObjectPickupC>())
+            {
+                Console.LogError("You need to add basic object logic before adding engine part logic!");
                 return;
+            }
 
             ObjectPickupC ob = obj.GetComponent<ObjectPickupC>();
             ob.isEngineComponent = true;
@@ -467,6 +469,9 @@ namespace JaLoader
             ec._camera = Camera.main.gameObject;
             ec.weight = ob.rigidMass;
             ec.durability = durability;
+
+            ec.flavourText = ob.flavourText;
+            ec.componentHeader = ob.componentHeader;
 
             var identif = obj.GetComponent<ObjectIdentification>();
             identif.PartIconScaleAdjustment = obj.transform.localScale;
@@ -765,7 +770,7 @@ namespace JaLoader
             var modName = identif.ModName;
             var version = identif.Version;
 
-            var mod = (Mod)ModLoader.Instance.FindMod(author, modID, modName);
+            var mod = (Mod)ModManager.FindMod(author, modID, modName);
 
             var extraHolder = Instantiate(new GameObject());
             extraHolder.name = $"Extra_{objOnCar.name.Substring(0, objOnCar.name.Length - 7)}_{identif.ModID}_{identif.Author}";

@@ -616,7 +616,7 @@ namespace JaLoader
 
         private IEnumerator WaitUntilLoadFinished()
         {
-            while (!ModLoader.Instance.finishedInitializingPartTwoMods)
+            while (!ModManager.FinishedLoadingMenuMods)
                 yield return null;
 
             allObjectsRegistered = true;

@@ -189,6 +189,7 @@
     <Compile Include="CustomKeybind.cs" />
     <Compile Include="CustomObjectsManager.cs" />
     <Compile Include="CustomRadioController.cs" />
+    <Compile Include="DataModels.cs" />
     <Compile Include="DebugCamera.cs" />
     <Compile Include="DebugObjectSpawner.cs" />
     <Compile Include="DebugInfo.cs" />
@@ -209,7 +210,6 @@
     <Compile Include="GameTweaks.cs" />
     <Compile Include="GameUtils.cs" />
     <Compile Include="HarmonyManager.cs" />
-    <Compile Include="DragRigidbodyC_ModExtension.cs" />
     <Compile Include="CustomObjectInfo.cs" />
     <Compile Include="ExtrasManager.cs" />
     <Compile Include="FPSCounter.cs" />
@@ -222,6 +222,7 @@
     <Compile Include="Mod.cs" />
     <Compile Include="ModLoader.cs" />
     <Compile Include="ModHelper.cs" />
+    <Compile Include="ModLoadException.cs" />
     <Compile Include="ModManager.cs" />
     <Compile Include="ObjectIdentification.cs" />
     <Compile Include="PaintJobManager.cs" />

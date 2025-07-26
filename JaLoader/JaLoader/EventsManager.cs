@@ -86,6 +86,8 @@ namespace JaLoader
 
         public void OnUILoadFinish()
         {
+            StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
+
             OnUILoadFinished?.Invoke();
         }
 
@@ -229,9 +231,6 @@ namespace JaLoader
 
         public void OnLog(string message, string stack, LogType type)
         {
-            /*if (OnSave != null && message == "Saved" && type == LogType.Log)
-                OnSave();*/ // Called with Harmony now
-
             if (OnException != null && type == LogType.Exception)
                 OnException(message, stack);
         }

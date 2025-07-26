@@ -409,7 +409,7 @@ namespace JaLoader
             SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().CurrentlyInstalledPart = SpawnedExtras[ID].Item2;
 
             var objIdentif = SpawnedExtras[ID].Item1.transform.Find("Mesh").GetComponent<ObjectIdentification>();
-            Mod mod = (Mod)ModLoader.Instance.FindMod(objIdentif.Author, objIdentif.ModID, objIdentif.ModName);
+            Mod mod = (Mod)ModManager.FindMod(objIdentif.Author, objIdentif.ModID, objIdentif.ModName);
             mod.OnExtraAttached(SpawnedExtras[ID].Item2);
         }
 
@@ -608,7 +608,7 @@ namespace JaLoader
         }
         private IEnumerator WaitUntilLoadFinished()
         {
-            while (!ModLoader.Instance.finishedInitializingPartTwoMods)
+            while (!ModManager.FinishedLoadingMenuMods)
                 yield return null;
 
             LoadData();
@@ -651,7 +651,7 @@ namespace JaLoader
                     int ID = GetExtraIDByRegistryName(entry);
 
                     if(ExtraMod.ContainsKey((entry, ID)))
-                        if (ModLoader.Instance.disabledMods.Contains(ExtraMod[(entry, ID)]))
+                        if (!ModManager.Mods[ExtraMod[(entry, ID)]].IsEnabled)
                             continue;
 
                     if (ID == -1)

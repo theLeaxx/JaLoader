@@ -41,29 +41,9 @@ namespace JaLoader
         #endregion
 
         private UIManager uiManager;
-
-        public int modsNumber;
-        private int bepinexModsNumber;
-        private int modsNeedUpdate;
-
-        public List<Mod> modsInitInGame = new List<Mod>();
-        private readonly List<MonoBehaviour> modsInitInMenuIncludingBIX = new List<MonoBehaviour>();
-        //private readonly List<Mod> modsInitInMenu = new List<Mod>();
-
-        public List<MonoBehaviour> disabledMods = new List<MonoBehaviour>();
-        private bool LoadedDisabledMods;
-        private readonly Dictionary<MonoBehaviour, Text> modStatusTextRef = new Dictionary<MonoBehaviour, Text>();
-   
-        public bool InitializedInGameMods;
-        private bool InitializedInMenuMods;
-        
-        public bool finishedInitializingPartOneMods;
-        public bool finishedInitializingPartTwoMods;
-        private bool skippedIntro;
         private bool reloadMods;
 
-        Color32 defaultWhiteColor = new Color32(255, 255, 255, 255);
-        Color32 defaultGrayColor = new Color32(120, 120, 120, 255);
+        private static readonly Regex BannedCharacters = new Regex(@"[_|]", RegexOptions.Compiled);
 
         private void Start()
         {
@@ -72,55 +52,10 @@ namespace JaLoader
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
 
             uiManager = UIManager.Instance;
-
-            return;
-
-            GameObject helperObj = Instantiate(new GameObject());
-            helperObj.name = "JaLoader Modding Helpers";
-            helperObj.AddComponent<EventsManager>();
-
-            DontDestroyOnLoad(helperObj);
-
-            uiManager = gameObject.AddComponent<UIManager>();
-
-            GameObject consoleObj = Instantiate(new GameObject());
-            consoleObj.AddComponent<Console>();
-            consoleObj.name = "ModConsole";
-            DontDestroyOnLoad(consoleObj);
-
-            gameObject.AddComponent<CustomObjectsManager>();
-            gameObject.AddComponent<DebugObjectSpawner>();
-            gameObject.AddComponent<ReferencesLoader>();
-            gameObject.AddComponent<CustomRadioController>();
-            gameObject.AddComponent<ExtrasManager>();
-            gameObject.AddComponent<GameTweaks>();
-            gameObject.AddComponent<PaintJobManager>();
-
-            helperObj.AddComponent<ModHelper>();
-            helperObj.AddComponent<UncleHelper>();
-            helperObj.AddComponent<PartIconManager>();
-            helperObj.AddComponent<HarmonyManager>();
-            helperObj.AddComponent<AdjustmentsEditor>();
-
-            gameObject.AddComponent<DiscordController>();
-
-            Stopwatch.Instance = gameObject.AddComponent<Stopwatch>();
-
-            Debug.Log("JaLoader initialized!");
-
-            if (SettingsManager.SkipLanguage && !skippedIntro)
-            {
-                skippedIntro = true;
-                SettingsManager.selectedLanguage = true;
-                SceneManager.LoadScene("MainMenu");
-            }
         }
 
         private void OnGameLoad()
         {
-            if (SettingsManager.UseExperimentalCharacterController)
-                GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
-
             if (!reloadMods)
                 return;
 
@@ -137,22 +72,22 @@ namespace JaLoader
 
         private IEnumerator WaitThenReload()
         {
-            while (ModHelper.Instance.laika == null)
+            /*while (ModHelper.Instance.laika == null)
                 yield return null;
 
-            StartCoroutine(ReloadAllMods());
+            StartCoroutine(ReloadAllMods());*/
 
             yield break;
         }
 
         public void ReloadMods()
         {
-            StartCoroutine(ReloadAllMods());
+            //StartCoroutine(ReloadAllMods());
         }
 
         private void OnGameUnload() 
         {
-            reloadMods = true;
+            /*reloadMods = true;
 
             if (InitializedInGameMods)
             {
@@ -164,12 +99,12 @@ namespace JaLoader
                 }
 
                 InitializedInGameMods = false;
-            }
+            }*/
         }
 
         private void Update()
         {
-            if (modsNumber == 0)
+           /* if (modsNumber == 0)
                 return;
 
             if (finishedInitializingPartOneMods && !reloadMods)
@@ -424,12 +359,12 @@ namespace JaLoader
 
                     InitializedInGameMods = true;
                 }
-            }       
+            }*/       
         }
 
         private void CheckForIncompatibilities(Mod mod)
         {
-            if (mod.Incompatibilities.Count > 0)
+            /*if (mod.Incompatibilities.Count > 0)
             {
                 foreach (var incompatibility in mod.Incompatibilities)
                 {
@@ -451,12 +386,12 @@ namespace JaLoader
                         }
                     }
                 }
-            }
+            }*/
         }
 
         private void CheckForDependencies(Mod mod)
         {
-            if (mod.Dependencies.Count > 0)
+            /*if (mod.Dependencies.Count > 0)
             {
                 foreach (var dependency in mod.Dependencies)
                 {
@@ -505,13 +440,11 @@ namespace JaLoader
                         }
                     }
                 }
-            }
+            }*/
         }
 
         public IEnumerator InitializeMods(string certainModFile = "")
         {
-            // wait until ReferencesLoader.canLoadMods = true
-
             while (!ReferencesLoader.Instance.canLoadMods)
                 yield return null;
 
@@ -553,16 +486,10 @@ namespace JaLoader
             {
                 bool isBepInExMod = false;
 
-                uiManager.modTemplateObject = Instantiate(uiManager.modTemplatePrefab);
-                uiManager.modTemplateObject.transform.SetParent(uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform, false);
-                uiManager.modTemplateObject.SetActive(true);
-
                 try
                 {
                     Assembly modAssembly = Assembly.LoadFrom(modFile.FullName);
-
                     Type[] allModTypes = modAssembly.GetTypes();
-
                     Type modType = allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "Mod");
 
                     #region BepInEx Loading
@@ -572,22 +499,21 @@ namespace JaLoader
 
                         if (modType == null)
                         {
-                            if(allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ModUnity4") != null) 
+                            if(allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ClassicMod") != null) 
                             {
                                 Console.LogWarning($"Mod {modFile.Name} is designed for an older version of Jalopy (1.0) and is not compatible with your current game version.");
-                                throw new Exception($"Mod {modFile.Name} is built for 1.0 and is not compatible with this version of the game.");
+                                throw new ModLoadException($"Mod {modFile.Name} is built for 1.0 and is not compatible with this version of the game.", null, 101);
                             }
                             else
                             {
-                                Console.LogError($"Mod {modFile.Name} does not contain any class derived from Mod or BaseUnityPlugin.");
-                                throw new Exception($"No valid mod class found for mod {modFile.Name}.");
+                                Console.LogError($"Mod {modFile.Name} does not contain any class derived from Mod, ClassicMod or BaseUnityPlugin.");
+                                throw new ModLoadException($"No valid mod class found for mod {modFile.Name}.", null, 102);
                             }
 
                         }
 
                         isBepInExMod = true;
 
-                        // the mod is made with BepInEx, try to load it
                         GameObject bix_ModObject = Instantiate(new GameObject());
                         bix_ModObject.transform.parent = null;
                         bix_ModObject.SetActive(false);
@@ -628,8 +554,6 @@ namespace JaLoader
                         }
                         else
                         {
-                            // somehow there is no attribute or it failed to load
-
                             ModID = ModName = modAssembly.GetName().Name;
                             ModVersion = modAssembly.GetName().Version.ToString();
                         }
@@ -639,7 +563,6 @@ namespace JaLoader
                         modInfo.Version = ModVersion;
 
                         bix_ModObject.name = $"BepInEx_CompatLayer_{ModID}";
-                        uiManager.modTemplateObject.name = $"BepInEx_CompatLayer_{ModID}_Mod";
 
                         string bix_modVersionText = ModVersion;
                         string bix_modName = SettingsManager.DebugMode ? $"{ModID} - BepInEx" : ModName;
@@ -648,35 +571,13 @@ namespace JaLoader
                         string authorName = "BepInEx";
 
                         if(Regex.IsMatch(modInfo.GUID, pattern))
-                        {
                             authorName = modInfo.GUID.Split('.')[1];
-                        }
 
-                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = bix_modName;
-                        uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = authorName;
+                        var genericBIXModData = new GenericModData(ModID, ModName, ModVersion, ModDescription, authorName, null, bix_mod, isBIXMod: true);
+                        var BIXtext = uiManager.CreateModEntryReturnText(genericBIXModData);
+                        ModManager.AddMod(bix_mod, WhenToInit.InMenu, BIXtext, genericBIXModData);
 
-                        uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(ModID, authorName, bix_modVersionText, $"{ModDescription}\n\nThis mod was made using BepInEx. Some features might not work as intended."); });
-                        uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"BepInEx_CompatLayer_{ModID}-SettingsHolder"); });
-
-                        var bix_tempModObj = uiManager.modTemplateObject;
-
-                        uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveUpButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderUp(bix_mod, bix_tempModObj); });
-                        uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveDownButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderDown(bix_mod, bix_tempModObj); });
-                        uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveTopButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderTop(bix_mod, bix_tempModObj); });
-                        uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveBottomButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderBottom(bix_mod, bix_tempModObj); });
-
-                        modsInitInMenuIncludingBIX.Add(bix_mod);
-
-                        GameObject bix_tempObj = uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").Find("Text").gameObject;
-                        uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleMod(bix_mod, bix_tempObj.GetComponent<Text>()); });
-
-                        modStatusTextRef.Add(bix_mod, bix_tempObj.GetComponent<Text>());
-
-                        Debug.Log($"Part 1/2 of initialization for BepInEx mod {ModName} completed");              
-
-                        modsNumber++;
-                        bepinexModsNumber++;
-
+                        Debug.Log($"Part 1/2 of initialization for BepInEx mod {ModName} completed");
                         if (certainModFile != "")
                         {
                             try
@@ -685,7 +586,8 @@ namespace JaLoader
 
                                 Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} completed");
 
-                                if (!disabledMods.Contains(bix_mod))
+                                ModDataForManager data;
+                                if (ModManager.Mods.TryGetValue(bix_mod, out data) && data.IsEnabled == false)
                                     bix_mod.gameObject.SetActive(true);
 
                                 foreach (IConfigEntry entry in bix_mod.configEntries.Keys)
@@ -718,7 +620,7 @@ namespace JaLoader
 
                                 Console.LogError("JaLoader", $"An error occured while trying to load BepInEx mod \"{modInfo.name}\"");
 
-                                modsInitInMenuIncludingBIX.Remove(bix_mod);
+                                ModManager.Mods.Remove(bix_mod);
 
                                 continue;
                                 throw;
@@ -740,15 +642,16 @@ namespace JaLoader
                     if (mod.ModID == null || mod.ModName == null || mod.ModAuthor == null || mod.ModVersion == null || mod.ModID == string.Empty || mod.ModName == string.Empty || mod.ModAuthor == string.Empty || mod.ModVersion == string.Empty)
                     {
                         Console.LogError(modFile.Name, $"{modFile.Name} contains no information related to its ID, name, author or version.");
+                        throw new ModLoadException("Invalid ModID/ModName/ModAuthor/ModVersion!", null, 100);
+                    }
 
-                        var warning = uiManager.modTemplateObject.transform.Find("WarningIcon").gameObject;
-                        uiManager.AddWarningToMod(warning, "Invalid ModID/ModName/ModAuthor/ModVersion!");
-
-                        throw new Exception();
+                    if(BannedCharacters.IsMatch(mod.ModID) || BannedCharacters.IsMatch(mod.ModName) || BannedCharacters.IsMatch(mod.ModAuthor))
+                    {
+                        Console.LogError(modFile.Name, $"{modFile.Name} contains invalid characters (_ or |) in its ID, name or author. Please remove them and try again.");
+                        throw new ModLoadException("Invalid characters in ModID/ModName/ModAuthor!", null, 103);
                     }
 
                     ModObject.name = $"{mod.ModID}_{mod.ModAuthor}_{mod.ModName}";
-                    uiManager.modTemplateObject.name = $"{mod.ModID}_{mod.ModAuthor}_{mod.ModName}_Mod";
 
                     if (mod.UseAssets)
                     {
@@ -761,60 +664,11 @@ namespace JaLoader
                     string modVersionText = mod.ModVersion;
                     string modName = SettingsManager.DebugMode ? mod.ModID : mod.ModName;
 
-                    if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
-                    {
-                        string[] splitLink = mod.GitHubLink.Split('/');
-
-                        string URL = $"https://api.github.com/repos/{splitLink[3]}/{splitLink[4]}/releases/latest";
-
-                        int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
-
-                        string latestVersion = SettingsManager.GetLatestUpdateVersionString(URL, currentVersion);
-
-                        if (int.Parse(latestVersion.Replace(".", "")) > currentVersion)
-                        {
-                            modsNeedUpdate++;
-                            modVersionText = $"{mod.ModVersion} <color=green>(Latest version: {latestVersion})</color>";
-                            modName = $"<color=green>(Update Available!)</color> {modName}";
-
-                            uiManager.MakeNutGreen();
-                        }
-
-                        uiManager.modTemplateObject.transform.Find("Buttons").Find("GitHubButton").GetComponent<Button>().interactable = true;
-                        uiManager.modTemplateObject.transform.Find("Buttons").Find("GitHubButton").GetComponent<Button>().onClick.AddListener(delegate { ModHelper.Instance.OpenURL(mod.GitHubLink); });
-                    }
-
-                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modName;
-                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
-
-                    uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, modVersionText, mod.ModDescription); });
-                    uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"); });
-
-                    var tempModObj = uiManager.modTemplateObject;
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveUpButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderUp(mod, tempModObj); });
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveDownButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderDown(mod, tempModObj); });
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveTopButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderTop(mod, tempModObj); });
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveBottomButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderBottom(mod, tempModObj); });
-
-                    switch (mod.WhenToInit)
-                    {
-                        case WhenToInit.InMenu:
-                            modsInitInMenuIncludingBIX.Add(mod);
-                            break;
-
-                        case WhenToInit.InGame:
-                            modsInitInGame.Add(mod);
-                            break;
-                    }
-
-                    GameObject tempObj = uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").Find("Text").gameObject;
-                    uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleMod(mod, tempObj.GetComponent<Text>()); });
-
-                    modStatusTextRef.Add(mod, tempObj.GetComponent<Text>());
+                    var genericModData = new GenericModData(mod.ModID, mod.ModName, mod.ModVersion, mod.ModDescription, mod.ModAuthor, mod.GitHubLink, mod);
+                    var text = uiManager.CreateModEntryReturnText(genericModData);
+                    ModManager.AddMod(mod, mod.WhenToInit, text, genericModData);
 
                     Debug.Log($"Part 1/2 of initialization for mod {mod.ModName} completed");
-
-                    modsNumber++;
 
                     if (certainModFile != "")
                     {
@@ -854,7 +708,7 @@ namespace JaLoader
 
                             Console.LogError("JaLoader", $"An error occured while trying to load mod \"{mod.ModName}\"");
 
-                            modsInitInMenuIncludingBIX.Remove(mod);
+                            ModManager.Mods.Remove(mod);
 
                             continue;
                             throw;
@@ -870,90 +724,73 @@ namespace JaLoader
                     Debug.Log($"Failed to initialize mod {modFile.Name}");
                     Console.LogError("JaLoader", $"An error occured while trying to initialize mod \"{modFile.Name}\": ");
 
-                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = new Color32(255, 83, 83, 255);
+                    var obj = uiManager.CreateModEntryReturnEntry(new GenericModData(modFile.Name, modFile.Name, "Failed to load", $"{modFile.Name} experienced an issue during loading and couldn't be initialized. You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.", "Unknown", "", null));
+                    uiManager.AddWarningToMod(obj, "Failed to load mod!", true);
 
-                    var warning = uiManager.modTemplateObject.transform.Find("WarningIcon").gameObject;
-                    uiManager.AddWarningToMod(warning, "Failed to load mod!");
-
-                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modFile.Name;
-                    uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = "Failed to load mod";
-
-                    uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(modFile.Name, "", "", $"{modFile.Name} experienced an issue during loading and couldn't be initialized. You can check the \"JaLoader_log.log\" file, located in the main game folder for more details."); });
-
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveUpButton").GetComponent<Button>().interactable = false;
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveDownButton").GetComponent<Button>().interactable = false;
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveTopButton").GetComponent<Button>().interactable = false;
-                    uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveBottomButton").GetComponent<Button>().interactable = false;
-
-                    if (ex is FileNotFoundException fileNotFoundException)
+                    switch (ex)
                     {
-                        string[] parts = fileNotFoundException.FileName.Split(',');
+                        case FileNotFoundException fileException:
+                            string[] parts = fileException.FileName.Split(',');
 
-                        if (parts.Length >= 2)
-                        {
-                            string dllName = parts[0].Trim();
-                            string versionSection = parts[1].Trim();
-
-                            int versionIndex = versionSection.IndexOf("Version=");
-                            if (versionIndex != -1)
+                            if (parts.Length >= 2)
                             {
-                                string versionNumber = versionSection.Substring(versionIndex + "Version=".Length).Trim();
+                                string dllName = parts[0].Trim();
+                                string versionSection = parts[1].Trim();
 
-                                uiManager.AddWarningToMod(warning, $"Missing assembly: {dllName}");
+                                int versionIndex = versionSection.IndexOf("Version=");
+                                if (versionIndex != -1)
+                                {
+                                    string versionNumber = versionSection.Substring(versionIndex + "Version=".Length).Trim();
 
-                                string errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}, version {versionNumber}";
-                                Debug.Log(errorMessage);
-                                Console.LogError("JaLoader", errorMessage);
-                                Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
+                                    uiManager.AddWarningToMod(obj, $"Missing assembly: {dllName}", true);
+
+                                    string errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}, version {versionNumber}";
+                                    Debug.Log(errorMessage);
+                                    Console.LogError("JaLoader", errorMessage);
+                                    Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
+                                }
                             }
-                        }
+                            break;
+
+                        case ModLoadException modLoadException:
+                            uiManager.AddWarningToMod(obj, $"Mod Load Exception: {modLoadException.Message}", true);
+                            Console.LogError("JaLoader", $"Mod Load Exception: {modLoadException.Message}");
+                            break;
+
+                        default:
+                            Console.LogError("/", ex);
+                            Debug.Log(ex);
+                            Debug.Log("You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
+                            Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
+
+                            if (isBepInExMod)
+                            {
+                                Console.LogWarning("JaLoader", "Please report this issue to the JaLoader GitHub page, making sure to upload your 'output_log.txt' file and applying the BepInEx label!");
+                            }
+
+                            break;
                     }
-                    else
-                    {
-                        if (ex.Message.EndsWith("is built for 1.0 and is not compatible with this version of the game."))
-                        {
-                            uiManager.AddWarningToMod(warning, "Mod is incompatible with this version of the game!");
-
-                            continue;
-                        }
-
-                        Console.LogError("/", ex);
-                        Debug.Log(ex);
-                        Debug.Log("You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
-                        Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
-
-                        if (isBepInExMod)
-                        {
-                            Console.LogWarning("JaLoader", "Please report this issue to the JaLoader GitHub page, making sure to upload your 'output_log.txt' file and applying the BepInEx label!");
-                        }
-                    }
-
-                    //Console.LogError("JaLoader", $"\"{modFile.Name}\" is not a valid mod! Please remove it from the Mods folder.");
                 }
                 finally
                 {
-                    uiManager.modTemplateObject = null;
-
                     if(errorOccured && certainModFile == "")
                         GetComponent<LoadingScreen>().DeleteLoadingScreen();
                 }
             }
 
+            if (!errorOccured && certainModFile == "")
+                GetComponent<LoadingScreen>().DeleteLoadingScreen();
 
-            if (validMods == modsNumber)
+            EventsManager.Instance.OnModsInit();
+
+            yield return null;
+
+
+            /*if (validMods == modsNumber)
             {
                 LoadModOrder();
 
                 finishedInitializingPartOneMods = true;
-            }
-
-            if (modsNumber == 0 && certainModFile == "")
-            {
-                Console.LogMessage("JaLoader", $"No mods found!");
-                Console.Instance.ToggleVisibility(true);
-
-                uiManager.modsCountText.text = "No mods installed";
-                UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
             }
 
             if(!errorOccured && certainModFile == "")
@@ -964,131 +801,6 @@ namespace JaLoader
             yield return null;
         }
 
-        private void MoveModOrderUp(MonoBehaviour mod, GameObject modListObj)
-        {
-            if(modListObj.transform.GetSiblingIndex() > 1)
-                modListObj.transform.SetSiblingIndex(modListObj.transform.GetSiblingIndex() - 1);
-
-            SaveModsOrder();
-        }
-
-        private void MoveModOrderDown(MonoBehaviour mod, GameObject modListObj)
-        {
-            if(modListObj.transform.GetSiblingIndex() < modListObj.transform.parent.childCount - 1)
-                modListObj.transform.SetSiblingIndex(modListObj.transform.GetSiblingIndex() + 1);
-
-            SaveModsOrder();
-        }
-
-        private void MoveModOrderTop(MonoBehaviour mod, GameObject modListObj)
-        {
-            modListObj.transform.SetSiblingIndex(1);
-
-            SaveModsOrder();
-        }
-
-        private void MoveModOrderBottom(MonoBehaviour mod, GameObject modListObj)
-        {
-            modListObj.transform.SetSiblingIndex(modListObj.transform.parent.childCount - 1);
-
-            SaveModsOrder();
-        }
-
-        private void SaveModsOrder()
-        {
-            string orderFilePath = Path.Combine(Application.persistentDataPath, "ModsOrder.txt");
-
-            using (StreamWriter writer = new StreamWriter(orderFilePath))
-            {
-                for (int i = 1; i < uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).childCount; i++)
-                {
-                    GameObject modObj = uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).GetChild(i).gameObject;
-                    string[] modInfo = modObj.name.Split('_');
-                    if (modInfo.Length < 3) return;
-
-                    writer.WriteLine($"{modInfo[0]}_{modInfo[1]}_{modInfo[2]}_{i}");
-                }
-            }
-
-            Debug.Log("Saved mods order");
-        }
-
-        private void LoadModOrder()
-        {
-            string orderFilePath = Path.Combine(Application.persistentDataPath, "ModsOrder.txt");
-
-            if (File.Exists(orderFilePath))
-            {
-                string[] lines = File.ReadAllLines(orderFilePath);
-
-                foreach (string line in lines)
-                {
-                    string[] modInfo = line.Split('_');
-
-                    string modID = modInfo[0];
-                    string modAuthor = modInfo[1];
-                    string modName = modInfo[2];
-                    int loadOrder = int.Parse(modInfo[3]);
-
-                    MonoBehaviour mod = FindMod(modAuthor, modID, modName);
-
-                    if (mod != null)
-                    {
-                        GameObject modObj = null;
-
-                        if (mod is Mod)
-                        {
-                            modObj = uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).Find($"{modID}_{modAuthor}_{modName}_Mod").gameObject;
-                        }
-                        else if(mod is BaseUnityPlugin)
-                        {
-                            ModInfo pluginInfo = mod.gameObject.GetComponent<ModInfo>();
-
-                            modObj = uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).Find($"BepInEx_CompatLayer_{pluginInfo.GUID}_Mod").gameObject;
-                        }
-
-                        modObj.transform.SetSiblingIndex(loadOrder);
-
-                        if (modsInitInMenuIncludingBIX.Contains(mod))
-                        {
-                            modsInitInMenuIncludingBIX.Remove(mod);
-
-                            if (loadOrder <= modsInitInMenuIncludingBIX.Count)
-                            {
-                                modsInitInMenuIncludingBIX.Insert(loadOrder - 1, mod);
-                            }
-                            else
-                            {
-                                modsInitInMenuIncludingBIX.Add(mod);
-                            }
-                        }
-
-                        if (modsInitInGame.Contains(mod as Mod))
-                        {
-                            modsInitInGame.Remove(mod as Mod);
-
-                            if (loadOrder <= modsInitInGame.Count)
-                            {
-                                modsInitInGame.Insert(loadOrder - 1, mod as Mod);
-                            }
-                            else
-                            {
-                                modsInitInGame.Add(mod as Mod);
-                            }
-                        }
-                    }
-                }
-
-                SaveModsOrder();
-            }
-            else
-            {
-                SaveModsOrder();
-            }
-
-            Debug.Log("Loaded mods order");
-        }
-
         private bool waitedForEndOfFrame = false;
 
         private IEnumerator WaitForEndOfFrame()
@@ -1097,7 +809,7 @@ namespace JaLoader
             waitedForEndOfFrame = true;
         }
 
-        private IEnumerator ReloadAllMods()
+        /*private IEnumerator ReloadAllMods()
         {
             Dictionary<GameObject, Type> modObjAndType = new Dictionary<GameObject, Type>();
             List<Mod> reloadedMods = new List<Mod>();
@@ -1213,229 +925,112 @@ namespace JaLoader
                     mod.OnReload();
 
             yield return null;
-        }
+        }*/
 
-        private Mod ReloadMod(Mod modToReload)
-        {
-            uiManager.modTemplateObject = Instantiate(uiManager.modTemplatePrefab);
-            uiManager.modTemplateObject.transform.SetParent(uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform, false);
-            uiManager.modTemplateObject.SetActive(true);
-
-            GameObject ModObject = modToReload.gameObject;
-
-            Type ModType = ModObject.GetComponent<Mod>().GetType();
-
-            DestroyImmediate(ModObject.GetComponent<Mod>());
-            if (uiManager.modSettingsScrollViewContent.transform.Find($"{modToReload.ModAuthor}_{modToReload.ModID}_{modToReload.ModName}-SettingsHolder"))
+            /*private Mod ReloadMod(Mod modToReload)
             {
-                DestroyImmediate(uiManager.modSettingsScrollViewContent.transform.Find($"{modToReload.ModAuthor}_{modToReload.ModID}_{modToReload.ModName}-SettingsHolder").gameObject);
-            }
-            if (uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform.Find($"{modToReload.ModID}_{modToReload.ModAuthor}_{modToReload.ModName}_Mod"))
-            {
-                DestroyImmediate(uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform.Find($"{modToReload.ModID}_{modToReload.ModAuthor}_{modToReload.ModName}_Mod").gameObject);
-            }
-            //modsInitInGame.Remove(modToReload);
-            modStatusTextRef.Remove(modToReload);
-            Console.Instance.RemoveCommandsFromMod(modToReload);
+                uiManager.modTemplateObject = Instantiate(uiManager.modTemplatePrefab);
+                uiManager.modTemplateObject.transform.SetParent(uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform, false);
+                uiManager.modTemplateObject.SetActive(true);
 
-            bool started = false;
-            while(!waitedForEndOfFrame)
-            {
-                if(!started)
+                GameObject ModObject = modToReload.gameObject;
+
+                Type ModType = ModObject.GetComponent<Mod>().GetType();
+
+                DestroyImmediate(ModObject.GetComponent<Mod>());
+                if (uiManager.modSettingsScrollViewContent.transform.Find($"{modToReload.ModAuthor}_{modToReload.ModID}_{modToReload.ModName}-SettingsHolder"))
                 {
-                    StartCoroutine(WaitForEndOfFrame());
-                    started = true;
+                    DestroyImmediate(uiManager.modSettingsScrollViewContent.transform.Find($"{modToReload.ModAuthor}_{modToReload.ModID}_{modToReload.ModName}-SettingsHolder").gameObject);
                 }
-            }
-
-            waitedForEndOfFrame = false;
-
-            Component ModComponent = ModObject.AddComponent(ModType);
-            Mod mod = ModObject.GetComponent<Mod>();
-
-            uiManager.modTemplateObject.name = $"{mod.ModID}_{mod.ModAuthor}_{mod.ModName}_Mod";
-
-            if (mod.UseAssets)
-            {
-                mod.AssetsPath = $@"{SettingsManager.ModFolderLocation}\Assets\{mod.ModID}";
-            }
-
-            string modVersionText = mod.ModVersion;
-            string modName = SettingsManager.DebugMode ? mod.ModID : mod.ModName;
-
-            if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
-            {
-                string[] splitLink = mod.GitHubLink.Split('/');
-
-                string URL = $"https://api.github.com/repos/{splitLink[3]}/{splitLink[4]}/releases/latest";
-
-                string version = ModHelper.Instance.GetLatestTagFromApiUrl(URL, modName);
-
-                int versionInt = int.Parse(version.Replace(".", ""));
-                int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
-
-                if (versionInt > currentVersion)
+                if (uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform.Find($"{modToReload.ModID}_{modToReload.ModAuthor}_{modToReload.ModName}_Mod"))
                 {
-                    modsNeedUpdate++;
-                    modVersionText = $"{mod.ModVersion} <color=green>(Latest version: {version})</color>";
-                    modName = $"<color=green>(Update Available!)</color> {modName}";
+                    DestroyImmediate(uiManager.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).transform.Find($"{modToReload.ModID}_{modToReload.ModAuthor}_{modToReload.ModName}_Mod").gameObject);
                 }
-            }
+                //modsInitInGame.Remove(modToReload);
+                modStatusTextRef.Remove(modToReload);
+                Console.Instance.RemoveCommandsFromMod(modToReload);
 
-            uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modName;
-            uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
-
-            uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, modVersionText, mod.ModDescription); });
-            uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"); });
-
-            var tempModObj = uiManager.modTemplateObject;
-            uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveUpButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderUp(mod, tempModObj); });
-            uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveDownButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderDown(mod, tempModObj); });
-            uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveTopButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderTop(mod, tempModObj); });
-            uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveBottomButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderBottom(mod, tempModObj); });
-
-            //modsInitInGame.Add(mod);
-
-            GameObject tempObj = uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").Find("Text").gameObject;
-            uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleMod(mod, tempObj.GetComponent<Text>()); });
-
-            modStatusTextRef.Add(mod, tempObj.GetComponent<Text>());
-
-            uiManager.modTemplateObject = null;
-
-            CheckForDependencies(mod);
-
-            CheckForIncompatibilities(mod);
-
-            mod.EventsDeclaration();
-
-            mod.SettingsDeclaration();
-
-            CustomObjectsManager.Instance.ignoreAlreadyExists = true;
-            mod.CustomObjectsRegistration();
-            CustomObjectsManager.Instance.ignoreAlreadyExists = false;
-
-            if (mod.settingsIDS.Count > 0)
-                mod.LoadModSettings();
-
-            return mod;
-        }
-
-        public void ToggleMod(MonoBehaviour mod, Text toggleBtn)
-        {
-            if (modsInitInMenuIncludingBIX.Contains(mod))
-            {
-                if (!disabledMods.Contains(mod))
+                bool started = false;
+                while(!waitedForEndOfFrame)
                 {
-                    disabledMods.Add(mod);
-                    toggleBtn.text = "Enable";
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = defaultGrayColor;
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = defaultGrayColor;
-                    mod.gameObject.SetActive(false);
-                }
-                else
-                {
-                    disabledMods.Remove(mod);
-                    disabledMods.Remove(mod); // bug "fix"
-                    toggleBtn.text = "Disable";
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = defaultWhiteColor;
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = defaultWhiteColor;
-                    mod.gameObject.SetActive(true);
-                }
-            }
-
-            if (modsInitInGame.Contains(mod as Mod))
-            {
-                if (!disabledMods.Contains(mod))
-                {
-                    disabledMods.Add(mod);
-                    toggleBtn.text = "Enable";
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = defaultGrayColor;
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = defaultGrayColor;
-                }
-                else
-                {
-                    disabledMods.Remove(mod);
-                    toggleBtn.text = "Disable";
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = defaultWhiteColor;
-                    toggleBtn.transform.parent.parent.parent.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = defaultWhiteColor;
-                }
-            }
-
-            SettingsManager.SaveSettings();
-        }
-
-        /// <summary>
-        /// Searches for a mod with the specified ID, name and author and returns it if found, otherwise returns null.
-        /// </summary>
-        /// <param name="author">The mod's author</param>
-        /// <param name="ID">The mod's ID</param>
-        /// <param name="name">The mod's name</param>
-        /// <returns>The searched Mod if found, otherwise null</returns>
-        public MonoBehaviour FindMod(string author, string ID, string name)
-        {
-            if (modsInitInGame.Find(i => i.ModID == ID && i.ModName == name && i.ModAuthor == author))
-            {
-                return modsInitInGame.Find(i => i.ModID == ID && i.ModName == name && i.ModAuthor == author);
-            }
-
-            foreach (MonoBehaviour monoBehaviour in modsInitInMenuIncludingBIX)
-            {
-                if (monoBehaviour is Mod mod)
-                {
-                    if (mod.ModID == ID && mod.ModAuthor == author)
+                    if(!started)
                     {
-                        return mod;
+                        StartCoroutine(WaitForEndOfFrame());
+                        started = true;
                     }
                 }
-                else if (monoBehaviour is BaseUnityPlugin bix_mod)
-                {
-                    ModInfo modInfo = bix_mod.gameObject.GetComponent<ModInfo>();
 
-                    if (modInfo.GUID == name)
+                waitedForEndOfFrame = false;
+
+                Component ModComponent = ModObject.AddComponent(ModType);
+                Mod mod = ModObject.GetComponent<Mod>();
+
+                uiManager.modTemplateObject.name = $"{mod.ModID}_{mod.ModAuthor}_{mod.ModName}_Mod";
+
+                if (mod.UseAssets)
+                {
+                    mod.AssetsPath = $@"{SettingsManager.ModFolderLocation}\Assets\{mod.ModID}";
+                }
+
+                string modVersionText = mod.ModVersion;
+                string modName = SettingsManager.DebugMode ? mod.ModID : mod.ModName;
+
+                if (mod.GitHubLink != string.Empty && mod.GitHubLink != null)
+                {
+                    string[] splitLink = mod.GitHubLink.Split('/');
+
+                    string URL = $"https://api.github.com/repos/{splitLink[3]}/{splitLink[4]}/releases/latest";
+
+                    string version = ModHelper.Instance.GetLatestTagFromApiUrl(URL, modName);
+
+                    int versionInt = int.Parse(version.Replace(".", ""));
+                    int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
+
+                    if (versionInt > currentVersion)
                     {
-                        return bix_mod;
+                        modsNeedUpdate++;
+                        modVersionText = $"{mod.ModVersion} <color=green>(Latest version: {version})</color>";
+                        modName = $"<color=green>(Update Available!)</color> {modName}";
                     }
                 }
-            }
 
-            return null;
-        }
+                uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().text = modName;
+                uiManager.modTemplateObject.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().text = mod.ModAuthor;
 
-        public Type GetTypeFromMod(string author, string ID, string name, string typeName)
-        {
-            MonoBehaviour mod = FindMod(author, ID, name);
+                uiManager.modTemplateObject.transform.Find("Buttons").Find("AboutButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleMoreInfo(mod.ModName, mod.ModAuthor, modVersionText, mod.ModDescription); });
+                uiManager.modTemplateObject.transform.Find("Buttons").Find("SettingsButton").GetComponent<Button>().onClick.AddListener(delegate { uiManager.ToggleSettings($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"); });
 
-            if (mod != null)
-                return Type.GetType($"{mod.GetType().Namespace}.{typeName}, {mod.GetType().Assembly.GetName().Name}");
+                var tempModObj = uiManager.modTemplateObject;
+                uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveUpButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderUp(mod, tempModObj); });
+                uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveDownButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderDown(mod, tempModObj); });
+                uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveTopButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderTop(mod, tempModObj); });
+                uiManager.modTemplateObject.transform.Find("LoadOrderButtons").Find("MoveBottomButton").GetComponent<Button>().onClick.AddListener(delegate { MoveModOrderBottom(mod, tempModObj); });
 
-            return null;
-        }   
+                //modsInitInGame.Add(mod);
 
-        /// <summary>
-        /// Searches for a mod with the specified ID and author and returns it if found, otherwise returns null.
-        /// </summary>
-        /// <param name="author">The mod's author</param>
-        /// <param name="ID">The mod's ID</param>
-        /// <returns>The searched Mod if found, otherwise null</returns>
-        public Mod FindMod(string author, string ID)
-        {
-            Mod inGameMod = modsInitInGame.Find(i => i.ModID == ID && i.ModAuthor == author);
-            Mod inMenuMod = null;
+                GameObject tempObj = uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").Find("Text").gameObject;
+                uiManager.modTemplateObject.transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().onClick.AddListener(delegate { ToggleMod(mod, tempObj.GetComponent<Text>()); });
 
-            foreach (MonoBehaviour monoBehaviour in modsInitInMenuIncludingBIX)
-            {
-                if (monoBehaviour is Mod mod)
-                {
-                    if (mod.ModID == ID && mod.ModAuthor == author)
-                    {
-                        inMenuMod = mod;
-                        break;
-                    }
-                }
-            }
+                modStatusTextRef.Add(mod, tempObj.GetComponent<Text>());
 
-            return inGameMod ?? inMenuMod;
+                uiManager.modTemplateObject = null;
+
+                CheckForDependencies(mod);
+
+                CheckForIncompatibilities(mod);
+
+                mod.EventsDeclaration();
+
+                mod.SettingsDeclaration();
+
+                CustomObjectsManager.Instance.ignoreAlreadyExists = true;
+                mod.CustomObjectsRegistration();
+                CustomObjectsManager.Instance.ignoreAlreadyExists = false;
+
+                if (mod.settingsIDS.Count > 0)
+                    mod.LoadModSettings();
+
+                return mod;*/
         }
     }
 }

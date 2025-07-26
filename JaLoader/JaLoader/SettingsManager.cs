@@ -73,10 +73,10 @@ namespace JaLoader
 
             string dllVersion = $"{version.Major}.{version.Minor}.{version.Build}";
 
-            if (version.ToString() != JaLoaderVersion)
+            if (dllVersion != JaLoaderVersion)
             {
-                Debug.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {version}");
-                Console.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {version}");
+                Debug.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {dllVersion}");
+                Console.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {dllVersion}");
             }
         }
 
@@ -387,22 +387,21 @@ namespace JaLoader
 
             if (includeDisabledMods)
             {
-                for (int i = 0; i < ModLoader.Instance.disabledMods.ToArray().Length; i++)
+                foreach (var mod in ModManager.Mods)
                 {
-                    var mod = ModLoader.Instance.disabledMods.ToArray()[i];
-
-                    if (mod is Mod)
+                    if (!mod.Value.IsEnabled)
                     {
-                        var modReference = mod as Mod;
-                        DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
-                    }
-                    else if (mod is BaseUnityPlugin)
-                    {
-                        var modReference = mod as BaseUnityPlugin;
-
-                        ModInfo modInfo = modReference.gameObject.GetComponent<ModInfo>();
-
-                        DisabledMods.Add($"BepInEx_CompatLayer_{modInfo.GUID}");
+                        if (mod.Key is Mod)
+                        {
+                            var modReference = mod.Key as Mod;
+                            DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
+                        }
+                        else if (mod.Key is BaseUnityPlugin)
+                        {
+                            var modReference = mod.Key as BaseUnityPlugin;
+                            ModInfo modInfo = modReference.gameObject.GetComponent<ModInfo>();
+                            DisabledMods.Add($"BepInEx_CompatLayer_{modInfo.GUID}");
+                        }
                     }
                 }
             }

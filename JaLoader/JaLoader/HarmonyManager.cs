@@ -704,6 +704,22 @@ namespace JaLoader
         }
     }
 
+    [HarmonyPatch(typeof(Language), "Get", new Type[] { typeof(string), typeof(string) })]
+    public static class Language_Get_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(string key, string sheetTitle, ref string __result)
+        {
+            if (key.StartsWith("MOD_"))
+            {
+                __result = key.Substring(4);
+
+                return false;
+            }
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(DialogueStuffsC), "StopTypeText")]
     public static class DialogueStuffsC_StopTypeText_Patch
     {

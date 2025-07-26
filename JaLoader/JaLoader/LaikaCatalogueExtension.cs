@@ -313,9 +313,9 @@ namespace JaLoader
 
                     var identif = obj.GetComponent<ObjectIdentification>();
                     var objInfo = obj.GetComponent<CustomObjectInfo>();
-                    var mod = ModLoader.Instance.FindMod(identif.Author, identif.ModID, identif.ModName);
+                    var mod = ModManager.FindMod(identif.Author, identif.ModID, identif.ModName);
 
-                    if(ModLoader.Instance.disabledMods.Contains(mod))
+                    if(!ModManager.Mods[mod].IsEnabled)
                         continue;
 
                     Texture2D tex = null;
