@@ -1277,7 +1277,7 @@ namespace JaLoader
             {
                 // wait for the request to complete
             }
-
+            
             // probably rate limited by github
             if (request.isHttpError || request.error == "Generic/unknown HTTP error")
                 return "0";

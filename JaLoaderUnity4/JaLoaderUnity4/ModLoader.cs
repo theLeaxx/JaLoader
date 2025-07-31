@@ -303,7 +303,6 @@ namespace JaLoaderUnity4
                     Type[] allModTypes = modAssembly.GetTypes();
 
                     Type modType = allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ModUnity4");
-                    //Type modType = modAssembly.GetType("Jalopy_PaperPlease.ModForUnity4");
                     GameObject ModObject = Instantiate(new GameObject()) as GameObject;
                     ModObject.transform.parent = null;
                     ModObject.SetActive(false);

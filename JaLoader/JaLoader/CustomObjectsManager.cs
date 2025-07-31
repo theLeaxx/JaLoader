@@ -108,7 +108,12 @@ namespace JaLoader
 
             ModHelper.Instance.RefreshPartHolders();
 
-            StartCoroutine(LoadDelay(1f, true));
+            StartCoroutine(LoadDelay(3f, true));
+        }
+
+        public void RegisterObject(GameObject obj, string registryName)
+        {
+            RegisterObject(obj, registryName, false);
         }
 
         /// <summary>
@@ -116,7 +121,7 @@ namespace JaLoader
         /// </summary>
         /// <param name="obj">The object in question</param>
         /// <param name="registryName">Internal object name</param>
-        public void RegisterObject(GameObject obj, string registryName)
+        public void RegisterObject(GameObject obj, string registryName, bool isPaintJob = false)
         {
             if (obj == null)
             {
@@ -140,18 +145,17 @@ namespace JaLoader
             obj.SetActive(false);
             obj.GetComponent<CustomObjectInfo>().objRegistryName = registryName;
 
+            if (isPaintJob)
+                obj.GetComponent<CustomObjectInfo>().isPaintJob = true;
+
             database.Add($"{registryName}", obj);
             Console.LogDebug("CustomObjectsManager", $"Registered object with the registry key {registryName}!");
             DontDestroyOnLoad(obj);
 
             if (allObjectsRegistered)
-            {
-                // compare debugobjectsspawner.instance.spawnedcustomobjects with the registryNames from databas, and print them to the console
-                
                 foreach(var entry in database)
                     if (!DebugObjectSpawner.Instance.addedCustomObjects.Contains(entry.Key))
                         DebugObjectSpawner.Instance.AddObjectToList(entry.Key, "");
-            }
         }
 
         /// <summary>
@@ -200,7 +204,7 @@ namespace JaLoader
 
             IncrementID(registryName, spawnedObj);
 
-            Console.LogDebug("1 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
+            Console.LogDebug("CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -252,7 +256,7 @@ namespace JaLoader
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
-            Console.LogDebug("2 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
+            Console.LogDebug("CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -307,7 +311,7 @@ namespace JaLoader
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
-            Console.LogDebug("3 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
+            Console.LogDebug("CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -635,7 +639,7 @@ namespace JaLoader
 
             LoadData(fullLoad);
             if(fullLoad)
-                LaikaCatalogueExtension.Instance.AddPages("", "", 0);
+                LaikaCatalogueExtension.Instance.AddPages();
         }
     }
 

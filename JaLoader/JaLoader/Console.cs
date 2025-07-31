@@ -97,7 +97,7 @@ namespace JaLoader
         
         public bool Visible
         {
-            get { return uiManager.modConsole.activeSelf; }
+            get { return uiManager.JLConsole.activeSelf; }
             private set { }
         }
         
@@ -105,102 +105,11 @@ namespace JaLoader
         {
             uiManager = UIManager.Instance;
 
-            inputField = uiManager.modConsole.transform.GetChild(2).GetComponent<InputField>();
-            consoleRectTransform = uiManager.modConsole.GetComponent<RectTransform>();
-
-            SetPosition(SettingsManager.ConsolePosition);
+            inputField = uiManager.JLConsole.GetComponentInChildren<InputField>();
 
             init = true;
 
             LogAllQueuedMessages();
-        }
-
-        public void SetPosition(ConsolePositions pos)
-        {
-            var modLoaderTextRT = uiManager.modLoaderText.GetComponent<RectTransform>();
-            var modLoaderTextT = uiManager.modLoaderText.GetComponent<Text>();
-
-            var modsFolderTextRT = uiManager.modFolderText.GetComponent<RectTransform>();
-            var modsFolderTextT = uiManager.modFolderText.GetComponent<Text>();
-
-            switch (pos)
-            {
-                case ConsolePositions.TopLeft:
-                    consoleRectTransform.anchorMin = new Vector2(0, 1);
-                    consoleRectTransform.anchorMax = new Vector2(0, 1);
-                    consoleRectTransform.pivot = new Vector2(0, 1);
-                    consoleRectTransform.position = new Vector2(5, Screen.height - 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(1, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(1, 1);
-                    modLoaderTextRT.pivot = new Vector2(1, 1);
-                    modLoaderTextRT.position = new Vector2(Screen.width - 10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleRight;
-
-                    modsFolderTextRT.anchorMin = new Vector2(1, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(1, 1);
-                    modsFolderTextRT.pivot = new Vector2(1, 1);
-                    modsFolderTextRT.position = new Vector2(Screen.width - 10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleRight;
-                    break;
-
-                case ConsolePositions.TopRight:
-                    consoleRectTransform.anchorMin = new Vector2(1, 1);
-                    consoleRectTransform.anchorMax = new Vector2(1, 1);
-                    consoleRectTransform.pivot = new Vector2(1, 1);
-                    consoleRectTransform.position = new Vector2(Screen.width -5, Screen.height - 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(0, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(0, 1);
-                    modLoaderTextRT.pivot = new Vector2(0, 1);
-                    modLoaderTextRT.position = new Vector2(10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleLeft;
-
-                    modsFolderTextRT.anchorMin = new Vector2(0, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(0, 1);
-                    modsFolderTextRT.pivot = new Vector2(0, 1);
-                    modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleLeft;
-                    break;
-
-                case ConsolePositions.BottomLeft:
-                    consoleRectTransform.anchorMin = new Vector2(0, 0);
-                    consoleRectTransform.anchorMax = new Vector2(0, 0);
-                    consoleRectTransform.pivot = new Vector2(0, 0);
-                    consoleRectTransform.position = new Vector2(5, 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(0, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(0, 1);
-                    modLoaderTextRT.pivot = new Vector2(0, 1);
-                    modLoaderTextRT.position = new Vector2(10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleLeft;
-
-                    modsFolderTextRT.anchorMin = new Vector2(0, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(0, 1);
-                    modsFolderTextRT.pivot = new Vector2(0, 1);
-                    modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleLeft;
-                    break;
-
-                case ConsolePositions.BottomRight:
-                    consoleRectTransform.anchorMin = new Vector2(1, 0);
-                    consoleRectTransform.anchorMax = new Vector2(1, 0);
-                    consoleRectTransform.pivot = new Vector2(1, 0);
-                    consoleRectTransform.position = new Vector2(Screen.width -5, 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(0, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(0, 1);
-                    modLoaderTextRT.pivot = new Vector2(0, 1);
-                    modLoaderTextRT.position = new Vector2(10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleLeft;
-
-                    modsFolderTextRT.anchorMin = new Vector2(0, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(0, 1);
-                    modsFolderTextRT.pivot = new Vector2(0, 1);
-                    modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleLeft;
-                    break;
-            }
         }
 
         public void AddCommand(string commandName, string description, string methodName, Mod mod)
@@ -287,21 +196,21 @@ namespace JaLoader
 
         public void UpdateConsole(float value)
         {
-            if (uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0).childCount > 100)
-                Destroy(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0).GetChild(1).gameObject);
+            if (uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0).childCount > 100)
+                Destroy(uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0).GetChild(1).gameObject);
 
-            StartCoroutine(ApplyScrollPosition(uiManager.modConsole.transform.GetChild(1).GetComponent<ScrollRect>(), value));
+            StartCoroutine(ApplyScrollPosition(uiManager.JLConsole.transform.GetChild(1).GetComponent<ScrollRect>(), value));
         }
 
         public void ToggleVisibility(bool visible)
         {
             if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
             {
-                uiManager.modConsole.SetActive(false);
+                uiManager.JLConsole.SetActive(false);
                 return;
             }
 
-            uiManager.modConsole.SetActive(visible);
+            uiManager.JLConsole.SetActive(visible);
         }
 
         IEnumerator ApplyScrollPosition(ScrollRect sr, float verticalPos)
@@ -405,10 +314,10 @@ namespace JaLoader
 
             ToggleVisibility(true);
 
-            float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
+            float _value = UIManager.Instance.JLConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
 
-            GameObject _msg = Instantiate(uiManager.messageTemplatePrefab);
-            _msg.transform.SetParent(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
+            GameObject _msg = Instantiate(uiManager.ConsoleMessageTemplate);
+            _msg.transform.SetParent(uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
             switch (color)
             {
                 case "grey":
@@ -809,7 +718,7 @@ namespace JaLoader
                 LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
             }
 
-            float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
+            float _value = UIManager.Instance.JLConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
 
             UpdateConsole(_value);
         }
@@ -902,7 +811,7 @@ namespace JaLoader
 
         private void Clear()
         {
-            foreach (Transform message in uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0))
+            foreach (Transform message in uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0))
                 if (message.name != "MessageTemplate")
                     Destroy(message.gameObject);
         }

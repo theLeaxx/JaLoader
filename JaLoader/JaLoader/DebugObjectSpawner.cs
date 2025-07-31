@@ -319,7 +319,7 @@ namespace JaLoader
 
         private void OnUILoadFinished()
         {
-            inputField = uiManager.objectsList.transform.Find("InputField").GetComponent<InputField>();
+            inputField = uiManager.ObjectsList.transform.Find("SearchField").GetComponent<InputField>();
 
             inputField.onValueChanged.AddListener(delegate { OnInputValueChanged(); });
 
@@ -328,7 +328,7 @@ namespace JaLoader
                 AddObjectToList(keyValuePair.Key.ToString(), keyValuePair.Value);
             }
 
-            uiManager.objectsList.transform.Find("SpawnButton").GetComponent<Button>().onClick.AddListener(delegate { SpawnObject(currentlySelected); });
+            uiManager.ObjectsList.transform.Find("SpawnButton").GetComponent<Button>().onClick.AddListener(delegate { SpawnObject(currentlySelected); });
         }
 
         private void OnCustomObjectsRegisterFinished()
@@ -345,14 +345,14 @@ namespace JaLoader
         {
             if (SettingsManager.DebugMode && Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.S))
             {
-                uiManager.objectsList.transform.parent.gameObject.SetActive(!uiManager.objectsList.transform.parent.gameObject.activeSelf);
+                uiManager.ObjectsList.transform.parent.gameObject.SetActive(!uiManager.ObjectsList.transform.parent.gameObject.activeSelf);
             }
         }
 
         public void AddObjectToList(string id, string name)
         {
-            GameObject _obj = Instantiate(uiManager.objectTemplate);
-            _obj.transform.SetParent(uiManager.objectTemplate.transform.parent, false);
+            GameObject _obj = Instantiate(uiManager.ObjectEntryTemplate);
+            _obj.transform.SetParent(uiManager.ObjectEntryTemplate.transform.parent, false);
             if (name != "")
             {
                 _obj.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = $"(Vanilla) - {id}\n{name}";
@@ -376,20 +376,20 @@ namespace JaLoader
                 if (int.TryParse(currentlySelected.Replace("(Vanilla) - ", ""), out int parsedID))
                     currentlySelected = parsedID.ToString();
 
-                uiManager.currentlySelectedText.text = $"Currently selected: <color=aqua>{GetNameOfVanillaObject(int.Parse(currentlySelected))} ({currentlySelected})</color>";
+                uiManager.CurrentSelectedObjectText.text = $"Currently selected: <color=aqua>{GetNameOfVanillaObject(int.Parse(currentlySelected))} ({currentlySelected})</color>";
 
                 currentlySelected = lines[0];
             }
             else
             {
                 currentlySelected = lines[1];
-                uiManager.currentlySelectedText.text = $"Currently selected: <color=aqua>{currentlySelected} ({customObjects.GetObject(currentlySelected).GetComponent<ObjectIdentification>().ModID})</color>";
+                uiManager.CurrentSelectedObjectText.text = $"Currently selected: <color=aqua>{currentlySelected} ({customObjects.GetObject(currentlySelected).GetComponent<ObjectIdentification>().ModID})</color>";
             }
         }
 
         private void OnInputValueChanged()
         {
-            foreach(Transform child in uiManager.objectTemplate.transform.parent)
+            foreach(Transform child in uiManager.ObjectsList.Find("Content/Viewport/Content"))
             {
                 if (child.name == "ItemTemplate") continue;
 

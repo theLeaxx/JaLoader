@@ -198,7 +198,7 @@ namespace JaLoader
             foreach (var paintJob in PaintJobs)
             {
                 var inGameObj = ModHelper.Instance.CreatePaintJobBox(paintJob.Name, paintJob.Author, paintJob.Description, paintJob.Price, paintJob.Material);
-                CustomObjectsManager.Instance.RegisterObject(inGameObj, paintJob.Name);
+                CustomObjectsManager.Instance.RegisterObject(inGameObj, paintJob.Name, true);
             }
         }
 

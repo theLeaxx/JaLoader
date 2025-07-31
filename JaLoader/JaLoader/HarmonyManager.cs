@@ -274,6 +274,26 @@ namespace JaLoader
         }
     }
 
+    [HarmonyPatch(typeof(MainMenuClickersC), "StartNewGame")]
+    public static class MainMenuClickersC_StartNewGame_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            EventsManager.Instance.OnNewGameStart();
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuClickersC), "StartNewGameSkipTutorial")]
+    public static class MainMenuClickersC_StartNewGameSkipTutorial_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            EventsManager.Instance.OnNewGameStart();
+        }
+    }
+
     [HarmonyPatch(typeof(MainMenuC), "Pause")]
     public static class MainMenuC_Pause_Patch
     {

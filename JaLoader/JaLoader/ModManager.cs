@@ -1,12 +1,15 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
+using Discord;
 using JaLoader.BepInExWrapper;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using JaLoader.Common;
 
 namespace JaLoader
 {
@@ -17,10 +20,60 @@ namespace JaLoader
         internal static List<MonoBehaviour> loadOrderList = new List<MonoBehaviour>();
 
         public static bool FinishedLoadingMenuMods;
+        internal static bool reloadGameModsRequired = false;
 
         internal static void Initialize()
         {
             EventsManager.Instance.OnModsInitialized += LoadModOrder;
+
+            EventsManager.Instance.OnGameLoad += EnableGameMods;
+            EventsManager.Instance.OnGameUnload += UnloadGameMods;
+            EventsManager.Instance.OnMenuLoad += UnloadGameMods;
+        }
+
+        internal static void UnloadGameMods()
+        {
+            if (!FinishedLoadingMenuMods)
+                return;
+
+            reloadGameModsRequired = true;
+
+            foreach (var script in Mods)
+                if (script.Value.InitTime == WhenToInit.InGame && script.Value.IsEnabled)
+                    script.Key.gameObject.SetActive(false);
+        }
+
+        internal static void ReloadGameModsIfNecessary()
+        {
+            reloadGameModsRequired = true;
+        }
+
+        internal static void EnableGameMods()
+        {
+            if (reloadGameModsRequired)
+            {
+                CoroutineManager.StartStaticCoroutine(WaitForLaikaThenReload());
+                return;
+            }
+
+            foreach (var script in Mods)
+                if (script.Value.InitTime == WhenToInit.InGame && script.Value.IsEnabled)
+                    script.Key.gameObject.SetActive(true);
+        }
+
+        private static IEnumerator WaitForLaikaThenReload()
+        {
+            while (ModHelper.Instance.laika == null)
+                yield return null;
+
+            ReloadMods();
+
+            yield break;
+        }
+
+        internal static void ReloadMods()
+        {
+            CoroutineManager.StartStaticCoroutine(ModLoader.Instance.ReloadAllMods());
         }
 
         internal static void LoadMods()
@@ -30,15 +83,16 @@ namespace JaLoader
                 Console.LogMessage("JaLoader", $"No mods found!");
                 Console.Instance.ToggleVisibility(true);
 
-                UIManager.Instance.modsCountText.text = "No mods installed";
-                UIManager.Instance.modTemplatePrefab.transform.parent.parent.parent.parent.Find("NoMods").gameObject.SetActive(true);
+                UIManager.Instance.NoMods();
+
+                DebugUtils.SignalFinishedLoading();
 
                 return;
             }
 
             LoadDisabledStatus();
 
-            UIManager.Instance.modsCountText.text = $"{Mods.Count} mods installed";
+            UIManager.Instance.ModsCountText.text = $"{Mods.Count} mods installed";
 
             foreach (var script in Mods)
             {
@@ -49,6 +103,45 @@ namespace JaLoader
             }
 
             FinishedLoadingMenuMods = true;
+
+            DebugUtils.SignalFinishedLoading();
+            UIManager.Instance.WriteConsoleStartMessage();
+
+            CheckAllModsForUpdates();
+        }
+
+        internal static void CheckAllModsForUpdates()
+        {
+            if (UpdateUtils.CanCheckForUpdates() && Mods.Count > 0)
+            {
+                var modsNeedUpdate = 0;
+
+                foreach (var script in Mods.Keys)
+                {
+                    if (script is Mod mod)
+                    {
+                        var latestVersion = "";
+                        if (UpdateUtils.CheckForModUpdate(mod, out latestVersion))
+                        {
+                            modsNeedUpdate++;
+                            UIManager.Instance.ShowUpdateAvailableForMod(Mods[mod].GenericModData, latestVersion);
+                        }
+                    }
+                }
+
+                if(modsNeedUpdate > 0)
+                    Console.LogMessage("JaLoader", $"{modsNeedUpdate} mods have available updates!");
+            }
+        }
+
+        internal static int GetDisabledModsCount()
+        {
+            return SettingsManager.DisabledMods.Count;
+        }
+
+        internal static int GetBepinExModsCount()
+        {
+            return Mods.Values.Count(data => data.GenericModData.IsBepInExMod);
         }
 
         internal static void FinishLoadingMod(MonoBehaviour script, bool enableMod = true)
@@ -60,13 +153,15 @@ namespace JaLoader
 
             if (script is Mod mod)
             {
-                //CheckForDependencies(mod);
+                CheckForDependencies(mod);
 
-                //CheckForIncompatibilities(mod);
+                CheckForIncompatibilities(mod);
 
                 try
                 {
                     modName = mod.ModName;
+
+                    mod.Preload();
 
                     mod.EventsDeclaration();
 
@@ -162,7 +257,7 @@ namespace JaLoader
                 var foundMod = FindMod(modInfo[0], modInfo[1], modInfo[2]);
 
                 if (foundMod != null)
-                    ToggleMod(Mods[foundMod].GenericModData, true);
+                    ToggleMod(Mods[foundMod].GenericModData, true, forceStatusDisabled: true);
             }
         }
 
@@ -178,14 +273,18 @@ namespace JaLoader
             loadOrderList.Add(mod);
         }
 
-        internal static void ToggleMod(GenericModData data, bool dontSave = false)
+        internal static void ToggleMod(GenericModData data, bool dontSave = false, bool forceStatusDisabled = false)
         {
             var modEntry = UIManager.Instance.modEntries[data];
             var toggleBtn = UIManager.Instance.modEntries[data].transform.Find("Buttons").Find("ToggleButton").GetComponent<Button>().GetComponentInChildren<Text>();
 
             var managerData = GetManagerDataFromGeneric(data);
 
-            if (data.IsEnabled)
+            bool enabledStatus = data.IsEnabled;
+            if(forceStatusDisabled)
+                enabledStatus = true;
+
+            if (enabledStatus)
             {
                 managerData.IsEnabled = false;
                 toggleBtn.text = "Enable";
@@ -195,7 +294,7 @@ namespace JaLoader
                 if (managerData.InitTime == WhenToInit.InMenu)
                     managerData.GenericModData.Mod.gameObject.SetActive(false);
             }
-            else
+            else if (!enabledStatus)
             {
                 managerData.IsEnabled = true;
                 toggleBtn.text = "Disable";
@@ -208,6 +307,85 @@ namespace JaLoader
 
             if(!dontSave)
                 SettingsManager.SaveSettings();
+        }
+
+        internal static void CheckForIncompatibilities(Mod mod)
+        {
+            if (mod.Incompatibilities.Count <= 0)
+                return;
+
+            foreach (var incompatibility in mod.Incompatibilities)
+            {
+                var foundMod = FindMod(incompatibility.Item2, incompatibility.Item1);
+
+                if (foundMod == null)
+                    continue;
+
+                var incompatibleMod = (Mod)foundMod;
+
+                //version is of format x.y.z-a.b.c, representing a range of versions from x.y.z to a.b.c
+                // separate it into 2 ints, one for the lower bound and one for the upper bound
+
+                string[] version = incompatibility.Item3.Split('-');
+                int lowerBound = int.Parse(version[0].Replace(".", ""));
+                int upperBound = int.Parse(version[1].Replace(".", ""));
+                int modVersion = int.Parse(incompatibleMod.ModVersion.Replace(".", ""));
+
+                if (modVersion >= lowerBound && modVersion <= upperBound)
+                {
+                    UIManager.Instance.ShowNotice("Incompatibility detected", $"The mod \"{mod.ModName}\" is incompatible with the mod \"{incompatibleMod.ModName}\". The mod may still load, but not function correctly.");
+                    UIManager.Instance.AddWarningToMod(UIManager.Instance.modEntries[Mods[mod].GenericModData], $"Incompatible with {incompatibleMod.ModName}!");
+                }
+            }
+        }
+
+        internal static void CheckForDependencies(Mod mod)
+        {
+            if (mod.Dependencies.Count <= 0)
+                return;
+
+            foreach (var dependency in mod.Dependencies)
+            {
+                int version = int.Parse(dependency.Item3.Replace(".", ""));
+
+                if (dependency.Item1 == "JaLoader" && dependency.Item2 == "Leaxx")
+                {
+                    if (SettingsManager.GetVersion() < version)
+                    {
+                        UIManager.Instance.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires JaLoader version {dependency.Item3} or higher. You are currently using version {SettingsManager.GetVersionString()}. The mod may still load, but not function correctly.");
+
+                        UIManager.Instance.AddWarningToMod(UIManager.Instance.modEntries[Mods[mod].GenericModData], $"Requires JaLoader >= {dependency.Item3}!");
+                    }
+
+                    continue;
+                }
+
+                var foundMod = FindMod(dependency.Item2, dependency.Item1);
+
+                if (foundMod == null)
+                {
+                    UIManager.Instance.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be installed. The mod may still load, but not function correctly.");
+
+                    UIManager.Instance.AddWarningToMod(UIManager.Instance.modEntries[Mods[mod].GenericModData], $"Requires {dependency.Item1}!");
+
+                    continue;
+                }
+
+                var dependentMod = (Mod)foundMod;
+
+                if (dependentMod.ModVersion != dependency.Item3)
+                {
+                    UIManager.Instance.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be version {dependency.Item3} or higher. You are currently using version {dependentMod.ModVersion}. The mod may still load, but not function correctly.");
+
+                    UIManager.Instance.AddWarningToMod(UIManager.Instance.modEntries[Mods[mod].GenericModData], $"Requires {dependency.Item1} >= {dependency.Item3}!");
+                }
+
+                if(loadOrderList.IndexOf(dependentMod) > loadOrderList.IndexOf(mod))
+                {
+                    UIManager.Instance.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires the mod \"{dependency.Item1}\" to be loaded before it. Adjust its load order in the mods list.");
+                    UIManager.Instance.AddWarningToMod(UIManager.Instance.modEntries[Mods[mod].GenericModData], $"Requires {dependency.Item1} to be loaded before it!");
+                }
+            }
         }
 
         internal static ModDataForManager GetManagerDataFromGeneric(GenericModData data)
@@ -232,10 +410,11 @@ namespace JaLoader
         /// <returns>The searched Mod if found, otherwise null</returns>
         public static MonoBehaviour FindMod(string author, string ID, string name = "")
         {
-            if (string.IsNullOrEmpty(author) || string.IsNullOrEmpty(ID) || string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(author) || string.IsNullOrEmpty(ID))
             {
                 Debug.LogError("Invalid parameters provided to FindMod.");
-                return null;
+                Console.LogError("JaLoader", "Invalid parameters provided to FindMod.");
+                throw new ModException("Invalid parameters provided to FindMod. Author and ID cannot be null or empty.", "", 104);
             }
 
             if (author == "BepInEx")
@@ -300,9 +479,9 @@ namespace JaLoader
 
             using (StreamWriter writer = new StreamWriter(orderFilePath))
             {
-                for (int i = 1; i < UIManager.Instance.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).childCount; i++)
+                for (int i = 1; i < UIManager.Instance.ModsListContent.childCount; i++)
                 {
-                    GameObject modObj = UIManager.Instance.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).GetChild(i).gameObject;
+                    GameObject modObj = UIManager.Instance.ModsListContent.GetChild(i).gameObject;
                     string[] modInfo = modObj.name.Split('_');
                     if (modInfo.Length < 3) return;
 
@@ -313,8 +492,15 @@ namespace JaLoader
             Debug.Log("Saved mods order");
         }
 
-        private static void LoadModOrder()
+        internal static void LoadModOrder()
         {
+            LoadModOrder(true);
+        }
+
+        internal static void LoadModOrder(bool loadMods = true)
+        {
+            DebugUtils.StartCounting();
+
             string orderFilePath = Path.Combine(Application.persistentDataPath, "ModsOrder.txt");
 
             if (File.Exists(orderFilePath))
@@ -336,20 +522,7 @@ namespace JaLoader
 
                     if (mod != null)
                     {
-                        GameObject modObj = null;
-
-                        if (mod is Mod)
-                        {
-                            modObj = UIManager.Instance.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).Find($"{modID}_{modAuthor}_{modName}_Mod").gameObject;
-                        }
-                        else if (mod is BaseUnityPlugin)
-                        {
-                            ModInfo pluginInfo = mod.gameObject.GetComponent<ModInfo>();
-
-                            modObj = UIManager.Instance.UICanvas.transform.Find("JLModsPanel/Scroll View").GetChild(0).GetChild(0).Find($"BepInEx_CompatLayer_{pluginInfo.GUID}_Mod").gameObject;
-                        }
-
-                        modObj.transform.SetSiblingIndex(loadOrder);
+                        UIManager.Instance.modEntries[Mods[mod].GenericModData].transform.SetSiblingIndex(loadOrder);
 
                         newLoadOrder.Add(mod);
                     }
@@ -364,7 +537,8 @@ namespace JaLoader
 
             Debug.Log("Loaded mods order");
 
-            LoadMods();
+            if(loadMods)
+                LoadMods();
         }
     }
 }

@@ -46,7 +46,7 @@ namespace JaLoader
         public virtual void Start() { }
         public virtual void Awake() { }
         public virtual void OnEnable() { }
-        public virtual void RunOnPreloader() { }
+        public virtual void Preload() { }
         public virtual void OnDisable() { }
         public virtual void OnDestroy() { }
         public virtual void OnReload() { }
@@ -101,7 +101,6 @@ namespace JaLoader
             identification.Version = ModVersion;
 
             ab.Unload(false);
-            Type type = obj.GetType();
             return obj;
         }
 
@@ -231,17 +230,17 @@ namespace JaLoader
 
         public void InstantiateSettings()
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Settings are already instantiated!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsHolder);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsHolder);
             obj.name = $"{ModAuthor}_{ModID}_{ModName}-SettingsHolder";
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform, false);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.transform, false);
 
-            GameObject name = Instantiate(UIManager.Instance.modOptionsNameTemplate);
+            GameObject name = Instantiate(UIManager.Instance.ModSettingsNameTemplate);
             name.transform.SetParent(obj.transform, false);
             name.GetComponentInChildren<Text>().text = $"{ModName} Settings";
             name.SetActive(true);
@@ -251,28 +250,28 @@ namespace JaLoader
 
         public void AddHeader(string text)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding header, but settings aren't instantiated!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsHeaderTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsHeaderTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.GetComponentInChildren<Text>().text = text;
             obj.SetActive(true);
         }
 
         public void AddDisclaimer(string text)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding disclaimer, but settings aren't instantiated!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsHeaderTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsHeaderTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.GetComponentInChildren<Text>().text = text;
             obj.GetComponentInChildren<Text>().resizeTextMaxSize = 20;
             obj.SetActive(true);
@@ -280,20 +279,20 @@ namespace JaLoader
 
         public void AddDropdown(string ID, string name, string[] values, int defaultValue)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding dropdown, but settings aren't instantiated!");
                 return;
             }
 
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
             {
                 Console.LogError(ModID, $"Dropdown with ID {ID} already exists!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsDropdownTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsDropdownTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Dropdown";
 
             List<Dropdown.OptionData> optionData = new List<Dropdown.OptionData>();
@@ -312,20 +311,20 @@ namespace JaLoader
 
         public void AddToggle(string ID, string name, bool defaultValue)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding toggle, but settings aren't instantiated!");
                 return;
             }
 
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Toggle"))
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Toggle"))
             {
                 Console.LogError(ModID, $"Toggle with ID {ID} already exists!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsToggleTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsToggleTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Toggle";
 
             List<Dropdown.OptionData> optionData = new List<Dropdown.OptionData>
@@ -344,20 +343,20 @@ namespace JaLoader
 
         public void AddSlider(string ID, string name, int minValue, int maxValue, int defaultValue, bool wholeNumbers)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding slider, but settings aren't instantiated!");
                 return;
             }
 
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider"))
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider"))
             {
                 Console.LogError(ModID, $"Slider with ID {ID} already exists!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsSliderTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsSliderTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Slider";
 
             var scr = obj.GetComponentInChildren<Slider>().gameObject.AddComponent<TooltipOnHover>();
@@ -375,20 +374,20 @@ namespace JaLoader
 
         public void AddInputField(string ID, string name, string defaultValue, string placeholderValue = null)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding input field, but settings aren't instantiated!");
                 return;
             }
 
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_InputField"))
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_InputField"))
             {
                 Console.LogError(ModID, $"Input field with ID {ID} already exists!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsInputTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsInputTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_InputField";
 
             obj.GetComponentInChildren<InputField>().text = defaultValue;
@@ -402,20 +401,20 @@ namespace JaLoader
 
         public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
                 return;
             }
 
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
             {
                 Console.LogError(ModID, $"Keybind with ID {ID} already exists!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsKeybindTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsKeybindTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Keybind";
 
             obj.SetActive(true);
@@ -431,20 +430,20 @@ namespace JaLoader
 
         public void AddKeybind(string ID, string name, KeyCode defaultPrimaryKey, KeyCode defaultSecondaryKey)
         {
-            if (!UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
+            if (!UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"))
             {
                 Console.LogError(ModID, "Tried adding keybind, but settings aren't instantiated!");
                 return;
             }
 
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
             {
                 Console.LogError(ModID, $"Keybind with ID {ID} already exists!");
                 return;
             }
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsKeybindTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsKeybindTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder"), false);
             obj.name = $"{ID}_Keybind";
 
             obj.SetActive(true);
@@ -461,8 +460,8 @@ namespace JaLoader
 
         public Dropdown GetDropdown(string ID)
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown").GetComponentInChildren<Dropdown>();
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown"))
+                return UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Dropdown").GetComponentInChildren<Dropdown>();
 
             return null;
         }
@@ -479,8 +478,8 @@ namespace JaLoader
 
         public Dropdown GetToggle(string ID)
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Toggle"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Toggle").GetComponentInChildren<Dropdown>();
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Toggle"))
+                return UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Toggle").GetComponentInChildren<Dropdown>();
             else
                 return null;
         }
@@ -497,16 +496,16 @@ namespace JaLoader
 
         public Slider GetSlider(string ID)
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider").GetComponentInChildren<Slider>();
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider"))
+                return UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Slider").GetComponentInChildren<Slider>();
             else
                 return null;
         }
 
         public InputField GetInputField(string ID)
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_InputField"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_InputField").GetComponentInChildren<InputField>();
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_InputField"))
+                return UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_InputField").GetComponentInChildren<InputField>();
             else
                 return null;
         }
@@ -533,16 +532,16 @@ namespace JaLoader
 
         public KeyCode GetPrimaryKeybind(string ID)
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().SelectedKey;
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+                return UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().SelectedKey;
             else
                 return KeyCode.None;
         }
 
         public KeyCode GetSecondaryKeybind(string ID)
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().AltSelectedKey;
+            if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind"))
+                return UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().AltSelectedKey;
             else
                 return KeyCode.None;
         }
@@ -558,27 +557,27 @@ namespace JaLoader
                 switch (type)
                 {
                     case "opdown":
-                        values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value.ToString());
+                        values.Add(ID, UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value.ToString());
                         break;
 
                     case "Toggle":
-                        values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value.ToString());
+                        values.Add(ID, UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value.ToString());
                         break;
 
                     case "Slider":
-                        values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value.ToString());
+                        values.Add(ID, UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value.ToString());
                         break;
 
                     case "eybind":
-                        values.Add($"{ID}_primary", ((int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SelectedKey).ToString());
-                        if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().EnableAltKey)
+                        values.Add($"{ID}_primary", ((int)UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SelectedKey).ToString());
+                        if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().EnableAltKey)
                         {
-                            values.Add($"{ID}_secondary", ((int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().AltSelectedKey).ToString());
+                            values.Add($"{ID}_secondary", ((int)UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().AltSelectedKey).ToString());
                         }
                         break;
 
                     case "tField":
-                        values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<InputField>().text);
+                        values.Add(ID, UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<InputField>().text);
                         break;
 
                     default:
@@ -641,29 +640,29 @@ namespace JaLoader
                 switch (type)
                 {
                     case "opdown":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(settingsValues[ID]);
+                        UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(settingsValues[ID]);
                         break;
 
                     case "Toggle":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(settingsValues[ID]);
+                        UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(settingsValues[ID]);
                         break;
 
                     case "Slider":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(settingsValues[ID]);
+                        UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(settingsValues[ID]);
                         break;
 
                     case "eybind":
                         string str = settingsValues[$"{ID}"];
                         // str is formatted as "int|int" so we split it and parse it as int, if there is no |, it will just parse the first part
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)int.Parse(str.Split('|')[0]));
-                        if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().EnableAltKey)
+                        UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)int.Parse(str.Split('|')[0]));
+                        if (UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().EnableAltKey)
                         {
-                            UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetSecondaryKey((KeyCode)int.Parse(str.Split('|')[1]));
+                            UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetSecondaryKey((KeyCode)int.Parse(str.Split('|')[1]));
                         }
                         break;
 
                     case "tField":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<InputField>().text = settingsValues[ID];
+                        UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<InputField>().text = settingsValues[ID];
                         break;
 
                     default:
@@ -696,19 +695,19 @@ namespace JaLoader
                         switch (type)
                         {
                             case "opdown":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)float.Parse(values[ID]);
+                                UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)float.Parse(values[ID]);
                                 break;
 
                             case "Toggle":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)float.Parse(values[ID]);
+                                UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)float.Parse(values[ID]);
                                 break;
 
                             case "Slider":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(values[ID]);
+                                UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(values[ID]);
                                 break;
 
                             case "tField":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<InputField>().text = values[ID];
+                                UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponentInChildren<InputField>().text = values[ID];
                                 break;
 
                             default:
@@ -718,12 +717,12 @@ namespace JaLoader
                     else if (values.ContainsKey($"{ID}_primary"))
                     {
                         //Debug.Log($"Primary! ({ID})");
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)float.Parse(values[$"{ID}_primary"]));
+                        UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)float.Parse(values[$"{ID}_primary"]));
                         
                         if (values.ContainsKey($"{ID}_secondary"))
                         {
                             //Debug.Log($"Secondary! ({ID})");
-                            UIManager.Instance.modSettingsScrollViewContent.transform.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetSecondaryKey((KeyCode)float.Parse(values[$"{ID}_secondary"]));
+                            UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetSecondaryKey((KeyCode)float.Parse(values[$"{ID}_secondary"]));
                         }
                     }
                 }

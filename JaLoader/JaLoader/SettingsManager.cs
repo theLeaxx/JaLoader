@@ -51,13 +51,10 @@ namespace JaLoader
         public static CursorMode CursorMode;
         public static bool ShowDisabledMods;
         public static string AppliedPaintJobName;
-        public static bool FixItemsFalilngBehindShop;
+        public static bool FixItemsFallingBehindShop;
         public static bool FixBorderGuardsFlags;
 
         public static List<string> DontShowAgainNotices = new List<string>();
-
-        public static DateTime lastUpdateCheck;
-        private static bool shouldCheckForUpdates = true;
 
         public static bool updateAvailable;
 
@@ -79,141 +76,7 @@ namespace JaLoader
                 Console.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {dllVersion}");
             }
         }
-
-        public static int GetLatestUpdateVersion(string URL, int version)
-        {
-            if(!shouldCheckForUpdates)
-            {
-                return 0;
-            }
-
-            bool shouldContinueChecking = false;
-
-            switch (UpdateCheckMode)
-            {
-                case UpdateCheckModes.Never:
-                    break;
-
-                case UpdateCheckModes.Hourly:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalHours >= 1)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-
-                case UpdateCheckModes.Daily:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 1)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-
-                case UpdateCheckModes.Every3Days:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 3)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-
-                case UpdateCheckModes.Weekly:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 7)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-            }
-
-            shouldCheckForUpdates = shouldContinueChecking;
-
-            if (!shouldContinueChecking)
-                return 0;
-            else
-            {
-                string latestVersion = ModHelper.Instance.GetLatestTagFromApiUrl(URL);
-                int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
-
-                if (latestVersion == "-1")
-                    return -1;
-                else if (latestVersionInt > version)
-                {
-                    return latestVersionInt;
-                }
-            }
-
-            return 0;
-        }
-
-        public static string GetLatestUpdateVersionString(string URL, int version)
-        {
-            if (!shouldCheckForUpdates)
-            {
-                return "0";
-            }
-
-            bool shouldContinueChecking = false;
-
-            switch (UpdateCheckMode)
-            {
-                case UpdateCheckModes.Never:
-                    break;
-
-                case UpdateCheckModes.Hourly:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalHours >= 1)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-
-                case UpdateCheckModes.Daily:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 1)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-
-                case UpdateCheckModes.Every3Days:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 3)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-
-                case UpdateCheckModes.Weekly:
-                    if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 7)
-                    {
-                        SetUpdateCheckRegistryKey();
-                        shouldContinueChecking = true;
-                    }
-                    break;
-            }
-
-            shouldCheckForUpdates = shouldContinueChecking;
-
-            if (!shouldContinueChecking)
-                return "0";
-            else
-            {
-                string latestVersion = ModHelper.Instance.GetLatestTagFromApiUrl(URL);
-                int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
-
-                if (latestVersion == "-1")
-                    return "-1";
-                else if (latestVersionInt > version)
-                {
-                    return latestVersion;
-                }
-            }
-
-            return "0";
-        }
-
+        
         public static int GetVersion()
         {
             return int.Parse(JaLoaderVersion.Replace(".", ""));
@@ -247,7 +110,7 @@ namespace JaLoader
             jalopyKey?.SetValue("JaLoaderVersion", GetVersion().ToString(), RegistryValueKind.String);
         }
 
-        private static void SetUpdateCheckRegistryKey()
+        internal static void SetUpdateCheckRegistryKey()
         {
             RegistryKey parentKey = Registry.CurrentUser;
 
@@ -268,12 +131,12 @@ namespace JaLoader
 
             if (jalopyKey != null && jalopyKey.GetValue("LastUpdateCheck") != null)
             {
-                lastUpdateCheck = DateTime.Parse(jalopyKey.GetValue("LastUpdateCheck").ToString());
+                UpdateUtils.lastUpdateCheck = DateTime.Parse(jalopyKey.GetValue("LastUpdateCheck").ToString());
             }
             else
             {
                 SetUpdateCheckRegistryKey();
-                lastUpdateCheck = DateTime.Now;
+                UpdateUtils.lastUpdateCheck = DateTime.Now;
             }
         }
 
@@ -340,7 +203,7 @@ namespace JaLoader
             CursorMode = _settings.CursorMode;
             ShowDisabledMods = _settings.ShowDisabledMods;
             AppliedPaintJobName = _settings.AppliedPaintJobName;
-            //FixItemsFalilngBehindShop = _settings.FixItemsFalilngBehindShop;
+            //FixItemsFallingBehindShop = _settings.FixItemsFallingBehindShop;
             FixBorderGuardsFlags = _settings.FixBorderGuardsFlags;
 
             DontShowAgainNotices = _settings.DontShowAgainNotices;
@@ -380,7 +243,7 @@ namespace JaLoader
             _settings.ShowDisabledMods = ShowDisabledMods;
 
             _settings.AppliedPaintJobName = AppliedPaintJobName;
-            //_settings.FixItemsFalilngBehindShop = FixItemsFalilngBehindShop;
+            //_settings.FixItemsFallingBehindShop = FixItemsFallingBehindShop;
             _settings.FixBorderGuardsFlags = FixBorderGuardsFlags;
 
             _settings.DontShowAgainNotices = DontShowAgainNotices;
@@ -442,7 +305,7 @@ namespace JaLoader
         [SerializeField] public MirrorDistances MirrorDistances = MirrorDistances.m1000;
         [SerializeField] public CursorMode CursorMode = CursorMode.Default;
         [SerializeField] public bool ShowDisabledMods = true;
-        //[SerializeField] public static bool FixItemsFalilngBehindShop = true;
+        //[SerializeField] public static bool FixItemsFallingBehindShop = true;
         [SerializeField] public bool FixBorderGuardsFlags = true;
 
         [SerializeField] public string AppliedPaintJobName = "";

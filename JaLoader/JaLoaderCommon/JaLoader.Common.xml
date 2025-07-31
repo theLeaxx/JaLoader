@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>JaLoader.Common</name>
+    </assembly>
+    <members>
+        <member name="M:JaLoader.Common.Interfaces.ILogger.Log(System.String,System.String)">
+            <summary>
+            Logs a message to the console.
+            </summary>
+            <param name="message">The message to log.</param>
+            <param name="author">Optional author of the message, defaults to null.</param>
+        </member>
+        <member name="M:JaLoader.Common.Interfaces.ILogger.LogWarning(System.String,System.String)">
+            <summary>
+            Logs a warning message to the console.
+            </summary>
+            <param name="message">The warning message to log.</param>
+            <param name="author">Optional author of the message, defaults to null.</param>
+        </member>
+        <member name="M:JaLoader.Common.Interfaces.ILogger.LogError(System.String,System.String)">
+            <summary>
+            Logs an error message to the console.
+            </summary>
+            <param name="message">The error message to log.</param>
+            <param name="author">Optional author of the message, defaults to null.</param>
+        </member>
+        <member name="M:JaLoader.Common.Interfaces.ILogger.LogDebug(System.String,System.String)">
+            <summary>
+            Logs a debug message to the console.
+            </summary>
+            <param name="message">The debug message to log</param>
+            <param name="author">Optional author of the message, defaults to null.</param>
+        </member>
+        <member name="M:JaLoader.Common.ModException.#ctor">
+            <summary>
+            Initializes a new instance of the ModException class.
+            </summary>
+        </member>
+        <member name="M:JaLoader.Common.ModException.#ctor(System.String)">
+            <summary>
+            Initializes a new instance of the ModException class with a specified error message.
+            <param name="message">The message that describes the error.</param>
+            </summary>
+        </member>
+        <member name="M:JaLoader.Common.ModException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the ModException class with a specified error message
+            and a reference to the inner exception that is the cause of this exception.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+            <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
+        </member>
+        <member name="M:JaLoader.Common.ModException.#ctor(System.String,System.String,System.Int32)">
+            <summary>
+            Initializes a new instance of the ModException class with a specified error message
+            and custom mod-related information.
+            </summary>
+            <param name="message">The message that describes the error.</param>
+            <param name="modID">The ID of the mod that caused the exception.</param>
+            <param name="errorCode">A custom error code associated with the mod load failure.</param>
+        </member>
+        <member name="M:JaLoader.Common.ModException.#ctor(System.Runtime.Serialization.SerializationInfo,System.Runtime.Serialization.StreamingContext)">
+            <summary>
+            Initializes a new instance of the ModException class with serialized data.
+            </summary>
+            <param name="info">The System.Runtime.Serialization.SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+            <param name="context">The System.Runtime.Serialization.StreamingContext that contains contextual information about the source or destination.</param>
+        </member>
+    </members>
+</doc>

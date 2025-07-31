@@ -34,10 +34,10 @@ namespace JaLoader
         public IEnumerator LoadAssemblies()
         {
             canLoadMods = false;
-            Debug.Log("Loading external mod assemblies...");
-            Stopwatch.Instance.StartCounting();
+            
+            DebugUtils.SignalStartRefLoading();
 
-            if(!Directory.Exists($@"{SettingsManager.ModFolderLocation}\Assemblies"))
+            if (!Directory.Exists($@"{SettingsManager.ModFolderLocation}\Assemblies"))
                 Directory.CreateDirectory($@"{SettingsManager.ModFolderLocation}\Assemblies");
 
             DirectoryInfo d = new DirectoryInfo($@"{SettingsManager.ModFolderLocation}\Assemblies");
@@ -90,8 +90,7 @@ namespace JaLoader
             
             loadedAlready = true;
 
-            Stopwatch.Instance.StopCounting();
-            Debug.Log($"Loaded JaLoader assemblies! ({Stopwatch.Instance.timePassed}s)");
+            DebugUtils.SignalFinishedRefLoading();
 
             StartCoroutine(ModLoader.Instance.InitializeMods());
             yield return null;

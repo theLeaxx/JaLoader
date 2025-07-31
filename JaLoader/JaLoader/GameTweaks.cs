@@ -53,8 +53,10 @@ namespace JaLoader
 
             if (SettingsManager.UseExperimentalCharacterController)
                 GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
+
+            GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.AddComponent<EnableCursorOnEnable>();
         }
-        
+
         internal void SkipLanguage()
         {
             if (SettingsManager.SkipLanguage && !skippedIntro)

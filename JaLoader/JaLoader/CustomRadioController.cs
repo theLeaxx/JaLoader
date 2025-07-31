@@ -37,18 +37,14 @@ namespace JaLoader
 
             EventsManager.Instance.OnGameLoad += OnGameLoad;
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
-            SceneManager.sceneLoaded += OnSceneChanged;
         }
         #endregion
 
-        private void OnSceneChanged(Scene sceneToLoad, LoadSceneMode mode)
-        {
-            if (sceneToLoad.buildIndex == 1)
-                FindObjectOfType<MenuVolumeChanger>().muted = true;
-        }
-
         private readonly string folderPath = $@"{Application.dataPath}\..\Songs";
         public List<AudioClip> loadedSongs = new List<AudioClip>();
+
+        private GameObject RadioFreq;
+        private MenuVolumeChanger menuVolumeChanger;
 
         void Update()
         {
@@ -128,6 +124,8 @@ namespace JaLoader
                 yield return null;
 
             AddSongsToRadio();
+
+            Console.Log("JaLoader", $"{loadedSongs.Count} custom songs loaded!");
         }
 
         private void OnGameLoad()
@@ -135,12 +133,24 @@ namespace JaLoader
             AddSongsToRadio();
         }
 
-        [Obsolete]
         private void OnMenuLoad()
         {
-            StartCoroutine(AddSongsToRadioWithDelay());
+            RadioFreq = GameObject.Find("RadioFreq");
+            menuVolumeChanger = RadioFreq.AddComponent<MenuVolumeChanger>();
+            menuVolumeChanger.muted = true;
 
-            Console.Log("JaLoader", $"{loadedSongs.Count} custom songs loaded!");
+            UpdateMenuMusic(!SettingsManager.DisableMenuMusic, (float)SettingsManager.MenuMusicVolume / 100);
+
+            StartCoroutine(AddSongsToRadioWithDelay());
+        }
+
+        internal void UpdateMenuMusic(bool enable, float volume)
+        {
+            if (SceneManager.GetActiveScene().buildIndex != 1)
+                return;
+
+            RadioFreq.SetActive(enabled);
+            menuVolumeChanger.volume = volume;
         }
 
         private void AddSongsToRadio()
@@ -182,6 +192,8 @@ namespace JaLoader
 
         private IEnumerator AddSongsToRadioWithDelay()
         {
+            AddSongsToRadio();
+
             yield return new WaitForEndOfFrame();
 
             FindObjectOfType<MenuVolumeChanger>().muted = false;

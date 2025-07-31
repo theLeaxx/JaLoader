@@ -36,12 +36,15 @@ namespace Doorstop
 
             if (i == 17)
             {
-                Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoaderUnity4.dll");
+                AppDomain.CurrentDomain.AssemblyLoad -= OnAssemblyLoadUnity4;
+
+                Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoader.Common.dll");
+                Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoaderClassic.dll");
 
                 GameObject obj = (GameObject)Object.Instantiate(new GameObject());
                 Debug.Log("Created object");
                 obj.name = "JaPreLoader";
-                obj.AddComponent<AddModLoaderComponentUnity4>();
+                obj.AddComponent<AddJaLoaderClassicCore>();
                 Object.DontDestroyOnLoad(obj);
             }
         }
@@ -52,16 +55,19 @@ namespace Doorstop
 
             if(i == 66)
             {
+                AppDomain.CurrentDomain.AssemblyLoad -= OnAssemblyLoadUnity5;
+
+                Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoader.Common.dll");
                 Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoader.dll");
 
                 GameObject obj = (GameObject)Object.Instantiate(new GameObject());
-                obj.AddComponent<AddModLoaderComponent>();
+                obj.AddComponent<AddJaLoaderCore>();
                 Object.DontDestroyOnLoad(obj);
             } 
         }
     }
 
-    public class AddModLoaderComponent : MonoBehaviour
+    public class AddJaLoaderCore : MonoBehaviour
     {
         private EventInfo logMessageReceivedEvent;
         private Delegate delegateInstance;
@@ -83,7 +89,7 @@ namespace Doorstop
 
             Type delegateType = sceneLoadedEvent.EventHandlerType;
 
-            var delegateInstance = Delegate.CreateDelegate(delegateType, this, typeof(AddModLoaderComponent).GetMethod("LoadModLoader"));
+            var delegateInstance = Delegate.CreateDelegate(delegateType, this, typeof(AddJaLoaderCore).GetMethod("LoadModLoader"));
 
             sceneLoadedEvent.AddEventHandler(null, delegateInstance);
         }
@@ -116,7 +122,7 @@ namespace Doorstop
         }
     }
 
-    public class AddModLoaderComponentUnity4 : MonoBehaviour
+    public class AddJaLoaderClassicCore : MonoBehaviour
     {
         private void Start()
         {
@@ -129,14 +135,14 @@ namespace Doorstop
 
             foreach (Assembly a in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (a.GetName().Name == "JaLoaderUnity4")
+                if (a.GetName().Name == "JaLoaderClassic")
                 {
                     assembly = a;
                     break;
                 }
             }
 
-            Type modLoaderType = assembly.GetType("JaLoaderUnity4.ModLoader");
+            Type modLoaderType = assembly.GetType("JaLoaderClassic.JaLoaderCore");
 
             MethodInfo addComponentMethod = typeof(GameObject).GetMethod("AddComponent", new[] { typeof(Type) });
 

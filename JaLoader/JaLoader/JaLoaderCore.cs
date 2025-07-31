@@ -7,16 +7,13 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using UnityEngine.SceneManagement;
+using JaLoader.Common;
 
 namespace JaLoader
 {
-    public class JaLoaderCore : MonoBehaviour
+    public class JaLoaderCore : MonoBehaviour, ICore
     {
         public static JaLoaderCore Instance { get; private set; }
-
-        #region Declarations
-
-        #endregion
 
         public void Start()
         {
@@ -32,10 +29,11 @@ namespace JaLoader
             }
 
             gameObject.name = "JaLoader";
+            RuntimeVariables.ApplicationDataPath = Application.dataPath;
 
-            if (AnyMissingDLLs() != "None")
+            if (CoreUtils.AnyMissingDLLs() != "None")
             {
-                CreateErrorMessage($"\n\nDLL {AnyMissingDLLs()} was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the files from JaPatcher's directory/Assets/Managed to Jalopy_Data/Managed");
+                CreateErrorMessage($"\n\nDLL {CoreUtils.AnyMissingDLLs()} was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the files from JaPatcher's directory/Assets/Managed to Jalopy_Data/Managed");
                 SceneManager.LoadScene("MainMenu");
                 return;
             }
@@ -45,6 +43,7 @@ namespace JaLoader
             Debug.Log("JaLoader Core initialized!");
 
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
+            EventsManager.Instance.OnUILoadFinished += OnUILoadFinished;
 
             GameTweaks.Instance.SkipLanguage();
         }
@@ -52,6 +51,12 @@ namespace JaLoader
         private void OnMenuLoad()
         {
             Debug.Log($"Selected language: {Language.CurrentLanguage()}");
+        }
+
+        private void OnUILoadFinished()
+        {
+            UIManager.Instance.JLFPSText.AddComponent<FPSCounter>();
+            UIManager.Instance.JLDebugText.AddComponent<DebugInfo>();
         }
 
         private void AddEssentialScripts()
@@ -70,50 +75,23 @@ namespace JaLoader
             gameObject.AddComponent<EventsManager>();
             SettingsManager.Initialize();
             ModManager.Initialize();
+            utilities.AddComponent<CustomRadioController>();
             gameObject.AddComponent<ReferencesLoader>();
             gameObject.AddComponent<UIManager>();
             gameObject.AddComponent<ModLoader>();
             gameObject.AddComponent<CustomObjectsManager>();
             gameObject.AddComponent<ExtrasManager>();
 
+            gameObject.AddComponent<DebugUtils>();
             utilities.AddComponent<ModHelper>();
             utilities.AddComponent<UncleHelper>();
-            utilities.AddComponent<CustomRadioController>();
             utilities.AddComponent<DebugObjectSpawner>();
             utilities.AddComponent<PaintJobManager>();
             utilities.AddComponent<PartIconManager>();
             utilities.AddComponent<DiscordController>();
             utilities.AddComponent<AdjustmentsEditor>();
             utilities.AddComponent<GameTweaks>();
-            utilities.AddComponent<Stopwatch>();
-        }
-
-        internal static string AnyMissingDLLs()
-        {
-            string[] requiredDLLs = new string[]
-            {
-                "0Harmony.dll",
-                "HarmonyXInterop.dll",
-                "NLayer.dll",
-                "Mono.Cecil.dll",
-                "Mono.Cecil.Mdb.dll",
-                "Mono.Cecil.Pdb.dll",
-                "Mono.Cecil.Rocks.dll",
-                "MonoMod.Backports.dll",
-                "MonoMod.RuntimeDetour.dll",
-                "MonoMod.Utils.dll",
-                "MonoMod.ILHelpers.dll"
-            };
-
-            var path = $@"{Application.dataPath}\Managed";
-
-            foreach (string dll in requiredDLLs)
-            {
-                if (!File.Exists($@"{path}\{dll}"))
-                    return dll;
-            }
-
-            return "None";
+            utilities.AddComponent<MenuCarRotate>();
         }
 
         internal void CreateErrorMessage(string issue, string possibleFixes)
@@ -151,6 +129,15 @@ namespace JaLoader
             }
 
             StartCoroutine(CreateErrorMesageAfterLoadingMenu(issue, possibleFixes));
+        }
+
+        internal void DestroyJaLoader()
+        {
+            var loadingScreenCanvas = GameObject.Find("JaLoader Loading Screen Canvas");
+            if(loadingScreenCanvas != null)
+                Destroy(loadingScreenCanvas);
+            FindObjectOfType<LoadingScreen>()?.DeleteLoadingScreen();
+            Destroy(gameObject);
         }
 
         internal IEnumerator CreateErrorMesageAfterLoadingMenu(string issue, string possibleFixes)

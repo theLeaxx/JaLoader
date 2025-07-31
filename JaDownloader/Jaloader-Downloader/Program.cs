@@ -32,7 +32,7 @@ internal abstract class Program
 
     private static string _modsLocation;
 
-    private static string version = "1.1.0";
+    private static string version = "1.2.0";
 
     private static bool isGitHub = true;
 
@@ -40,7 +40,7 @@ internal abstract class Program
     {
         Console.WriteLine($"JaDownloader v{version}\n");
 
-        /*if (args.Length <= 0)
+        if (args.Length <= 0)
         {
             Console.WriteLine("No arguments provided!");
             return;
@@ -48,13 +48,13 @@ internal abstract class Program
 
         _param = args[0].Split('\u002F')[2];
         _author = args[0].Split('\u002F')[3];
-        _repo = args[0].Split('\u002F')[4];*/
-        Console.WriteLine("Please enter the mod ID (available values currently are 2, 4, 5 and 6):");
-        _repo = Console.ReadLine();
-        _param = "install";
-        _author = "nexus";
-        //_modsLocation = GetModsLocation();
-        //_workingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Jalopy\.cache";
+        _repo = args[0].Split('\u002F')[4];
+        //Console.WriteLine("Please enter the mod ID (available values currently are 2, 4, 5 and 6):");
+        //_repo = Console.ReadLine();
+        //_param = "install";
+        //_author = "nexus";
+        _modsLocation = GetModsLocation();
+        _workingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Jalopy\.cache";
 
         if (_workingDirectory != null && !Directory.Exists(_workingDirectory)) Directory.CreateDirectory(_workingDirectory);
         if (_param != "install" && _param != "installingame") return;
