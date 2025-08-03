@@ -1,3 +1,4 @@
+using JaLoader;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -158,7 +159,7 @@ public static class SearchingExtensions
     public static GameObject FindDeepChildObject(this Transform parent, string name)
     {
         Transform child = parent.FindDeepChild(name);
-        return child != null ? child.gameObject : null;
+        return child?.gameObject;
     }
 
     public static GameObject FindObject(this GameObject parent, string name)
@@ -179,6 +180,6 @@ public static class SearchingExtensions
     public static GameObject FindDeepChildObject(this GameObject parent, string name)
     {
         Transform child = parent.transform.FindDeepChild(name);
-        return child != null ? child.gameObject : null;
+        return child?.gameObject;
     }
 }

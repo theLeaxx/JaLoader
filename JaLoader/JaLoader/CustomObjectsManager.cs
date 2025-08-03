@@ -111,17 +111,17 @@ namespace JaLoader
             StartCoroutine(LoadDelay(3f, true));
         }
 
-        public void RegisterObject(GameObject obj, string registryName)
-        {
-            RegisterObject(obj, registryName, false);
-        }
-
         /// <summary>
         /// Register a custom object to the database.
         /// </summary>
         /// <param name="obj">The object in question</param>
         /// <param name="registryName">Internal object name</param>
-        public void RegisterObject(GameObject obj, string registryName, bool isPaintJob = false)
+        public void RegisterObject(GameObject obj, string registryName)
+        {
+            RegisterObject(obj, registryName, false);
+        }
+
+        internal void RegisterObject(GameObject obj, string registryName, bool isPaintJob = false)
         {
             if (obj == null)
             {
@@ -333,7 +333,7 @@ namespace JaLoader
                 List<float> parameters = new List<float>();
                 PartTypes type = PartTypes.Default;
                 bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine;
-                string json = "";
+                string json;
                 int trunkPos = -1;
                 if (!inEngine && spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt == null)
                     continue;
@@ -417,7 +417,6 @@ namespace JaLoader
                 foreach (string entry in data.Keys)
                 {
                     string name = entry.Split('_')[0];
-                    string id = entry.Split('_')[1];
 
                     if (!database.ContainsKey(name))
                         continue;

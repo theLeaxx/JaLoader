@@ -5,9 +5,6 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine;
 using System.IO;
-using System.Diagnostics;
-using System.Linq;
-using UnityEngine.EventSystems;
 
 namespace JaLoader
 {
@@ -78,22 +75,18 @@ namespace JaLoader
         }
         #endregion
 
-        private InputField inputField;
-        
         private UIManager uiManager;
-        private RectTransform consoleRectTransform;
+        private InputField inputField;
 
-        private readonly List<string> log = new List<string>();
-        private readonly List<string> enteredCommands = new List<string>();
         private int currentInList = 0;
 
-        private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
-
+        public bool LogEverythingFromDebug = false;
         private bool init = false;
 
-        private readonly List<(string, string, string)> queuedLogs = new List<(string, string, string)>();
-
-        public bool LogEverythingFromDebug = false;
+        private static readonly List<string> log = new List<string>();
+        private static readonly List<(string, string, string)> queuedLogs = new List<(string, string, string)>();
+        private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
+        private readonly List<string> enteredCommands = new List<string>();
         
         public bool Visible
         {
@@ -271,7 +264,37 @@ namespace JaLoader
         /// <param name="message"></param>
         public static void LogOnlyToFile(object message)
         {
-            Instance.log.Add($"{DateTime.Now} - {message}");
+            log.Add($"{DateTime.Now} > '/': '{message}'");
+            Instance.WriteLog();
+        }
+
+        /// <summary>
+        /// Logs a warning to the JaLoader_log.log file, does not show in-game.
+        /// </summary>
+        /// <param name="message"></param>
+        public static void LogWarningOnlyToFile(object message)
+        {
+            log.Add($"{DateTime.Now} >! '/': '{message}'");
+            Instance.WriteLog();
+        }
+
+        /// <summary>
+        /// Logs an error to the JaLoader_log.log file, does not show in-game.
+        /// </summary>
+        /// <param name="message"></param>"
+        public static void LogErrorOnlyToFile(object message)
+        {
+            log.Add($"{DateTime.Now} >!! '/': '{message}'");
+            Instance.WriteLog();
+        }
+
+        /// <summary>
+        /// Logs a debug message to the JaLoader_log.log file, does not show in-game.
+        /// </summary>
+        /// <param name="message"></param>"
+        public static void LogDebugOnlyToFile(object message)
+        {
+            log.Add($"{DateTime.Now} * '/': '{message}'");
             Instance.WriteLog();
         }
 
@@ -355,7 +378,10 @@ namespace JaLoader
         public static void LogWarning(object sender, object message)
         {
             if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || SettingsManager.ConsoleMode == ConsoleModes.Errors)
+            {
+                LogWarningOnlyToFile(message);
                 return;
+            }
 
             Instance.LogMessage(sender, message, "yellow");
         }
@@ -367,7 +393,10 @@ namespace JaLoader
         public static void LogWarning(object message)
         {
             if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || SettingsManager.ConsoleMode == ConsoleModes.Errors)
+            {
+                LogWarningOnlyToFile(message);
                 return;
+            }
 
             Instance.LogMessage("/", message, "yellow");
         }
@@ -380,7 +409,10 @@ namespace JaLoader
         public static void LogError(object sender, object message)
         {
             if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
+            {
+                LogErrorOnlyToFile(message);
                 return;
+            }
 
             Instance.LogMessage(sender, message, "red");
         }
@@ -392,7 +424,10 @@ namespace JaLoader
         public static void LogError(object message)
         {
             if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
+            {
+                LogErrorOnlyToFile(message);
                 return;
+            }
 
             Instance.LogMessage("/", message, "red");
         }
@@ -405,7 +440,10 @@ namespace JaLoader
         public static void LogDebug(object sender, object message)
         {
             if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.DebugMode)
+            {
+                LogDebugOnlyToFile(message);
                 return;
+            }
 
             Instance.LogMessage(sender, message, "grey");
         }
@@ -417,7 +455,10 @@ namespace JaLoader
         public static void LogDebug(object message)
         {
             if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.DebugMode)
+            {
+                LogDebugOnlyToFile(message);
                 return;
+            }
 
             Instance.LogMessage("/", message, "grey");
         }
@@ -712,10 +753,11 @@ namespace JaLoader
             LogMessage("/", "`freecam` - Toggles freecam");
             LogMessage("/", "`tofreecam` - Teleports the player to the freecam's position");
 
-            LogMessage("Mods commands", "");
-            foreach ((string, string, string) pair in customCommands.Keys)
+            if(customCommands.Count > 0)
             {
-                LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
+                LogMessage("Mods commands", "");
+                foreach ((string, string, string) pair in customCommands.Keys)
+                    LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
             }
 
             float _value = UIManager.Instance.JLConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
@@ -806,7 +848,7 @@ namespace JaLoader
 
         private void SendVersion()
         {
-            LogMessage("/", $"a_{SettingsManager.GetVersionString()}");
+            LogMessage("/", SettingsManager.GetVersionString());
         }
 
         private void Clear()

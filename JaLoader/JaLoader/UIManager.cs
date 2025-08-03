@@ -1,29 +1,17 @@
 ﻿using BepInEx;
-using HarmonyLib;
-using JetBrains.Annotations;
 using System;
-using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Configuration;
 using System.Reflection;
-using System.Security.Policy;
 using System.Text.RegularExpressions;
-using System.Xml;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using static UIKeyBinding;
-using static UnityEngine.EventSystems.EventTrigger;
 using Debug = UnityEngine.Debug;
 
 namespace JaLoader
@@ -60,20 +48,21 @@ namespace JaLoader
 
         #endregion
 
-        #region Declarations
-
-        internal GameObject JLCanvas;     
+        #region Declarations  
 
         internal Texture2D knobTexture;
-
+        private AudioClip buttonClickSound;
+        private AudioSource audioSource;
+        private Material GreenToolMaterial;
+        private Material GlowGreenToolMaterial;
         private MainMenuBookC book;
 
-        private bool inOptions;
-        private bool inModsOptions;
-        private bool inModsList;
         private bool isObstructing;
+        private bool isNutGreen;
         internal bool CanCloseMap = true;
+        private bool showingNotice;
 
+        internal GameObject JLCanvas;
         private Text JaLoaderText;
         private GameObject ModsLocationText;
         private GameObject JLBookUI;
@@ -106,6 +95,9 @@ namespace JaLoader
         internal Dictionary<string, Dropdown> AllSettingsDropdowns = new Dictionary<string, Dropdown>();
         internal Dictionary<string, Slider> AllSettingsSliders = new Dictionary<string, Slider>();
         internal Dictionary<string, InputField> AllSettingsInputFields = new Dictionary<string, InputField>();
+        internal Dictionary<GenericModData, GameObject> modEntries = new Dictionary<GenericModData, GameObject>();
+        private readonly List<(string, string, bool)> noticesToShow = new List<(string, string, bool)>();
+        private readonly List<string> allNotices = new List<string>();
 
         #region Panels
         internal GameObject JLPanel;
@@ -125,12 +117,6 @@ namespace JaLoader
 
         private GameObject MoreModInfoPanel;
         #endregion
-
-        private AudioClip buttonClickSound;
-        private AudioSource audioSource;
-        private List<string> allNotices = new List<string>();
-
-        internal Dictionary<GenericModData, GameObject> modEntries = new Dictionary<GenericModData, GameObject>();
 
         #endregion
 
@@ -169,42 +155,7 @@ namespace JaLoader
 
                 if (JLSettingsPanel.activeSelf)
                     ToggleModLoaderSettings_Main();
-
-                RefreshUI();
             }
-
-            if (inOptions && Input.GetMouseButtonDown(0))
-                if (AnyDropdownClicked())
-                    RefreshUI();
-
-            if (inModsList && Input.GetMouseButtonDown(0))
-                if (AllSettingsDropdowns["ShowDisabledMods"].Find("Dropdown List"))
-                    RefreshUI();
-
-            if (inModsOptions && Input.GetMouseButtonDown(0))
-                if (AnyModDropdownClicked())
-                    RefreshUI();
-        }
-
-        private bool AnyDropdownClicked()
-        {
-            foreach (var dropdown in AllSettingsDropdowns.Values)
-            {
-                if (dropdown.Find("Dropdown List") != null)
-                    return true;
-            }
-
-            return false;
-        }
-
-        private bool AnyModDropdownClicked()
-        {
-            foreach (Transform item in ModsSettingsContent.transform)
-            {
-                if (item.Find("Dropdown List"))
-                    return true;
-            }
-            return false;
         }
 
         private void OnMenuLoad()
@@ -213,18 +164,30 @@ namespace JaLoader
             {
                 var loadingScreenScript = gameObject.AddComponent<LoadingScreen>();
                 loadingScreenScript.ShowLoadingScreen();
+
+                GreenToolMaterial = new Material(Shader.Find("Legacy Shaders/Diffuse"))
+                {
+                    color = CommonColors.MenuGreenToolColor
+                };
+
+                GlowGreenToolMaterial = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
+                {
+                    color = CommonColors.MenuGreenToolColor
+                };
             }
 
+            book = FindObjectOfType<MainMenuBookC>();
+            
             if (JLCanvas == null)
                 StartCoroutine(LoadUIDelay());
 
             SetNewspaperText();
 
-            book = FindObjectOfType<MainMenuBookC>();
-
             ToggleJaLoaderInfoStatus(true);
 
             AddObjectShortcuts();
+
+            FixDropdowns();
         }
 
         internal void NoMods()
@@ -237,14 +200,10 @@ namespace JaLoader
         {
             ToggleJaLoaderInfoStatus(false);
             Console.Instance.ToggleVisibility(false);
-
-            if (inOptions)
-                CloseAllSettings();
         }
 
         private void CloseAllSettings()
         {
-            inOptions = false;
             MainSettings.SetActive(false);
             PreferencesSettings.SetActive(false);
             TweaksSettings.SetActive(false);
@@ -308,7 +267,6 @@ namespace JaLoader
             if (JLCanvas == null)
                 return;
 
-            RefreshUI();
             JLPanel.SetActive(show);
         }
 
@@ -334,11 +292,13 @@ namespace JaLoader
             ModsSettingsList = JLModsPanel.FindDeepChildObject("SettingsList");
             ModsSettingsContent = ModsSettingsList.FindDeepChildObject("Content");
             ModsInstallButton = JLModsPanel.FindDeepChildObject("InstallButton");
+            MoreModInfoPanel = JLModsPanel.FindObject("MoreModInfo");
 
             ConsoleMessageTemplate = JLConsole.FindDeepChildObject("MessageTemplate");
-            MoreModInfoPanel = JLModsPanel.FindObject("MoreModInfo");
+            
             CataloguePageTemplate = JLCatalogue.FindDeepChildObject("MainTemplate");
             CatalogueEntryTemplate = CataloguePageTemplate.FindDeepChildObject("Template");
+            
             ObjectsList = JLObjectsList.FindObject("ObjectsList");
             ObjectEntryTemplate = ObjectsList.FindDeepChildObject("ItemTemplate");
             CurrentSelectedObjectText = ObjectsList.FindObject("CurrentlySelectedText").GetComponent<Text>();
@@ -364,7 +324,12 @@ namespace JaLoader
             ModSettingsInputTemplate = ModsSettingsContent.Find("InputTemplate").gameObject;
 
             var clickers = GameObject.Find("UI Root").Find("Options/OptionsGameplay/Back").GetComponent<MainMenuClickersC>();
-            buttonClickSound = clickers.audioClip;
+            buttonClickSound = clickers.audioClip;  
+        }
+
+        private void FixDropdowns()
+        {
+            GameObject.Find("Canvas").Find("Image").GetComponent<Image>().raycastTarget = false;
         }
 
         private void AddListenerEvents()
@@ -373,6 +338,8 @@ namespace JaLoader
             JLBookUI.FindButton("OptionsButton").onClick.AddListener(ToggleModLoaderSettings_Main);
 
             JLModsPanel.FindButton("ExitButton").onClick.AddListener(ToggleModMenu);
+            ModsSearchBar.onValueChanged.AddListener(delegate { OnInputValueChanged_ModsList(); });
+            JLModsPanel.FindDeepButton("InstallButton").onClick.AddListener(InstallMod);
 
             MainSettings.FindButton("ExitButton").onClick.AddListener(ToggleModLoaderSettings_Main);
             MainSettings.FindButton("Buttons/PreferencesButton").onClick.AddListener(ToggleModLoaderSettings_Preferences);
@@ -387,16 +354,12 @@ namespace JaLoader
             TweaksSettings.FindButton("SaveButton").onClick.AddListener(SaveAndApplyValues);
             AccessibilitySettings.FindButton("SaveButton").onClick.AddListener(SaveAndApplyValues);
 
-            JLNoticePanel.FindButton("UnderstandButton").onClick.AddListener(delegate { CloseNotice(); });
-            JLNoticePanel.FindButton("DontShowAgainButton").onClick.AddListener(delegate { CloseNotice(true); });
-
-            ModsSearchBar.onValueChanged.AddListener(delegate { OnInputValueChanged_ModsList(); });
-            JLModsPanel.FindDeepButton("InstallButton").onClick.AddListener(InstallMod);
-
             AllSettingsDropdowns["ShowDisabledMods"].onValueChanged.AddListener(delegate { ShowDisabledMods(); });
-
             AllSettingsDropdowns["MirrorDistance"].onValueChanged.AddListener(delegate { GameTweaks.Instance.UpdateMirrors((MirrorDistances)AllSettingsDropdowns["MirrorDistance"].value); });
             AllSettingsDropdowns["CursorMode"].onValueChanged.AddListener(delegate { GameTweaks.Instance.ChangeCursor((CursorMode)AllSettingsDropdowns["CursorMode"].value); });
+
+            JLNoticePanel.FindButton("UnderstandButton").onClick.AddListener(delegate { CloseNotice(); });
+            JLNoticePanel.FindButton("DontShowAgainButton").onClick.AddListener(delegate { CloseNotice(true); });
         }
 
         private void AddAllSettingsToDictionaries()
@@ -413,7 +376,6 @@ namespace JaLoader
             AllSettingsDropdowns.Add("DebugMode", PreferencesSettings.FindDeepDropdown("DebugMode"));
 
             AllSettingsDropdowns.Add("MenuMusic", TweaksSettings.FindDeepDropdown("MenuMusic"));
-            AllSettingsDropdowns.Add("MenuMusicVolume", TweaksSettings.FindDeepSlider("MenuMusicVolume").GetComponent<Dropdown>());
             AllSettingsDropdowns.Add("CustomSongs", TweaksSettings.FindDeepDropdown("CustomSongs"));
             AllSettingsDropdowns.Add("CustomSongsBehaviour", TweaksSettings.FindDeepDropdown("CustomSongsBehaviour"));
             AllSettingsDropdowns.Add("RadioAds", TweaksSettings.FindDeepDropdown("RadioAds"));
@@ -463,7 +425,7 @@ namespace JaLoader
                     modsFolderTextRT.anchorMax = new Vector2(1, 1);
                     modsFolderTextRT.pivot = new Vector2(1, 1);
                     modsFolderTextRT.position = new Vector2(Screen.width - 10, Screen.height - 30);
-                    JaLoaderText.alignment = TextAnchor.MiddleRight;
+                    modsFolderText.alignment = TextAnchor.MiddleRight;
                     break;
 
                 case ConsolePositions.TopRight:
@@ -482,7 +444,7 @@ namespace JaLoader
                     modsFolderTextRT.anchorMax = new Vector2(0, 1);
                     modsFolderTextRT.pivot = new Vector2(0, 1);
                     modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    JaLoaderText.alignment = TextAnchor.MiddleLeft;
+                    modsFolderText.alignment = TextAnchor.MiddleLeft;
                     break;
 
                 case ConsolePositions.BottomLeft:
@@ -501,7 +463,7 @@ namespace JaLoader
                     modsFolderTextRT.anchorMax = new Vector2(0, 1);
                     modsFolderTextRT.pivot = new Vector2(0, 1);
                     modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    JaLoaderText.alignment = TextAnchor.MiddleLeft;
+                    modsFolderText.alignment = TextAnchor.MiddleLeft;
                     break;
 
                 case ConsolePositions.BottomRight:
@@ -520,7 +482,7 @@ namespace JaLoader
                     modsFolderTextRT.anchorMax = new Vector2(0, 1);
                     modsFolderTextRT.pivot = new Vector2(0, 1);
                     modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    JaLoaderText.alignment = TextAnchor.MiddleLeft;
+                    modsFolderText.alignment = TextAnchor.MiddleLeft;
                     break;
             }
         }
@@ -722,10 +684,10 @@ namespace JaLoader
             if (modData.Mod == null)
                 return text;
 
-            newEntry.FindDeepButton("MoveUpButton").onClick.AddListener(delegate { ModManager.MoveModOrderUp(modData.Mod, newEntry); });
-            newEntry.FindDeepButton("MoveDownButton").onClick.AddListener(delegate { ModManager.MoveModOrderDown(modData.Mod, newEntry); });
-            newEntry.FindDeepButton("MoveTopButton").onClick.AddListener(delegate { ModManager.MoveModOrderTop(modData.Mod, newEntry); });
-            newEntry.FindDeepButton("MoveBottomButton").onClick.AddListener(delegate { ModManager.MoveModOrderBottom(modData.Mod, newEntry); });
+            newEntry.FindDeepButton("MoveUpButton").onClick.AddListener(delegate { ModManager.MoveModOrderUp(newEntry); });
+            newEntry.FindDeepButton("MoveDownButton").onClick.AddListener(delegate { ModManager.MoveModOrderDown(newEntry); });
+            newEntry.FindDeepButton("MoveTopButton").onClick.AddListener(delegate { ModManager.MoveModOrderTop(newEntry); });
+            newEntry.FindDeepButton("MoveBottomButton").onClick.AddListener(delegate { ModManager.MoveModOrderBottom(newEntry); });
 
             newEntry.FindDeepButton("ToggleButton").onClick.AddListener(delegate { ModManager.ToggleMod(modData); });
 
@@ -748,7 +710,7 @@ namespace JaLoader
             var nut = toolBox.transform.GetChild(toolBox.transform.childCount - 1);
             MainMenuToolboxC orgComp = toolBox.GetComponent<MainMenuToolboxC>();
 
-            wrench.localPosition = new Vector3(24.21f, -3.55f, 8.96f); // The wrench in the original toolbox clips through the casing
+            wrench.localPosition = new Vector3(24.21f, -3.55f, 8.96f); // The wrench in the original toolbox clips through the casing, so why not fix it here
 
             var JLWrench = Instantiate(wrench.gameObject);
             JLWrench.name = "JLWrench";
@@ -815,27 +777,14 @@ namespace JaLoader
                     StartCoroutine(ShowNoticeAfterLoad("OUTDATED GAME DETECTED", "You are using an outdated version of Jalopy.\r\n\r\nYou may encounter issues with JaLoader and certain mods, as well as more bugs in general.\r\n\r\nIf you encounter bugs, please make sure to ask or check if they exist in newer versions as well before reporting them.\r\n\r\nHave fun!"));
             }
         }
-        bool isNutGreen = false;
 
         public void MakeNutGreen()
         {
             var nut = FindObjectOfType<MenuNut>();
 
-            var greenMat = new Material(Shader.Find("Legacy Shaders/Diffuse"))
-            {
-                color = new Color32(120, 255, 85, 255)
-            };
-
-            nut.startMaterial = greenMat;
-
-            var glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
-            {
-                color = greenMat.color
-            };
-
-            nut.glowMaterial = glowMat;
-
-            nut.GetComponent<MeshRenderer>().material = greenMat;
+            nut.startMaterial = GreenToolMaterial;
+            nut.glowMaterial = GlowGreenToolMaterial;
+            nut.GetComponent<MeshRenderer>().material = GreenToolMaterial;
 
             isNutGreen = true;
         }
@@ -844,21 +793,11 @@ namespace JaLoader
         {
             var wrench = FindObjectOfType<MenuWrench>();
 
-            var greenMat = new Material(Shader.Find("Legacy Shaders/Diffuse"))
-            {
-                color = new Color32(120, 255, 85, 255)
-            };
+            wrench.startMaterial = GreenToolMaterial;
 
-            wrench.startMaterial = greenMat;
+            wrench.glowMaterial = GlowGreenToolMaterial;
 
-            var glowMat = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
-            {
-                color = greenMat.color
-            };
-
-            wrench.glowMaterial = glowMat;
-
-            wrench.GetComponent<MeshRenderer>().material = greenMat;
+            wrench.GetComponent<MeshRenderer>().material = GreenToolMaterial;
         }
 
         private void SaveModSettings()
@@ -869,9 +808,9 @@ namespace JaLoader
                 {
                     string fullName = ModsSettingsContent.transform.GetChild(i).gameObject.name;
 
-                    string modAuthor = "";
-                    string modID = "";
-                    string modName = "";
+                    string modAuthor;
+                    string modID;
+                    string modName;
 
                     string[] parts = fullName.Split('_');
 
@@ -881,7 +820,7 @@ namespace JaLoader
                     modName = parts[2];
                     modName = modName.Remove(modName.Length - 15);
 
-                    if (modName == string.Empty)
+                    if (string.IsNullOrEmpty(modName))
                         modName = modID;
 
                     var mod = ModManager.FindMod(modAuthor, modID, modName);
@@ -908,9 +847,9 @@ namespace JaLoader
                 {
                     string fullName = ModsSettingsContent.transform.GetChild(i).gameObject.name;
 
-                    string modAuthor = "";
-                    string modID = "";
-                    string modName = "";
+                    string modAuthor;
+                    string modID;
+                    string modName;
 
                     string[] parts = fullName.Split('_');
 
@@ -920,7 +859,7 @@ namespace JaLoader
                     modName = parts[2];
                     modName = modName.Remove(modName.Length - 15);
 
-                    if (modName == string.Empty)
+                    if (string.IsNullOrEmpty(modName))
                         modName = modID;
 
                     var mod = ModManager.FindMod(modAuthor, modID, modName);
@@ -1041,7 +980,6 @@ namespace JaLoader
             PlayClickSound();
 
             ModsSettingsList.SetActive(false);
-            inModsOptions = false;
 
             MoreModInfoPanel.SetActive(true);
 
@@ -1070,7 +1008,6 @@ namespace JaLoader
             PlayClickSound();
 
             ModsSettingsList.SetActive(true);
-            inModsOptions = true;
 
             MoreModInfoPanel.SetActive(false);
 
@@ -1098,7 +1035,6 @@ namespace JaLoader
             ModsSearchBar.Select();
             ModsSearchBar.text = "";
             JLModsPanel.SetActive(!JLModsPanel.gameObject.activeSelf);
-            inModsList = !inModsList;
 
             if (SceneManager.GetActiveScene().buildIndex == 3)
                 TogglePauseMenu(JLModsPanel.gameObject.activeSelf);
@@ -1112,9 +1048,8 @@ namespace JaLoader
             if (!IsBookClosed())
                 book.CloseBook();
 
-            inOptions = !inOptions;
-            JLSettingsPanel.SetActive(inOptions);
-            JLSettingsPanel.transform.GetChild(1).gameObject.SetActive(!JLSettingsPanel.transform.GetChild(1).gameObject.activeSelf);
+            JLSettingsPanel.SetActive(!JLSettingsPanel.activeSelf);
+            MainSettings.SetActive(!MainSettings.activeSelf);
 
             if (SceneManager.GetActiveScene().buildIndex == 3)
                 TogglePauseMenu(JLSettingsPanel.gameObject.activeSelf);
@@ -1126,24 +1061,24 @@ namespace JaLoader
         {
             PlayClickSound();
 
-            JLSettingsPanel.transform.GetChild(1).gameObject.SetActive(!JLSettingsPanel.transform.GetChild(0).gameObject.activeSelf);
-            JLSettingsPanel.transform.GetChild(2).gameObject.SetActive(!JLSettingsPanel.transform.GetChild(1).gameObject.activeSelf);
+            MainSettings.SetActive(!MainSettings.activeSelf);
+            PreferencesSettings.SetActive(!PreferencesSettings.activeSelf);
         }
 
         public void ToggleModLoaderSettings_Tweaks()
         {
             PlayClickSound();
 
-            JLSettingsPanel.transform.GetChild(1).gameObject.SetActive(! JLSettingsPanel.transform.GetChild(0).gameObject.activeSelf);
-            JLSettingsPanel.transform.GetChild(3).gameObject.SetActive(!JLSettingsPanel.transform.GetChild(2).gameObject.activeSelf);
+            MainSettings.SetActive(!MainSettings.activeSelf);
+            TweaksSettings.SetActive(!TweaksSettings.activeSelf);
         }
 
         public void ToggleModLoaderSettings_Accessibility()
         {
             PlayClickSound();
 
-            JLSettingsPanel.transform.GetChild(1).gameObject.SetActive(!JLSettingsPanel.transform.GetChild(0).gameObject.activeSelf);
-            JLSettingsPanel.transform.GetChild(4).gameObject.SetActive(! JLSettingsPanel.transform.GetChild(3).gameObject.activeSelf);
+            MainSettings.SetActive(!MainSettings.activeSelf);
+            AccessibilitySettings.SetActive(!AccessibilitySettings.activeSelf);
         }
 
         private void TogglePauseMenu(bool value)
@@ -1270,8 +1205,7 @@ namespace JaLoader
             File.Delete(Path.Combine(SettingsManager.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
 
             ReferencesLoader.Instance.StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
-
-            ModLoader.Instance.InitializeMod(out MonoBehaviour mod, certainModFile: dllName);
+            ModLoader.Instance.InitializeMod(out _, certainModFile: dllName);
             yield return null;
         }
 
@@ -1375,9 +1309,7 @@ namespace JaLoader
             var wasJaDownChanged = false;
 
             if (SettingsManager.EnableJaDownloader != !Convert.ToBoolean(AllSettingsDropdowns["EnableJaDownloader"].value))
-            {
                 wasJaDownChanged = true;
-            }
 
             SettingsManager.ConsoleMode = (ConsoleModes)AllSettingsDropdowns["ConsoleMode"].value;
             SettingsManager.ConsolePosition = (ConsolePositions)AllSettingsDropdowns["ConsolePosition"].value;
@@ -1398,7 +1330,7 @@ namespace JaLoader
             SettingsManager.LicensePlateText = AllSettingsInputFields["LicensePlateText"].text;
             SettingsManager.ShowFPSCounter = Convert.ToBoolean(AllSettingsDropdowns["ShowFPSCounter"].value);
             SettingsManager.FixLaikaShopMusic = !Convert.ToBoolean(AllSettingsDropdowns["FixLaikaShopMusic"].value);
-            // SettingsManager.Replace0WithBanned = !Convert.ToBoolean(AllSettingsDropdowns["Replace0WithBanned"].value);
+            //SettingsManager.Replace0WithBanned = !Convert.ToBoolean(AllSettingsDropdowns["Replace0WithBanned"].value);
             SettingsManager.MirrorDistances = (MirrorDistances)AllSettingsDropdowns["MirrorDistance"].value;
             SettingsManager.CursorMode = (CursorMode)AllSettingsDropdowns["CursorMode"].value;
             //SettingsManager.FixItemsFallingBehindShop = !Convert.ToBoolean(AllSettingsDropdowns["FixItemsFallingBehindShop"].value);
@@ -1433,9 +1365,6 @@ namespace JaLoader
                 }
             }
         }
-
-        private List<(string, string, bool)> noticesToShow = new List<(string, string, bool)>();
-        private bool showingNotice;
 
         private IEnumerator ShowNoticeAfterLoad(string subtitle, string message)
         {

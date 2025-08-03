@@ -132,12 +132,12 @@ namespace JaLoader
                     {
                         if (allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ClassicMod") != null)
                         {
-                            Console.LogWarning($"Mod {modFile.Name} is designed for an older version of Jalopy (1.0) and is not compatible with your current game version.");
+                            Console.LogWarning("JaLoader", $"Mod {modFile.Name} is designed for an older version of Jalopy (1.0) and is not compatible with your current game version.");
                             throw new ModException($"Mod {modFile.Name} is built for 1.0 and is not compatible with this version of the game.", null, 101);
                         }
                         else
                         {
-                            Console.LogError($"Mod {modFile.Name} does not contain any class derived from Mod, ClassicMod or BaseUnityPlugin.");
+                            Console.LogError("JaLoader", $"Mod {modFile.Name} does not contain any class derived from Mod, ClassicMod or BaseUnityPlugin.");
                             throw new ModException($"No valid mod class found for mod {modFile.Name}.", null, 102);
                         }
 
@@ -317,7 +317,7 @@ namespace JaLoader
                         break;
 
                     default:
-                        Console.LogError("/", ex);
+                        Console.LogError("JaLoader", ex);
                         Debug.Log(ex);
                         Debug.Log("You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                         Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
@@ -353,9 +353,8 @@ namespace JaLoader
 
             DirectoryInfo d = new DirectoryInfo(SettingsManager.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
-
             foreach (FileInfo modFile in mods)
-                InitializeMod(out MonoBehaviour outMod, modFile: modFile);
+                InitializeMod(out _, modFile: modFile);
 
             GetComponent<LoadingScreen>().DeleteLoadingScreen();
 

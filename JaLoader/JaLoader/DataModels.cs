@@ -110,6 +110,7 @@ namespace JaLoader
         public static Color ErrorRed = new Color32(255, 83, 83, 255);
         public static Color EnabledModColor = new Color32(255, 255, 255, 255);
         public static Color DisabledModColor = new Color32(120, 120, 120, 255);
+        public static Color MenuGreenToolColor = new Color32(120, 255, 85, 255);
     }
 
 

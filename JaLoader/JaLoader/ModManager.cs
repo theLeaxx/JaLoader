@@ -1,6 +1,5 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
-using Discord;
 using JaLoader.BepInExWrapper;
 using System;
 using System.Collections;
@@ -120,8 +119,7 @@ namespace JaLoader
                 {
                     if (script is Mod mod)
                     {
-                        var latestVersion = "";
-                        if (UpdateUtils.CheckForModUpdate(mod, out latestVersion))
+                        if (UpdateUtils.CheckForModUpdate(mod, out string latestVersion))
                         {
                             modsNeedUpdate++;
                             UIManager.Instance.ShowUpdateAvailableForMod(Mods[mod].GenericModData, latestVersion);
@@ -443,7 +441,7 @@ namespace JaLoader
             return null;
         }
 
-        internal static void MoveModOrderUp(MonoBehaviour mod, GameObject modListObj)
+        internal static void MoveModOrderUp(GameObject modListObj)
         {
             if (modListObj.transform.GetSiblingIndex() > 1)
                 modListObj.transform.SetSiblingIndex(modListObj.transform.GetSiblingIndex() - 1);
@@ -451,7 +449,7 @@ namespace JaLoader
             SaveModsOrder();
         }
 
-        internal static void MoveModOrderDown(MonoBehaviour mod, GameObject modListObj)
+        internal static void MoveModOrderDown(GameObject modListObj)
         {
             if (modListObj.transform.GetSiblingIndex() < modListObj.transform.parent.childCount - 1)
                 modListObj.transform.SetSiblingIndex(modListObj.transform.GetSiblingIndex() + 1);
@@ -459,14 +457,14 @@ namespace JaLoader
             SaveModsOrder();
         }
 
-        internal static void MoveModOrderTop(MonoBehaviour mod, GameObject modListObj)
+        internal static void MoveModOrderTop( GameObject modListObj)
         {
             modListObj.transform.SetSiblingIndex(1);
 
             SaveModsOrder();
         }
 
-        internal static void MoveModOrderBottom(MonoBehaviour mod, GameObject modListObj)
+        internal static void MoveModOrderBottom(GameObject modListObj)
         {
             modListObj.transform.SetSiblingIndex(modListObj.transform.parent.childCount - 1);
 
