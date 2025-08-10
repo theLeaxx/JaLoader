@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using JaLoader.Common;
 using MonoMod.RuntimeDetour;
 using System;
 using System.Collections;
@@ -608,7 +609,7 @@ namespace JaLoader
         {
             bool radioAds = false;
 
-            radioAds = SettingsManager.RadioAds;
+            radioAds = JaLoaderSettings.RadioAds;
             /*Transform[] allObjects = GameObject.FindObjectsOfType<Transform>();
 
             foreach (Transform obj in allObjects)
@@ -688,24 +689,34 @@ namespace JaLoader
         [HarmonyPostfix]
         public static void Postfix(RouteGeneratorC __instance)
         {
-            string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
-            if (info.Length > 0 && info[0] != "" && info[0] != string.Empty)
+            try
             {
-                string destination = info[2];
-                string start = info[0];
-                if (destination == "M.")
+                string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
+                if (info.Length > 0 && info[0] != "" && info[0] != string.Empty)
                 {
-                    destination = "Malko Tarnovo";
+                    string destination = info[2];
+                    string start = info[0];
+                    if (destination == "M.")
+                    {
+                        destination = "Malko Tarnovo";
+                    }
+                    else if (start == "M.")
+                    {
+                        start = "Malko Tarnovo";
+                        destination = info[3];
+                    }
+                    EventsManager.Instance.CallRoute(start, destination, __instance.routeChosenLength * 70);
                 }
-                else if (start == "M.")
-                {
-                    start = "Malko Tarnovo";
-                    destination = info[3];
-                }
-                EventsManager.Instance.CallRoute(start, destination, __instance.routeChosenLength * 70);
+                else
+                    EventsManager.Instance.CallRoute("Berlin", "Dresden", __instance.routeChosenLength * 70);
             }
-            else
+            catch (Exception ex)
+            {
+                Console.LogError("JaLoader", "Failed to get route information: " + ex.Message);
+                Console.LogError("JaLoader", "Using default route information. Please report this issue.");
+                Console.LogError("JaLoader", Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text);
                 EventsManager.Instance.CallRoute("Berlin", "Dresden", __instance.routeChosenLength * 70);
+            }
         }
     }
 
@@ -721,6 +732,93 @@ namespace JaLoader
             GameTweaks.Instance.isDialogueActive = true;
             target1.AddComponent<DialogueReceiver>();
             return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(ScrapYardC), "Start")]
+    public static class ScrapYardC_Start_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(ScrapYardC __instance)
+        {
+            foreach (var objName in CustomObjectsManager.Instance.database.Keys)
+            {
+                var obj = CustomObjectsManager.Instance.GetObject(objName);
+
+                if (!obj.GetComponent<EngineComponentC>())
+                    continue;
+
+                if (!obj.GetComponent<ObjectIdentification>().CanFindInJunkCars)
+                    continue;
+
+                __instance.spawnCatalogue.Add(obj);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(AbandonCarC), "Start")]
+    public static class AbandonCarC_Start_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(AbandonCarC __instance)
+        {
+            var enginesList = __instance.engineBlocks.ToList();
+            var fuelTanksList = __instance.fuelTanks.ToList();
+            var carburettorsList = __instance.carburettors.ToList();
+            var airFiltersList = __instance.airFilters.ToList();
+            var ignitionCoilsList = __instance.ignitionCoils.ToList();
+            var batteriesList = __instance.batteries.ToList();
+            var waterTanksList = __instance.waterTanks.ToList();
+
+            foreach (var objName in CustomObjectsManager.Instance.database.Keys)
+            {
+                var obj = CustomObjectsManager.Instance.GetObject(objName);
+
+                if (!obj.GetComponent<EngineComponentC>())
+                    continue;
+
+                if (!obj.GetComponent<ObjectIdentification>().CanFindInJunkCars)
+                    continue;
+
+                switch (obj.GetComponent<ObjectPickupC>().engineString)
+                {
+                    case "EngineBlock":
+                        enginesList.Add(obj);
+                        break;
+
+                    case "FuelTank":
+                        fuelTanksList.Add(obj);
+                        break;
+
+                    case "Carburettor":
+                        carburettorsList.Add(obj);
+                        break;
+
+                    case "AirFilter":
+                        airFiltersList.Add(obj);
+                        break;
+
+                    case "IgnitionCoil":
+                        ignitionCoilsList.Add(obj);
+                        break;
+
+                    case "Battery":
+                        batteriesList.Add(obj);
+                        break;
+
+                    case "WaterContainer":
+                        waterTanksList.Add(obj);
+                        break;
+                }
+            }
+
+            __instance.engineBlocks = enginesList.ToArray();
+            __instance.fuelTanks = fuelTanksList.ToArray();
+            __instance.carburettors = carburettorsList.ToArray();
+            __instance.airFilters = airFiltersList.ToArray();
+            __instance.ignitionCoils = ignitionCoilsList.ToArray();
+            __instance.batteries = batteriesList.ToArray();
+            __instance.waterTanks = waterTanksList.ToArray();
         }
     }
 

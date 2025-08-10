@@ -21,6 +21,9 @@ namespace JaLoader
         public int CustomID;
         public BoxSizes BoxSize;
 
+        public bool CanBuyInDealership;
+        public bool CanFindInJunkCars;
+
         public Vector3 PartIconPositionAdjustment = Vector3.zero;
         public Vector3 PartIconRotationAdjustment = Vector3.zero;
         public Vector3 PartIconScaleAdjustment = Vector3.one;

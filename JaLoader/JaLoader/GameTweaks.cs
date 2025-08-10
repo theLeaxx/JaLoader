@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using CursorMode = JaLoader.Common.CursorMode;
 
 namespace JaLoader
 {
@@ -51,7 +53,7 @@ namespace JaLoader
         {
             StartCoroutine(OnGameLoadDelay());
 
-            if (SettingsManager.UseExperimentalCharacterController)
+            if (JaLoaderSettings.UseExperimentalCharacterController)
                 GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
 
             GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.AddComponent<EnableCursorOnEnable>();
@@ -59,10 +61,10 @@ namespace JaLoader
 
         internal void SkipLanguage()
         {
-            if (SettingsManager.SkipLanguage && !skippedIntro)
+            if (JaLoaderSettings.SkipLanguage && !skippedIntro)
             {
                 skippedIntro = true;
-                SettingsManager.selectedLanguage = true;
+                JaLoaderSettings.SelectedLanguage = true;
                 SceneManager.LoadScene("MainMenu");
             }
         }
@@ -86,19 +88,19 @@ namespace JaLoader
             emptyTexture = new Texture2D(1, 1, TextureFormat.Alpha8, false);
             emptyTexture.SetPixel(0, 0, Color.clear);
 
-            ChangeCursor(SettingsManager.CursorMode);
+            ChangeCursor(JaLoaderSettings.CursorMode);
 
             yield return new WaitForSeconds(3);
             UpdateMirrors();
             FixBorderFlags();
 
-            if (SettingsManager.FixLaikaShopMusic)
+            if (JaLoaderSettings.FixLaikaShopMusic)
             {
                 yield return new WaitForSeconds(2);
                 FixLaikaDealershipSong();
             }
 
-            if (SettingsManager.FixBorderGuardsFlags)
+            if (JaLoaderSettings.FixBorderGuardsFlags)
             {
                 yield return new WaitForSeconds(2);
                 FixBorderGuardsFlags();
@@ -139,10 +141,10 @@ namespace JaLoader
         {
             FixBorderFlags();
 
-            if (SettingsManager.FixLaikaShopMusic)
+            if (JaLoaderSettings.FixLaikaShopMusic)
                 Invoke("FixLaikaDealershipSong", 5);
 
-            if (SettingsManager.FixBorderGuardsFlags)
+            if (JaLoaderSettings.FixBorderGuardsFlags)
                 Invoke("FixBorderGuardsFlags", 5);
 
             SceneManager.GetActiveScene().GetRootGameObjects().ToList().ForEach(go =>
@@ -206,7 +208,7 @@ namespace JaLoader
 
         public void UpdateMirrors()
         {
-            UpdateMirrors(SettingsManager.MirrorDistances);
+            UpdateMirrors(JaLoaderSettings.MirrorDistances);
         }
 
         public void UpdateMirrors(MirrorDistances value)

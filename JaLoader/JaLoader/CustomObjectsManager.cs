@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -47,7 +48,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (!SettingsManager.DebugMode)
+            if (!JaLoaderSettings.DebugMode)
                 return;
 
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -20,11 +21,11 @@ namespace JaLoader
             if (counting)
                 timePassedRaw += Time.deltaTime;
 
-            if (!SettingsManager.DebugMode)
+            if (!JaLoaderSettings.DebugMode)
                 return;
 
             if (Input.GetKeyDown(KeyCode.F5))
-                SettingsManager.ReadSettings();
+                JaLoaderSettings.ReadSettings();
         }
 
         internal static void SignalFinishedLoading()

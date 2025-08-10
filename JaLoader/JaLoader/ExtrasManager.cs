@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using JaLoader.Common;
+using Steamworks;
 using System;
 using System.CodeDom;
 using System.Collections;
@@ -589,7 +590,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (!SettingsManager.DebugMode)
+            if (!JaLoaderSettings.DebugMode)
                 return;
 
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))

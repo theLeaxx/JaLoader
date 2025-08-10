@@ -5,6 +5,7 @@ using System.Text;
 using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using JaLoader.Common;
 
 namespace JaLoader
 {

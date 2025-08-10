@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -56,7 +57,7 @@ namespace JaLoader
 
         public void LoadDefaultTexture()
         {
-            byte[] bytes = File.ReadAllBytes(Path.Combine(SettingsManager.ModFolderLocation, @"Required\defaultPaintjobTexture.png"));
+            byte[] bytes = File.ReadAllBytes(Path.Combine(JaLoaderSettings.ModFolderLocation, @"Required\defaultPaintjobTexture.png"));
 
             Texture2D texture = new Texture2D(128, 128, TextureFormat.ARGB32, false);
             texture.LoadImage(bytes);
@@ -101,7 +102,7 @@ namespace JaLoader
             {
                 if (pj.Material.name == appliedPaintJobMaterial.name.Replace(" (Instance)", ""))
                 {
-                    SettingsManager.AppliedPaintJobName = pj.Name;
+                    JaLoaderSettings.AppliedPaintJobName = pj.Name;
                     SettingsManager.SaveSettings();
                     return;
                 }
@@ -124,7 +125,7 @@ namespace JaLoader
 
         public void ApplySavedPaintjob()
         {
-            var savedPaintJob = SettingsManager.AppliedPaintJobName;
+            var savedPaintJob = JaLoaderSettings.AppliedPaintJobName;
 
             if (string.IsNullOrEmpty(savedPaintJob))
                 return;

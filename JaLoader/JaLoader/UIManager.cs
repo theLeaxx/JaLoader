@@ -13,6 +13,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
+using JaLoader.Common;
+using CursorMode = JaLoader.Common.CursorMode;
 
 namespace JaLoader
 {
@@ -160,7 +162,7 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
-            if (!SettingsManager.loadedFirstTime)
+            if (!JaLoaderSettings.LoadedFirstTime)
             {
                 var loadingScreenScript = gameObject.AddComponent<LoadingScreen>();
                 loadingScreenScript.ShowLoadingScreen();
@@ -493,21 +495,21 @@ namespace JaLoader
             {
                 SetObstructRay(true);
 
-                JaLoaderText.text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{SettingsManager.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
+                JaLoaderText.text = $"JaLoader <color={(JaLoaderSettings.IsPreReleaseVersion ? "red" : "yellow")}>{JaLoaderSettings.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
 
                 var dialog = JLCanvas.FindObject("JLUpdateDialog");
                 dialog.FindButton("YesButton").onClick.AddListener(() => UpdateUtils.StartJaLoaderUpdate());
-                dialog.Find("Subtitle").GetComponent<Text>().text = $"{SettingsManager.GetVersionString()} ➔ {latestVersion}";
+                dialog.Find("Subtitle").GetComponent<Text>().text = $"{JaLoaderSettings.GetVersionString()} ➔ {latestVersion}";
                 dialog.FindButton("NoButton").onClick.AddListener(delegate { dialog.SetActive(false); SetObstructRay(false); });
-                dialog.FindButton("OpenGitHubButton").onClick.AddListener(() => Application.OpenURL($"{SettingsManager.JaLoaderGitHubLink}/releases/latest"));
+                dialog.FindButton("OpenGitHubButton").onClick.AddListener(() => Application.OpenURL($"{JaLoaderSettings.JaLoaderGitHubLink}/releases/latest"));
                 dialog.SetActive(true);
 
                 MakeWrenchGreen();
             }
             else
-                JaLoaderText.text = $"JaLoader <color={(SettingsManager.IsPreReleaseVersion ? "red" : "yellow")}>{SettingsManager.GetVersionString()}</color> loaded!";
+                JaLoaderText.text = $"JaLoader <color={(JaLoaderSettings.IsPreReleaseVersion ? "red" : "yellow")}>{JaLoaderSettings.GetVersionString()}</color> loaded!";
 
-            ModsLocationText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{SettingsManager.ModFolderLocation}</color>";
+            ModsLocationText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{JaLoaderSettings.ModFolderLocation}</color>";
         }
 
         private IEnumerator LoadUIDelay()
@@ -516,7 +518,7 @@ namespace JaLoader
 
             yield return new WaitForEndOfFrame();
 
-            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(SettingsManager.ModFolderLocation, @"Required\JaLoader_UI.unity3d"));
+            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(JaLoaderSettings.ModFolderLocation, @"Required\JaLoader_UI.unity3d"));
 
             yield return bundleLoadReq;
             yield return new WaitForEndOfFrame();
@@ -561,19 +563,19 @@ namespace JaLoader
 
                 Console.Instance.Init();
 
-                if (SettingsManager.HideModFolderLocation)
+                if (JaLoaderSettings.HideModFolderLocation)
                     ModsLocationText.SetActive(false);
 
                 SetOptionsValues();
                 
-                SetConsolePosition(SettingsManager.ConsolePosition);
+                SetConsolePosition(JaLoaderSettings.ConsolePosition);
 
-                Console.LogMessage("JaLoader", $"JaLoader {SettingsManager.GetVersionString()} loaded successfully!");
+                Console.LogMessage("JaLoader", $"JaLoader {JaLoaderSettings.GetVersionString()} loaded successfully!");
                 DebugUtils.SignalFinishedUI();
             }
             catch (Exception e)
             {
-                Console.LogMessage("JaLoader", $"JaLoader {SettingsManager.GetVersionString()} failed to load!");
+                Console.LogMessage("JaLoader", $"JaLoader {JaLoaderSettings.GetVersionString()} failed to load!");
                 DebugUtils.StopCounting();
                 Debug.Log($"Failed to load JaLoader UI!");
 
@@ -583,10 +585,10 @@ namespace JaLoader
 
                 ShowNotice("JaLoader failed to load!", "JaLoader failed to fully load the UI. This is likely due to an outdated JaLoader_UI.unity3d file. Please try reinstalling JaLoader with JaPatcher.");
 
-                if (!SettingsManager.updateAvailable)
-                    JaLoaderText.text = $"JaLoader <color=red>{SettingsManager.GetVersionString()}</color> failed to load!";
+                if (!JaLoaderSettings.UpdateAvailable)
+                    JaLoaderText.text = $"JaLoader <color=red>{JaLoaderSettings.GetVersionString()}</color> failed to load!";
                 else
-                    JaLoaderText.text = $"JaLoader <color=red>{SettingsManager.GetVersionString()}</color> failed to load! (<color=lime>Update available!</color>)";
+                    JaLoaderText.text = $"JaLoader <color=red>{JaLoaderSettings.GetVersionString()}</color> failed to load! (<color=lime>Update available!</color>)";
                 throw;
             }
             finally
@@ -594,10 +596,10 @@ namespace JaLoader
                 if (GameUtils.IsCrackedGame)
                     ShowNotice("PIRATED GAME DETECTED", "You are using a pirated version of Jalopy.\r\n\r\nYou may encounter issues with certain mods, as well as more bugs in general.\r\n\r\nIf you encounter any game-breaking bugs, feel free to submit them to the official GitHub for JaLoader. Remember to mark them with the \"pirated\" tag!\r\n\r\nHave fun!");
 
-                if (SettingsManager.IsPreReleaseVersion)
+                if (JaLoaderSettings.IsPreReleaseVersion)
                     ShowNotice("USING A PRE-RELEASE VERSION OF JALOADER", "You are using a pre-release version of JaLoader.\r\n\r\nThese versions are prone to bugs and may cause issues with certain mods.\r\n\r\nPlease report any bugs you encounter to the JaLoader GitHub page, marking them with the \"pre-release\" tag.\r\n\r\nHave fun!");
 
-                if (!SettingsManager.AskedAboutJaDownloader && !SettingsManager.EnableJaDownloader)
+                if (!JaLoaderSettings.AskedAboutJaDownloader && !JaLoaderSettings.EnableJaDownloader)
                     ShowJaDownloaderNotice();
 
                 EventsManager.Instance.OnUILoadFinish();
@@ -643,7 +645,7 @@ namespace JaLoader
             modEntries[data].FindDeepButton("AboutButton").onClick.RemoveAllListeners();
             modEntries[data].FindDeepButton("AboutButton").onClick.AddListener(delegate { ToggleMoreInfo(data.ModName, data.ModAuthor, $"{data.ModVersion} <color=green>(Latest version: {latestVersion})</color>", data.ModDescription); });
 
-            modEntries[data].FindDeepChildObject("ModName").GetComponent<Text>().text = $"<color=green>(Update Available!)</color> {(SettingsManager.DebugMode == false ? data.ModName : data.ModID)}";
+            modEntries[data].FindDeepChildObject("ModName").GetComponent<Text>().text = $"<color=green>(Update Available!)</color> {(JaLoaderSettings.DebugMode == false ? data.ModName : data.ModID)}";
 
             if(!isNutGreen)
                 MakeNutGreen();
@@ -669,7 +671,7 @@ namespace JaLoader
                 newEntry.FindDeepButton("GitHubButton").gameObject.SetActive(true);
             }
 
-            newEntry.FindDeepChildObject("ModName").GetComponent<Text>().text = SettingsManager.DebugMode == false ? modData.ModName : modData.ModID;
+            newEntry.FindDeepChildObject("ModName").GetComponent<Text>().text = JaLoaderSettings.DebugMode == false ? modData.ModName : modData.ModID;
             newEntry.FindDeepChildObject("ModAuthor").GetComponent<Text>().text = modData.ModAuthor;
 
             newEntry.FindDeepButton("AboutButton").onClick.AddListener(delegate { ToggleMoreInfo(modData.ModName, modData.ModAuthor, modData.ModVersion, modData.ModDescription); });
@@ -771,7 +773,7 @@ namespace JaLoader
                 string versionText = GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text;
                 versionText = Regex.Replace(versionText, @"JALOPY", "");
                 versionText = Regex.Replace(versionText, @"\s", "");
-                GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {(SettingsManager.IsPreReleaseVersion ? $"{SettingsManager.GetVersionString().Replace("Pre-Release", "PR")}" : SettingsManager.GetVersionString())}";
+                GameObject.Find("Newspaper").transform.Find("TextMeshPro").GetComponent<TextMeshPro>().text = $"JALOPY {versionText}|JALOADER {(JaLoaderSettings.IsPreReleaseVersion ? $"{JaLoaderSettings.GetVersionString().Replace("Pre-Release", "PR")}" : JaLoaderSettings.GetVersionString())}";
 
                 if (int.Parse(versionText.Replace(".", "")) < 1105)
                     StartCoroutine(ShowNoticeAfterLoad("OUTDATED GAME DETECTED", "You are using an outdated version of Jalopy.\r\n\r\nYou may encounter issues with JaLoader and certain mods, as well as more bugs in general.\r\n\r\nIf you encounter bugs, please make sure to ask or check if they exist in newer versions as well before reporting them.\r\n\r\nHave fun!"));
@@ -880,41 +882,41 @@ namespace JaLoader
 
         public void SetOptionsValues()
         {
-            AllSettingsDropdowns["ConsoleMode"].value = (int)SettingsManager.ConsoleMode;
-            AllSettingsDropdowns["ConsolePosition"].value = (int)SettingsManager.ConsolePosition;
-            AllSettingsDropdowns["ShowModsFolderLocation"].value = SettingsManager.HideModFolderLocation ? 1 : 0;
-            AllSettingsDropdowns["EnableJaDownloader"].value = SettingsManager.EnableJaDownloader ? 0 : 1;
-            AllSettingsDropdowns["UpdateCheckFrequency"].value = (int)SettingsManager.UpdateCheckMode;
-            AllSettingsDropdowns["SkipLanguageSelectionScreen"].value = SettingsManager.SkipLanguage ? 0 : 1;
-            AllSettingsDropdowns["DiscordRichPresence"].value = SettingsManager.UseDiscordRichPresence ? 0 : 1;
-            AllSettingsDropdowns["DebugMode"].value = SettingsManager.DebugMode ? 0 : 1;
-            AllSettingsDropdowns["MenuMusic"].value = SettingsManager.DisableMenuMusic ? 1 : 0;
-            AllSettingsSliders["MenuMusicVolume"].value = SettingsManager.MenuMusicVolume;
-            AllSettingsDropdowns["Uncle"].value = SettingsManager.DisableUncle ? 1 : 0;
-            AllSettingsDropdowns["CustomSongs"].value = SettingsManager.UseCustomSongs ? 0 : 1;
-            AllSettingsDropdowns["CustomSongsBehaviour"].value = (int)SettingsManager.CustomSongsBehaviour;
-            AllSettingsDropdowns["RadioAds"].value = SettingsManager.RadioAds ? 0 : 1;
-            AllSettingsDropdowns["UseEnhancedMovement"].value = SettingsManager.UseExperimentalCharacterController ? 1 : 0;
-            AllSettingsDropdowns["ChangeLicensePlate"].value = (int)SettingsManager.ChangeLicensePlateText;
-            AllSettingsInputFields["LicensePlateText"].text = SettingsManager.LicensePlateText;
-            AllSettingsDropdowns["ShowFPSCounter"].value = SettingsManager.ShowFPSCounter ? 1 : 0;
-            AllSettingsDropdowns["FixLaikaShopMusic"].value = SettingsManager.FixLaikaShopMusic ? 0 : 1;
-            // AllSettingsDropdowns["Replace0WithBanned"].value = SettingsManager.Replace0WithBanned ? 0 : 1;
-            AllSettingsDropdowns["MirrorDistance"].value = (int)SettingsManager.MirrorDistances;
-            AllSettingsDropdowns["CursorMode"].value = (int)SettingsManager.CursorMode;
-            //AllSettingsDropdowns["FixItemsFallingBehindShop"].value = SettingsManager.FixItemsFallingBehindShop ? 0 : 1;
-            AllSettingsDropdowns["FixGuardsFlags"].value = SettingsManager.FixBorderGuardsFlags ? 0 : 1;
-            AllSettingsDropdowns["ShowDisabledMods"].value = SettingsManager.ShowDisabledMods ? 0 : 1;
+            AllSettingsDropdowns["ConsoleMode"].value = (int)JaLoaderSettings.ConsoleMode;
+            AllSettingsDropdowns["ConsolePosition"].value = (int)JaLoaderSettings.ConsolePosition;
+            AllSettingsDropdowns["ShowModsFolderLocation"].value = JaLoaderSettings.HideModFolderLocation ? 1 : 0;
+            AllSettingsDropdowns["EnableJaDownloader"].value = JaLoaderSettings.EnableJaDownloader ? 0 : 1;
+            AllSettingsDropdowns["UpdateCheckFrequency"].value = (int)JaLoaderSettings.UpdateCheckMode;
+            AllSettingsDropdowns["SkipLanguageSelectionScreen"].value = JaLoaderSettings.SkipLanguage ? 0 : 1;
+            AllSettingsDropdowns["DiscordRichPresence"].value = JaLoaderSettings.UseDiscordRichPresence ? 0 : 1;
+            AllSettingsDropdowns["DebugMode"].value = JaLoaderSettings.DebugMode ? 0 : 1;
+            AllSettingsDropdowns["MenuMusic"].value = JaLoaderSettings.DisableMenuMusic ? 1 : 0;
+            AllSettingsSliders["MenuMusicVolume"].value = JaLoaderSettings.MenuMusicVolume;
+            AllSettingsDropdowns["Uncle"].value = JaLoaderSettings.DisableUncle ? 1 : 0;
+            AllSettingsDropdowns["CustomSongs"].value = JaLoaderSettings.UseCustomSongs ? 0 : 1;
+            AllSettingsDropdowns["CustomSongsBehaviour"].value = (int)JaLoaderSettings.CustomSongsBehaviour;
+            AllSettingsDropdowns["RadioAds"].value = JaLoaderSettings.RadioAds ? 0 : 1;
+            AllSettingsDropdowns["UseEnhancedMovement"].value = JaLoaderSettings.UseExperimentalCharacterController ? 1 : 0;
+            AllSettingsDropdowns["ChangeLicensePlate"].value = (int)JaLoaderSettings.ChangeLicensePlateText;
+            AllSettingsInputFields["LicensePlateText"].text = JaLoaderSettings.LicensePlateText;
+            AllSettingsDropdowns["ShowFPSCounter"].value = JaLoaderSettings.ShowFPSCounter ? 1 : 0;
+            AllSettingsDropdowns["FixLaikaShopMusic"].value = JaLoaderSettings.FixLaikaShopMusic ? 0 : 1;
+            // AllSettingsDropdowns["Replace0WithBanned"].value = JaLoaderSettings.Replace0WithBanned ? 0 : 1;
+            AllSettingsDropdowns["MirrorDistance"].value = (int)JaLoaderSettings.MirrorDistances;
+            AllSettingsDropdowns["CursorMode"].value = (int)JaLoaderSettings.CursorMode;
+            //AllSettingsDropdowns["FixItemsFallingBehindShop"].value = JaLoaderSettings.FixItemsFallingBehindShop ? 0 : 1;
+            AllSettingsDropdowns["FixGuardsFlags"].value = JaLoaderSettings.FixBorderGuardsFlags ? 0 : 1;
+            AllSettingsDropdowns["ShowDisabledMods"].value = JaLoaderSettings.ShowDisabledMods ? 0 : 1;
 
-            JLFPSText.SetActive(SettingsManager.ShowFPSCounter);
-            JLDebugText.SetActive(SettingsManager.DebugMode);
+            JLFPSText.SetActive(JaLoaderSettings.ShowFPSCounter);
+            JLDebugText.SetActive(JaLoaderSettings.DebugMode);
 
             ShowDisabledMods();
         }
 
         private void SwitchLanguage()
         {
-            SettingsManager.selectedLanguage = false;
+            JaLoaderSettings.SelectedLanguage = false;
 
             SaveAndApplyValues();
 
@@ -930,7 +932,7 @@ namespace JaLoader
         {
             PlayClickSound();
 
-            Application.OpenURL(SettingsManager.ModFolderLocation);
+            Application.OpenURL(JaLoaderSettings.ModFolderLocation);
         }
 
         private void OpenOutputLog()
@@ -1189,7 +1191,7 @@ namespace JaLoader
             author = author.Replace("\n", "").Replace("\r", "");
             repo = repo.Replace("\n", "").Replace("\r", "");
 
-            while (!File.Exists(Path.Combine(SettingsManager.ModFolderLocation, $"{author}_{repo}_Installed.txt")))
+            while (!File.Exists(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt")))
             {
                 if(maximumTime == currentTime)
                 {
@@ -1201,8 +1203,8 @@ namespace JaLoader
                 yield return new WaitForSeconds(1);
             }
 
-            var dllName = File.ReadAllText(Path.Combine(SettingsManager.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
-            File.Delete(Path.Combine(SettingsManager.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
+            var dllName = File.ReadAllText(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
+            File.Delete(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
 
             ReferencesLoader.Instance.StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
             ModLoader.Instance.InitializeMod(out _, certainModFile: dllName);
@@ -1211,7 +1213,7 @@ namespace JaLoader
 
         private void OnInputValueChanged_ModsList()
         {
-            if (ModsSearchBar.text.StartsWith("jaloader://install/") && SettingsManager.EnableJaDownloader)
+            if (ModsSearchBar.text.StartsWith("jaloader://install/") && JaLoaderSettings.EnableJaDownloader)
                 ModsInstallButton.SetActive(true);
             else
                 ModsInstallButton.SetActive(false);
@@ -1299,7 +1301,7 @@ namespace JaLoader
         {
             PlayClickSound();
 
-            if (SettingsManager.UseDiscordRichPresence != !Convert.ToBoolean(AllSettingsDropdowns["DiscordRichPresence"].value))
+            if (JaLoaderSettings.UseDiscordRichPresence != !Convert.ToBoolean(AllSettingsDropdowns["DiscordRichPresence"].value))
             {
                 ToggleModLoaderSettings_Preferences();
                 ToggleModLoaderSettings_Main();
@@ -1308,37 +1310,37 @@ namespace JaLoader
 
             var wasJaDownChanged = false;
 
-            if (SettingsManager.EnableJaDownloader != !Convert.ToBoolean(AllSettingsDropdowns["EnableJaDownloader"].value))
+            if (JaLoaderSettings.EnableJaDownloader != !Convert.ToBoolean(AllSettingsDropdowns["EnableJaDownloader"].value))
                 wasJaDownChanged = true;
 
-            SettingsManager.ConsoleMode = (ConsoleModes)AllSettingsDropdowns["ConsoleMode"].value;
-            SettingsManager.ConsolePosition = (ConsolePositions)AllSettingsDropdowns["ConsolePosition"].value;
-            SettingsManager.HideModFolderLocation = Convert.ToBoolean(AllSettingsDropdowns["ShowModsFolderLocation"].value);
-            SettingsManager.EnableJaDownloader = !Convert.ToBoolean(AllSettingsDropdowns["EnableJaDownloader"].value);
-            SettingsManager.UpdateCheckMode = (UpdateCheckModes)AllSettingsDropdowns["UpdateCheckFrequency"].value;
-            SettingsManager.SkipLanguage = !Convert.ToBoolean(AllSettingsDropdowns["SkipLanguageSelectionScreen"].value);
-            SettingsManager.UseDiscordRichPresence = !Convert.ToBoolean(AllSettingsDropdowns["DiscordRichPresence"].value);
-            SettingsManager.DebugMode = !Convert.ToBoolean(AllSettingsDropdowns["DebugMode"].value);
-            SettingsManager.DisableMenuMusic = Convert.ToBoolean(AllSettingsDropdowns["MenuMusic"].value);
-            SettingsManager.MenuMusicVolume = (int)AllSettingsSliders["MenuMusicVolume"].value;
-            SettingsManager.DisableUncle = Convert.ToBoolean(AllSettingsDropdowns["Uncle"].value);
-            SettingsManager.UseCustomSongs = !Convert.ToBoolean(AllSettingsDropdowns["CustomSongs"].value);
-            SettingsManager.CustomSongsBehaviour = (CustomSongsBehaviour)AllSettingsDropdowns["CustomSongsBehaviour"].value;
-            SettingsManager.RadioAds = !Convert.ToBoolean(AllSettingsDropdowns["RadioAds"].value);
-            SettingsManager.UseExperimentalCharacterController = Convert.ToBoolean(AllSettingsDropdowns["UseEnhancedMovement"].value);
-            SettingsManager.ChangeLicensePlateText = (LicensePlateStyles)AllSettingsDropdowns["ChangeLicensePlate"].value;
-            SettingsManager.LicensePlateText = AllSettingsInputFields["LicensePlateText"].text;
-            SettingsManager.ShowFPSCounter = Convert.ToBoolean(AllSettingsDropdowns["ShowFPSCounter"].value);
-            SettingsManager.FixLaikaShopMusic = !Convert.ToBoolean(AllSettingsDropdowns["FixLaikaShopMusic"].value);
-            //SettingsManager.Replace0WithBanned = !Convert.ToBoolean(AllSettingsDropdowns["Replace0WithBanned"].value);
-            SettingsManager.MirrorDistances = (MirrorDistances)AllSettingsDropdowns["MirrorDistance"].value;
-            SettingsManager.CursorMode = (CursorMode)AllSettingsDropdowns["CursorMode"].value;
-            //SettingsManager.FixItemsFallingBehindShop = !Convert.ToBoolean(AllSettingsDropdowns["FixItemsFallingBehindShop"].value);
-            SettingsManager.FixBorderGuardsFlags = !Convert.ToBoolean(AllSettingsDropdowns["FixGuardsFlags"].value);
-            SettingsManager.ShowDisabledMods = !Convert.ToBoolean(AllSettingsDropdowns["ShowDisabledMods"].value);
+            JaLoaderSettings.ConsoleMode = (ConsoleModes)AllSettingsDropdowns["ConsoleMode"].value;
+            JaLoaderSettings.ConsolePosition = (ConsolePositions)AllSettingsDropdowns["ConsolePosition"].value;
+            JaLoaderSettings.HideModFolderLocation = Convert.ToBoolean(AllSettingsDropdowns["ShowModsFolderLocation"].value);
+            JaLoaderSettings.EnableJaDownloader = !Convert.ToBoolean(AllSettingsDropdowns["EnableJaDownloader"].value);
+            JaLoaderSettings.UpdateCheckMode = (UpdateCheckModes)AllSettingsDropdowns["UpdateCheckFrequency"].value;
+            JaLoaderSettings.SkipLanguage = !Convert.ToBoolean(AllSettingsDropdowns["SkipLanguageSelectionScreen"].value);
+            JaLoaderSettings.UseDiscordRichPresence = !Convert.ToBoolean(AllSettingsDropdowns["DiscordRichPresence"].value);
+            JaLoaderSettings.DebugMode = !Convert.ToBoolean(AllSettingsDropdowns["DebugMode"].value);
+            JaLoaderSettings.DisableMenuMusic = Convert.ToBoolean(AllSettingsDropdowns["MenuMusic"].value);
+            JaLoaderSettings.MenuMusicVolume = (int)AllSettingsSliders["MenuMusicVolume"].value;
+            JaLoaderSettings.DisableUncle = Convert.ToBoolean(AllSettingsDropdowns["Uncle"].value);
+            JaLoaderSettings.UseCustomSongs = !Convert.ToBoolean(AllSettingsDropdowns["CustomSongs"].value);
+            JaLoaderSettings.CustomSongsBehaviour = (CustomSongsBehaviour)AllSettingsDropdowns["CustomSongsBehaviour"].value;
+            JaLoaderSettings.RadioAds = !Convert.ToBoolean(AllSettingsDropdowns["RadioAds"].value);
+            JaLoaderSettings.UseExperimentalCharacterController = Convert.ToBoolean(AllSettingsDropdowns["UseEnhancedMovement"].value);
+            JaLoaderSettings.ChangeLicensePlateText = (LicensePlateStyles)AllSettingsDropdowns["ChangeLicensePlate"].value;
+            JaLoaderSettings.LicensePlateText = AllSettingsInputFields["LicensePlateText"].text;
+            JaLoaderSettings.ShowFPSCounter = Convert.ToBoolean(AllSettingsDropdowns["ShowFPSCounter"].value);
+            JaLoaderSettings.FixLaikaShopMusic = !Convert.ToBoolean(AllSettingsDropdowns["FixLaikaShopMusic"].value);
+            //JaLoaderSettings.Replace0WithBanned = !Convert.ToBoolean(AllSettingsDropdowns["Replace0WithBanned"].value);
+            JaLoaderSettings.MirrorDistances = (MirrorDistances)AllSettingsDropdowns["MirrorDistance"].value;
+            JaLoaderSettings.CursorMode = (CursorMode)AllSettingsDropdowns["CursorMode"].value;
+            //JaLoaderSettings.FixItemsFallingBehindShop = !Convert.ToBoolean(AllSettingsDropdowns["FixItemsFallingBehindShop"].value);
+            JaLoaderSettings.FixBorderGuardsFlags = !Convert.ToBoolean(AllSettingsDropdowns["FixGuardsFlags"].value);
+            JaLoaderSettings.ShowDisabledMods = !Convert.ToBoolean(AllSettingsDropdowns["ShowDisabledMods"].value);
 
-            JLFPSText.SetActive(SettingsManager.ShowFPSCounter);
-            JLDebugText.gameObject.SetActive(SettingsManager.DebugMode);
+            JLFPSText.SetActive(JaLoaderSettings.ShowFPSCounter);
+            JLDebugText.gameObject.SetActive(JaLoaderSettings.DebugMode);
 
             SettingsManager.SaveSettings(false);
 
@@ -1346,15 +1348,15 @@ namespace JaLoader
                 Console.Instance.ToggleVisibility(false);
 
             SetConsolePosition((ConsolePositions)AllSettingsDropdowns["ConsolePosition"].value);
-            ModsLocationText.SetActive(!SettingsManager.HideModFolderLocation);
+            ModsLocationText.SetActive(!JaLoaderSettings.HideModFolderLocation);
 
             CustomRadioController.Instance.UpdateMenuMusic(!Convert.ToBoolean(AllSettingsDropdowns["MenuMusic"].value), (float)AllSettingsSliders["MenuMusicVolume"].value / 100);
 
-            UncleHelper.Instance.UncleEnabled = !SettingsManager.DisableUncle;
+            UncleHelper.Instance.UncleEnabled = !JaLoaderSettings.DisableUncle;
 
             if (wasJaDownChanged)
             {
-                if (SettingsManager.EnableJaDownloader)
+                if (JaLoaderSettings.EnableJaDownloader)
                 {
                     var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, "."), "JaDownloader.exe"));
                     Process.Start($@"{Application.dataPath}\.\JaDownloaderSetup.exe", $"\"{path}\"");
@@ -1386,12 +1388,12 @@ namespace JaLoader
             dialog.Find("Message").GetComponent<Text>().text = "JaDownloader is a tool that allows you to install most mods automatically. \r\n Would you like to enable it now? (you can find this setting in Modloader Settings/Preferences)";
             dialog.FindButton("YesButton").onClick.AddListener(delegate {
                 var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, "."), "JaDownloader.exe"));
-                Process.Start($@"{Application.dataPath}\.\JaDownloaderSetup.exe", $"\"{path}\""); SettingsManager.EnableJaDownloader = true; SetObstructRay(false); Destroy(dialog);
+                Process.Start($@"{Application.dataPath}\.\JaDownloaderSetup.exe", $"\"{path}\""); JaLoaderSettings.EnableJaDownloader = true; SetObstructRay(false); Destroy(dialog);
             });
             dialog.FindButton("NoButton").onClick.AddListener(delegate {SetObstructRay(false); Destroy(dialog); });
             dialog.SetActive(true);
 
-            SettingsManager.AskedAboutJaDownloader = true;
+            JaLoaderSettings.AskedAboutJaDownloader = true;
             SettingsManager.SaveSettings(false);
         }
 
@@ -1400,7 +1402,7 @@ namespace JaLoader
             allNotices.Add(message);
             noticesToShow.Add((subtitle, message, ignoreObstructRayChange));
 
-            if (!SettingsManager.DontShowAgainNotices.Contains(message))
+            if (!JaLoaderSettings.DontShowAgainNotices.Contains(message))
             {
                 JLNoticePanel.SetActive(true);
 
@@ -1425,14 +1427,14 @@ namespace JaLoader
         {
             PlayClickSound();
 
-            if (SettingsManager.DontShowAgainNotices.Contains(noticesToShow[0].Item2) && noticesToShow.Count > 1)
+            if (JaLoaderSettings.DontShowAgainNotices.Contains(noticesToShow[0].Item2) && noticesToShow.Count > 1)
             {
                 var _ignoreIfLastOne = noticesToShow[0].Item3;
                 noticesToShow.RemoveAt(0);
 
                 for (int i = 0; i < noticesToShow.Count; i++)
                 {
-                    if(SettingsManager.DontShowAgainNotices.Contains(noticesToShow[i].Item2))
+                    if(JaLoaderSettings.DontShowAgainNotices.Contains(noticesToShow[i].Item2))
                     {
                         if(noticesToShow.Count == 1)
                             _ignoreIfLastOne = noticesToShow[0].Item3;
@@ -1457,9 +1459,9 @@ namespace JaLoader
             var ignoreIfLastOne = noticesToShow[0].Item3;
             noticesToShow.RemoveAt(0);
 
-            if (dontShowAgain && !SettingsManager.DontShowAgainNotices.Contains(JLNoticePanel.transform.Find("Message").GetComponent<Text>().text))
+            if (dontShowAgain && !JaLoaderSettings.DontShowAgainNotices.Contains(JLNoticePanel.transform.Find("Message").GetComponent<Text>().text))
             {
-                SettingsManager.DontShowAgainNotices.Add(JLNoticePanel.transform.Find("Message").GetComponent<Text>().text);
+                JaLoaderSettings.DontShowAgainNotices.Add(JLNoticePanel.transform.Find("Message").GetComponent<Text>().text);
                 SettingsManager.SaveSettings(false);
             }
 
@@ -1482,12 +1484,12 @@ namespace JaLoader
 
         private void RemoveExcessDontShowAgainNotices()
         {
-            if (allNotices.Count <= SettingsManager.DontShowAgainNotices.Count)
+            if (allNotices.Count <= JaLoaderSettings.DontShowAgainNotices.Count)
             {
-                var toRemove = SettingsManager.DontShowAgainNotices.Except(allNotices).ToList();
+                var toRemove = JaLoaderSettings.DontShowAgainNotices.Except(allNotices).ToList();
 
                 foreach (var item in toRemove)
-                    SettingsManager.DontShowAgainNotices.Remove(item);
+                    JaLoaderSettings.DontShowAgainNotices.Remove(item);
 
                 SettingsManager.SaveSettings(false);
             }

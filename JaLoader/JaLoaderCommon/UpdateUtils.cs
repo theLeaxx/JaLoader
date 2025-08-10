@@ -1,8 +1,8 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Diagnostics;
-using UnityEngine;
 
-namespace JaLoader
+namespace JaLoader.Common
 {
     public static class UpdateUtils
     {
@@ -16,7 +16,7 @@ namespace JaLoader
 
         public static void StartJaLoaderUpdate()
         {
-            Process.Start($@"{Application.dataPath}\..\JaUpdater.exe", $"{SettingsManager.ModFolderLocation} Jalopy");
+            Process.Start($@"{RuntimeVariables.ApplicationDataPath}\..\JaUpdater.exe", $"{JaLoaderSettings.ModFolderLocation} Jalopy");
             Process.GetCurrentProcess().Kill();
         }
 
@@ -32,25 +32,25 @@ namespace JaLoader
                 return false;
 
             string URL = "https://api.github.com/repos/JaJalopy/Jalopy/releases/latest";
-            string latestVersion = GetLatestUpdateVersionAsString(URL, SettingsManager.GetVersion());
+            string latestVersion = GetLatestUpdateVersionAsString(URL, JaLoaderSettings.GetVersion());
             latestVersionString = latestVersion;
 
             if (latestVersion == "-1")
             {
-                Console.LogError("Couldn't check for updates!");
+                RuntimeVariables.Logger.LogError("Couldn't check for updates!");
                 return false;
             }
 
             int latestVersionInt = ConvertVersionStringToInt(latestVersion);
 
-            if (latestVersionInt <= SettingsManager.GetVersion())
+            if (latestVersionInt <= JaLoaderSettings.GetVersion())
                 return false;
 
-            SettingsManager.updateAvailable = true;
+            JaLoaderSettings.UpdateAvailable = true;
             return true;
         }
 
-        public static bool CheckForModUpdate(Mod mod, out string latestVersion)
+        public static bool CheckForModUpdate(IMod mod, out string latestVersion)
         {
             if (!canCheckForUpdates || string.IsNullOrEmpty(mod.GitHubLink))
             {
@@ -84,7 +84,7 @@ namespace JaLoader
             if (!CanCheckForUpdatesInternal())
                 return "0";
 
-            string latestVersion = ModHelper.Instance.GetLatestTagFromApiUrl(URL);
+            string latestVersion = "-1";//ModHelper.Instance.GetLatestTagFromApiUrl(URL);
             int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
 
             if (latestVersion == "-1")
@@ -105,7 +105,7 @@ namespace JaLoader
         {
             bool canCheck = false;
 
-            switch (SettingsManager.UpdateCheckMode)
+            switch (JaLoaderSettings.UpdateCheckMode)
             {
                 case UpdateCheckModes.Never:
                     break;
@@ -113,7 +113,7 @@ namespace JaLoader
                 case UpdateCheckModes.Hourly:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalHours >= 1)
                     {
-                        SettingsManager.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckRegistryKey();
                         canCheck = true;
                     }
                     break;
@@ -121,7 +121,7 @@ namespace JaLoader
                 case UpdateCheckModes.Daily:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 1)
                     {
-                        SettingsManager.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckRegistryKey();
                         canCheck = true;
                     }
                     break;
@@ -129,7 +129,7 @@ namespace JaLoader
                 case UpdateCheckModes.Every3Days:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 3)
                     {
-                        SettingsManager.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckRegistryKey();
                         canCheck = true;
                     }
                     break;
@@ -137,7 +137,7 @@ namespace JaLoader
                 case UpdateCheckModes.Weekly:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 7)
                     {
-                        SettingsManager.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckRegistryKey();
                         canCheck = true;
                     }
                     break;

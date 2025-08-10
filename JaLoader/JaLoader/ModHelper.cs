@@ -9,7 +9,7 @@ using System.Xml.Linq;
 using System.Data.SqlTypes;
 using System.Linq;
 using System.Collections;
-using Steamworks;
+using JaLoader.Common;
 
 namespace JaLoader
 {
@@ -183,7 +183,7 @@ namespace JaLoader
 
         private void OnGameLoad()
         {
-            if (SettingsManager.DebugMode)
+            if (JaLoaderSettings.DebugMode)
                 Camera.main.gameObject.AddComponent<DebugCamera>();
 
             RefreshPartHolders();
@@ -209,7 +209,7 @@ namespace JaLoader
 
                 Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
 
-                if (SettingsManager.IsPreReleaseVersion)
+                if (JaLoaderSettings.IsPreReleaseVersion)
                 {
                     var obj = Instantiate(new GameObject());
                     obj.name = "JaLoader Game Scripts";
@@ -437,7 +437,7 @@ namespace JaLoader
         /// <param name="type">What type of engine component is this?</param>
         /// <param name="durability">Max durability</param>
         /// <param name="canBuyInDealership">Can this object be bought in laika dealerships?</param>
-        /// <param name="canFindInJunkCars">(Not implemented yet) Can this object be found at scrapyards/abandoned cars?</param>
+        /// <param name="canFindInJunkCars">Can this object be found at scrapyards/abandoned cars?</param>
         public void AddEnginePartLogic(GameObject obj, PartTypes type, int durability, bool canBuyInDealership, bool canFindInJunkCars)
         {
             if(type == PartTypes.Wheel)
@@ -475,6 +475,9 @@ namespace JaLoader
 
             var identif = obj.GetComponent<ObjectIdentification>();
             identif.PartIconScaleAdjustment = obj.transform.localScale;
+
+            identif.CanBuyInDealership = canBuyInDealership;
+            identif.CanFindInJunkCars = canFindInJunkCars;
 
             var template = GameObject.Find("EngineBlock");
             var template_ec = template.GetComponent<EngineComponentC>();
@@ -556,7 +559,6 @@ namespace JaLoader
             }
 
             obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic = true;
-
         }
 
         /// <summary>
@@ -1225,82 +1227,14 @@ namespace JaLoader
             audio.priority = 128;
         }
 
-        public string GetLatestTagFromApiUrl(string URL, string modName)
-        {
-            UnityWebRequest request = UnityWebRequest.Get(URL);
-            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
-            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
-
-            request.SendWebRequest();
-
-            while (!request.isDone)
-            {
-                // wait for the request to complete
-            }
-
-            if (request.isHttpError || request.error == "Generic/unknown HTTP error")
-                return "0";
-
-            string tagName = null;
-
-            if (!request.isNetworkError)
-            {
-                string json = request.downloadHandler.text;
-                Release release = JsonUtility.FromJson<Release>(json);
-                tagName = release.tag_name;
-            }
-            else if (request.isNetworkError)
-                return "-1";
-            else
-            {
-                Console.LogError(modName, $"Error getting response for URL \"{URL}\": {request.error}");
-                return "-1";
-            }
-
-            return tagName;
-        }
+    
 
         public void OpenURL(string URL)
         {
             Application.OpenURL(URL);
         }
 
-        public string GetLatestTagFromApiUrl(string URL)
-        {
-            UnityWebRequest request = UnityWebRequest.Get(URL);
-            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
-            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
-
-            request.SendWebRequest();
-
-            while (!request.isDone)
-            {
-                // wait for the request to complete
-            }
-            
-            // probably rate limited by github
-            if (request.isHttpError || request.error == "Generic/unknown HTTP error")
-                return "0";
-
-            string tagName = null;
-
-            if (!request.isNetworkError && !request.isHttpError)
-            {
-                string json = request.downloadHandler.text;
-                Release release = JsonUtility.FromJson<Release>(json);
-                tagName = release.tag_name;
-            }
-            else if (request.isNetworkError)
-                return "-1";
-            else
-            {
-                Console.LogError($"Error getting response for URL \"{URL}\": {request.error}");
-                return "-1";
-            }
-
-            return tagName;
-        }
-
+        
     }
 
     #region Part Types

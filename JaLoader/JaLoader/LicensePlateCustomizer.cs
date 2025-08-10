@@ -6,6 +6,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using JaLoader.Common;
 
 namespace JaLoader
 {
@@ -43,10 +44,10 @@ namespace JaLoader
 
             EventsManager.Instance.OnSettingsSaved += OnSettingsSave;
 
-            if (SettingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
+            if (JaLoaderSettings.ChangeLicensePlateText == LicensePlateStyles.None)
                 return;
 
-            SetPlateText(SettingsManager.LicensePlateText, SettingsManager.ChangeLicensePlateText);
+            SetPlateText(JaLoaderSettings.LicensePlateText, JaLoaderSettings.ChangeLicensePlateText);
         }
 
         private void OnDestroy()
@@ -56,13 +57,13 @@ namespace JaLoader
 
         private void OnSettingsSave()
         {
-            SetPlateText(SettingsManager.LicensePlateText, SettingsManager.ChangeLicensePlateText);
+            SetPlateText(JaLoaderSettings.LicensePlateText, JaLoaderSettings.ChangeLicensePlateText);
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F5) && SettingsManager.DebugMode)
-                SetPlateText(SettingsManager.LicensePlateText, SettingsManager.ChangeLicensePlateText);
+            if (Input.GetKeyDown(KeyCode.F5) && JaLoaderSettings.DebugMode)
+                SetPlateText(JaLoaderSettings.LicensePlateText, JaLoaderSettings.ChangeLicensePlateText);
         }
 
         public void SetPlateText(string plateText, LicensePlateStyles style)
@@ -141,14 +142,5 @@ namespace JaLoader
                     break;
             }
         }
-    }
-
-    public enum LicensePlateStyles
-    {
-        None,
-        Default,
-        DiplomaticRed,
-        DiplomaticBlue,
-        WhiteOnBlack
     }
 }

@@ -91,7 +91,7 @@ namespace JaLoader
 
             if (certainModFile != "")
             {
-                var path = Path.Combine(SettingsManager.ModFolderLocation, certainModFile);
+                var path = Path.Combine(JaLoaderSettings.ModFolderLocation, certainModFile);
 
                 if (CheckIfModIsAlreadyLoaded(path) == true)
                 {
@@ -101,7 +101,7 @@ namespace JaLoader
                     return false;
                 }
 
-                modFile = new FileInfo(Path.Combine(SettingsManager.ModFolderLocation, $"{certainModFile}"));
+                modFile = new FileInfo(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{certainModFile}"));
             }
 
             try
@@ -196,7 +196,7 @@ namespace JaLoader
                     bix_ModObject.name = $"BepInEx_CompatLayer_{ModID}";
 
                     string bix_modVersionText = ModVersion;
-                    string bix_modName = SettingsManager.DebugMode ? $"{ModID} - BepInEx" : ModName;
+                    string bix_modName = JaLoaderSettings.DebugMode ? $"{ModID} - BepInEx" : ModName;
 
                     string pattern = @"^[a-zA-Z]+(\.[a-zA-Z]+)+$";
                     string authorName = "BepInEx";
@@ -248,15 +248,14 @@ namespace JaLoader
 
                 if (mod.UseAssets)
                 {
-                    mod.AssetsPath = $@"{SettingsManager.ModFolderLocation}\Assets\{mod.ModID}";
+                    mod._assetsPath = $@"{JaLoaderSettings.ModFolderLocation}\Assets\{mod.ModID}";
 
                     if (!Directory.Exists(mod.AssetsPath))
                         Directory.CreateDirectory(mod.AssetsPath);
                 }
 
-
                 string modVersionText = mod.ModVersion;
-                string modName = SettingsManager.DebugMode ? mod.ModID : mod.ModName;
+                string modName = JaLoaderSettings.DebugMode ? mod.ModID : mod.ModName;
 
                 var genericModData = new GenericModData(mod.ModID, mod.ModName, mod.ModVersion, mod.ModDescription, mod.ModAuthor, mod.GitHubLink, mod);
                 var text = UIManager.Instance.CreateModEntryReturnText(genericModData);
@@ -285,6 +284,8 @@ namespace JaLoader
                 var obj = UIManager.Instance.CreateModEntryReturnEntry(new GenericModData(modFile.Name, modFile.Name, "Failed to load", $"{modFile.Name} experienced an issue during loading and couldn't be initialized. You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.", "Unknown", "", null));
                 UIManager.Instance.AddWarningToMod(obj, "Failed to load mod!", true);
 
+                string errorMessage;
+
                 switch (ex)
                 {
                     case FileNotFoundException fileException:
@@ -302,12 +303,21 @@ namespace JaLoader
 
                                 UIManager.Instance.AddWarningToMod(obj, $"Missing assembly: {dllName}", true);
 
-                                string errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}, version {versionNumber}";
+                                errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}, version {versionNumber}";
                                 Debug.Log(errorMessage);
                                 Console.LogError("JaLoader", errorMessage);
                                 Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                             }
                         }
+                        break;
+
+                    case ReflectionTypeLoadException typeLoadException:
+                        errorMessage = $"{modFile.Name} has a type load exception. This may be caused by a missing reference. Contact the mod author.";
+                        UIManager.Instance.AddWarningToMod(obj, errorMessage, true);
+                        Debug.LogError(errorMessage);
+                        Debug.LogError(typeLoadException);
+                        Console.LogError("JaLoader", errorMessage);
+                        Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                         break;
 
                     case ModException modLoadException:
@@ -331,6 +341,8 @@ namespace JaLoader
                 if (certainModFile != "")
                     UIManager.Instance.ShowNotice("MOD INSTALLATION FAILED", "The mod installation failed. Please make sure you have the correct URL and that your internet connection is stable.", ignoreObstructRayChange: true, enableDontShowAgain: false);
 
+                ModManager.ModFilesCount++;
+
                 return false;
             }
 
@@ -351,7 +363,7 @@ namespace JaLoader
 
             DebugUtils.SignalStartInit();
 
-            DirectoryInfo d = new DirectoryInfo(SettingsManager.ModFolderLocation);
+            DirectoryInfo d = new DirectoryInfo(JaLoaderSettings.ModFolderLocation);
             FileInfo[] mods = d.GetFiles("*.dll");
             foreach (FileInfo modFile in mods)
                 InitializeMod(out _, modFile: modFile);

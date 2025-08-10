@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using JaLoader.Common;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -117,7 +118,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (!SettingsManager.DebugMode || !ModManager.FinishedLoadingMenuMods || SceneManager.GetActiveScene().buildIndex == 3 || SceneManager.GetActiveScene().buildIndex == 2)
+            if (!JaLoaderSettings.DebugMode || !ModManager.FinishedLoadingMenuMods || SceneManager.GetActiveScene().buildIndex == 3 || SceneManager.GetActiveScene().buildIndex == 2)
                 return;
 
             if (!loadedViewingEditor)
@@ -392,7 +393,7 @@ namespace JaLoader
 
         private IEnumerator LoadGarage()
         {
-            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(SettingsManager.ModFolderLocation, @"Required\JaLoader_AdjustmentsEditor.unity3d"));
+            var bundleLoadReq = AssetBundle.LoadFromFileAsync(Path.Combine(JaLoaderSettings.ModFolderLocation, @"Required\JaLoader_AdjustmentsEditor.unity3d"));
 
             yield return bundleLoadReq;
 

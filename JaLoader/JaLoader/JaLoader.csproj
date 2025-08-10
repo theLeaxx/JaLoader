@@ -240,7 +240,6 @@
     <Compile Include="SearchingExtensions.cs" />
     <Compile Include="UIManager.cs" />
     <Compile Include="UncleHelper.cs" />
-    <Compile Include="UpdateUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig">

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using JaLoader.Common;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -21,7 +22,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if(!SettingsManager.DebugMode)
+            if(!JaLoaderSettings.DebugMode)
                 return;
 
             if(Input.GetKeyDown(KeyCode.F3))

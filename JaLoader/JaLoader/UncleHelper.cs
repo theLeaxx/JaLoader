@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using JaLoader.Common;
+using UnityEngine;
 
 namespace JaLoader
 {
@@ -19,7 +20,7 @@ namespace JaLoader
             EventsManager.Instance.OnGameLoad += OnGameLoad;
         }
 
-        public bool UncleEnabled = !SettingsManager.DisableUncle;
+        public bool UncleEnabled = !JaLoaderSettings.DisableUncle;
         public UncleLogicC Uncle;
 
         public void OnGameLoad()
@@ -32,7 +33,7 @@ namespace JaLoader
         public void DisableUncle()
         {
             UncleEnabled = false;
-            SettingsManager.DisableUncle = true;
+            JaLoaderSettings.DisableUncle = true;
 
             Uncle.uncleGoneForever = true;
         }
@@ -40,7 +41,7 @@ namespace JaLoader
         public void EnableUncle()
         {
             UncleEnabled = transform;
-            SettingsManager.DisableUncle = false;
+            JaLoaderSettings.DisableUncle = false;
 
             Uncle.uncleGoneForever = false;
         }

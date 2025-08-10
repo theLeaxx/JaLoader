@@ -6,6 +6,8 @@ using System;
 using BepInEx;
 using JaLoader.BepInExWrapper;
 using System.Reflection;
+using JaLoader.Common;
+using CursorMode = JaLoader.Common.CursorMode;
 
 namespace JaLoader
 {
@@ -13,156 +15,26 @@ namespace JaLoader
     {
         internal static void Initialize()
         {
+            JaLoaderSettings.JaLoaderVersion = "5.0.0";
+            JaLoaderSettings.IsPreReleaseVersion = false;
+
             ReadSettings();
-            SetVersionRegistryKey();
-            GetUpdateCheckRegistryKey();
+            JaLoaderSettings.SetVersionRegistryKey();
+            JaLoaderSettings.GetUpdateCheckRegistryKey();
 
-            CompareAssemblyVersion();
+            JaLoaderSettings.CompareAssemblyVersion();
         }
 
-        [SerializeField] private static Settings _settings = new Settings();
-
-        public const string JaLoaderVersion = "5.0.0";
-        public static readonly bool IsPreReleaseVersion = false;
-        public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
-        public static string ModFolderLocation { get; private set; }
-
-        public static bool SkipLanguage;
-        public static bool DebugMode;
-        public static bool DisableUncle;
-        public static bool HideModFolderLocation;
-        public static bool DisableMenuMusic;
-        public static int MenuMusicVolume;
-        public static bool UseExperimentalCharacterController;
-        public static bool UseCustomSongs;
-        public static CustomSongsBehaviour CustomSongsBehaviour;
-        public static bool RadioAds;
-        public static ConsolePositions ConsolePosition;
-        public static ConsoleModes ConsoleMode;
-        public static LicensePlateStyles ChangeLicensePlateText;
-        public static bool UseDiscordRichPresence;
-        public static string LicensePlateText;
-        public static bool ShowFPSCounter;
-        public static UpdateCheckModes UpdateCheckMode;
-        public static bool EnableJaDownloader;
-        public static bool AskedAboutJaDownloader;
-        public static bool FixLaikaShopMusic;
-        public static MirrorDistances MirrorDistances;
-        public static CursorMode CursorMode;
-        public static bool ShowDisabledMods;
-        public static string AppliedPaintJobName;
-        public static bool FixItemsFallingBehindShop;
-        public static bool FixBorderGuardsFlags;
-
-        public static List<string> DontShowAgainNotices = new List<string>();
-
-        public static bool updateAvailable;
-
-        public static bool loadedFirstTime;
-        public static bool selectedLanguage;
-
-        public static List<string> DisabledMods = new List<string>();
-
-        internal static void CompareAssemblyVersion()
-        {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            Version version = assembly.GetName().Version;
-
-            string dllVersion = $"{version.Major}.{version.Minor}.{version.Build}";
-
-            if (dllVersion != JaLoaderVersion)
-            {
-                Debug.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {dllVersion}");
-                Console.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {dllVersion}");
-            }
-        }
-        
-        public static int GetVersion()
-        {
-            return int.Parse(JaLoaderVersion.Replace(".", ""));
-        }
-
-        public static string GetVersionString()
-        {
-            if (IsPreReleaseVersion)
-                return $"Pre-Release {JaLoaderVersion}";
-
-            return JaLoaderVersion;
-        }
-
-        public static bool IsNewerThan(string version)
-        {
-            var versionSpecified = int.Parse(version.Replace(".", ""));
-            var currentVersion = int.Parse(GetVersionString().Replace("Pre-Release ", "").Replace(".", ""));
-
-            if (currentVersion > versionSpecified) return true;
-            else return false;
-        }
-
-        private static void SetVersionRegistryKey()
-        {
-            RegistryKey parentKey = Registry.CurrentUser;
-
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            jalopyKey?.SetValue("JaLoaderVersion", GetVersion().ToString(), RegistryValueKind.String);
-        }
-
-        internal static void SetUpdateCheckRegistryKey()
-        {
-            RegistryKey parentKey = Registry.CurrentUser;
-
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            jalopyKey?.SetValue("LastUpdateCheck", DateTime.Now.ToString(), RegistryValueKind.String);
-        }
-
-        private static void GetUpdateCheckRegistryKey()
-        {
-            RegistryKey parentKey = Registry.CurrentUser;
-
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            if (jalopyKey != null && jalopyKey.GetValue("LastUpdateCheck") != null)
-            {
-                UpdateUtils.lastUpdateCheck = DateTime.Parse(jalopyKey.GetValue("LastUpdateCheck").ToString());
-            }
-            else
-            {
-                SetUpdateCheckRegistryKey();
-                UpdateUtils.lastUpdateCheck = DateTime.Now;
-            }
-        }
+        [SerializeField] private static SerializableJaLoaderSettings _settings = new SerializableJaLoaderSettings();
 
         internal static void ReadSettings()
         {
-            RegistryKey parentKey = Registry.CurrentUser;
-
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            if (jalopyKey != null && jalopyKey.GetValue("ModsLocation") != null)
-            {
-                ModFolderLocation = jalopyKey.GetValue("ModsLocation").ToString();
-            }
-            else
-            {
-                ModFolderLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Jalopy\Mods");
-
-                jalopyKey?.SetValue("ModsLocation", ModFolderLocation, RegistryValueKind.String);
-            }
+            JaLoaderSettings.ReadSettings();
 
             if (File.Exists(Path.Combine(Application.persistentDataPath, @"JaConfig.json")))
             {
                 string json = File.ReadAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"));
-                _settings = JsonUtility.FromJson<Settings>(json);
+                _settings = JsonUtility.FromJson<SerializableJaLoaderSettings>(json);
 
                 Load();
             }
@@ -177,36 +49,7 @@ namespace JaLoader
 
         private static void Load()
         {
-            ConsolePosition = _settings.ConsolePosition;
-            ConsoleMode = _settings.ConsoleMode;
-
-            SkipLanguage = _settings.SkipLanguageSelector;
-            DisableUncle = _settings.DisableUncle;
-            DebugMode = _settings.DebugMode;
-            HideModFolderLocation = _settings.HideModFolder;
-            DisableMenuMusic = _settings.DisableMenuMusic;
-            MenuMusicVolume = _settings.MenuMusicVolume;
-            UseExperimentalCharacterController = _settings.UseEnhancedMovement;
-            UseCustomSongs = _settings.UseCustomSongs;
-            CustomSongsBehaviour = _settings.CustomSongsBehaviour;
-            RadioAds = _settings.RadioAds;
-            DisabledMods = _settings.DisabledMods;
-            ChangeLicensePlateText = _settings.ChangeLicensePlateText;
-            LicensePlateText = _settings.LicensePlateText;
-            UseDiscordRichPresence = _settings.UseDiscordRichPresence;
-            ShowFPSCounter = _settings.ShowFPSCounter;
-            EnableJaDownloader = _settings.EnableJaDownloader;
-            AskedAboutJaDownloader = _settings.AskedAboutJaDownloader;
-            UpdateCheckMode = _settings.UpdateCheckMode;
-            FixLaikaShopMusic = _settings.FixLaikaShopMusic;
-            MirrorDistances = _settings.MirrorDistances;
-            CursorMode = _settings.CursorMode;
-            ShowDisabledMods = _settings.ShowDisabledMods;
-            AppliedPaintJobName = _settings.AppliedPaintJobName;
-            //FixItemsFallingBehindShop = _settings.FixItemsFallingBehindShop;
-            FixBorderGuardsFlags = _settings.FixBorderGuardsFlags;
-
-            DontShowAgainNotices = _settings.DontShowAgainNotices;
+            JaLoaderSettings.LoadSettings(_settings);
 
             EventsManager.Instance.OnSettingsLoad();
         }
@@ -214,39 +57,9 @@ namespace JaLoader
         public static void SaveSettings(bool includeDisabledMods = true)
         {
             if (includeDisabledMods)
-                DisabledMods.Clear();
+                JaLoaderSettings.DisabledMods.Clear();
 
-            _settings.SkipLanguageSelector = SkipLanguage;
-            _settings.DisableUncle = DisableUncle;
-            _settings.DebugMode = DebugMode;
-            _settings.HideModFolder = HideModFolderLocation;
-            _settings.DisableMenuMusic = DisableMenuMusic;
-            _settings.MenuMusicVolume = MenuMusicVolume;
-            _settings.UseEnhancedMovement = UseExperimentalCharacterController;
-            _settings.DisabledMods = DisabledMods;
-            _settings.UseCustomSongs = UseCustomSongs;
-            _settings.CustomSongsBehaviour = CustomSongsBehaviour;
-            _settings.RadioAds = RadioAds;
-            _settings.ConsolePosition = ConsolePosition;
-            _settings.ConsoleMode = ConsoleMode;
-            _settings.ChangeLicensePlateText = ChangeLicensePlateText;
-            _settings.LicensePlateText = LicensePlateText;
-            _settings.UseDiscordRichPresence = UseDiscordRichPresence;
-            _settings.ShowFPSCounter = ShowFPSCounter;
-            _settings.EnableJaDownloader = EnableJaDownloader;
-            _settings.AskedAboutJaDownloader = AskedAboutJaDownloader;
-            _settings.UpdateCheckMode = UpdateCheckMode;
-
-            _settings.FixLaikaShopMusic = FixLaikaShopMusic;
-            _settings.MirrorDistances = MirrorDistances;
-            _settings.CursorMode = CursorMode;
-            _settings.ShowDisabledMods = ShowDisabledMods;
-
-            _settings.AppliedPaintJobName = AppliedPaintJobName;
-            //_settings.FixItemsFallingBehindShop = FixItemsFallingBehindShop;
-            _settings.FixBorderGuardsFlags = FixBorderGuardsFlags;
-
-            _settings.DontShowAgainNotices = DontShowAgainNotices;
+            JaLoaderSettings.SaveSettings(_settings);
 
             if (includeDisabledMods)
             {
@@ -257,96 +70,23 @@ namespace JaLoader
                         if (mod.Key is Mod)
                         {
                             var modReference = mod.Key as Mod;
-                            DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
+                            JaLoaderSettings.DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
                         }
                         else if (mod.Key is BaseUnityPlugin)
                         {
                             var modReference = mod.Key as BaseUnityPlugin;
                             ModInfo modInfo = modReference.gameObject.GetComponent<ModInfo>();
-                            DisabledMods.Add($"BepInEx_CompatLayer_{modInfo.GUID}");
+                            JaLoaderSettings.DisabledMods.Add($"BepInEx_CompatLayer_{modInfo.GUID}");
                         }
                     }
                 }
             }
 
-            _settings.DisabledMods = DisabledMods;
+            _settings.DisabledMods = JaLoaderSettings.DisabledMods;
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
 
             EventsManager.Instance.OnSettingsSave();
         }
-    }
-
-    [System.Serializable]
-    public class Settings
-    {
-        [SerializeField] public bool SkipLanguageSelector = true;
-        [SerializeField] public bool DebugMode = false;
-        [SerializeField] public ConsolePositions ConsolePosition = ConsolePositions.BottomLeft;
-        [SerializeField] public ConsoleModes ConsoleMode = ConsoleModes.Default;
-        [SerializeField] public List<string> DisabledMods = new List<string>();
-
-        [SerializeField] public bool DisableMenuMusic = false;
-        [SerializeField] public int MenuMusicVolume = 50;
-        [SerializeField] public bool HideModFolder = false;
-        [SerializeField] public bool DisableUncle = false;
-        [SerializeField] public bool UseCustomSongs = true;
-        [SerializeField] public CustomSongsBehaviour CustomSongsBehaviour = CustomSongsBehaviour.Replace;
-        [SerializeField] public bool RadioAds = true;
-        [SerializeField] public bool UseEnhancedMovement = false;
-        [SerializeField] public LicensePlateStyles ChangeLicensePlateText = LicensePlateStyles.None;
-        [SerializeField] public string LicensePlateText = "";
-        [SerializeField] public bool UseDiscordRichPresence = true;
-        [SerializeField] public bool ShowFPSCounter = false;
-        [SerializeField] public bool EnableJaDownloader = false;
-        [SerializeField] public bool AskedAboutJaDownloader = false;
-        [SerializeField] public UpdateCheckModes UpdateCheckMode = UpdateCheckModes.Daily;
-        [SerializeField] public bool FixLaikaShopMusic = true;
-        [SerializeField] public MirrorDistances MirrorDistances = MirrorDistances.m1000;
-        [SerializeField] public CursorMode CursorMode = CursorMode.Default;
-        [SerializeField] public bool ShowDisabledMods = true;
-        //[SerializeField] public static bool FixItemsFallingBehindShop = true;
-        [SerializeField] public bool FixBorderGuardsFlags = true;
-
-        [SerializeField] public string AppliedPaintJobName = "";
-
-        [SerializeField] public List<string> DontShowAgainNotices = new List<string>();
-    }
-
-    public enum UpdateCheckModes
-    {
-        Never,
-        Hourly,
-        Daily,
-        Every3Days,
-        Weekly
-    }
-
-    public enum CustomSongsBehaviour
-    {
-        Add,
-        Replace
-    }
-
-    public enum MirrorDistances
-    {
-        m250,
-        m500,
-        m750,
-        m1000,
-        m1500,
-        m2000,
-        m2500,
-        m3000,
-        m3500,
-        m4000,
-        m5000
-    }
-
-    public enum CursorMode
-    {
-        Default,
-        Circle,
-        Hidden
     }
 }

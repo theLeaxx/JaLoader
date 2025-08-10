@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -343,7 +344,7 @@ namespace JaLoader
 
         private void Update()
         {
-            if (SettingsManager.DebugMode && Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.S))
+            if (JaLoaderSettings.DebugMode && Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.S))
             {
                 uiManager.ObjectsList.transform.parent.gameObject.SetActive(!uiManager.ObjectsList.transform.parent.gameObject.activeSelf);
             }

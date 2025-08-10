@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -37,10 +38,10 @@ namespace JaLoader
             
             DebugUtils.SignalStartRefLoading();
 
-            if (!Directory.Exists($@"{SettingsManager.ModFolderLocation}\Assemblies"))
-                Directory.CreateDirectory($@"{SettingsManager.ModFolderLocation}\Assemblies");
+            if (!Directory.Exists($@"{JaLoaderSettings.ModFolderLocation}\Assemblies"))
+                Directory.CreateDirectory($@"{JaLoaderSettings.ModFolderLocation}\Assemblies");
 
-            DirectoryInfo d = new DirectoryInfo($@"{SettingsManager.ModFolderLocation}\Assemblies");
+            DirectoryInfo d = new DirectoryInfo($@"{JaLoaderSettings.ModFolderLocation}\Assemblies");
             List<FileInfo> asm = d.GetFiles("*.dll").ToList();
 
             for (int i = 0; i < asm.Count; i++)

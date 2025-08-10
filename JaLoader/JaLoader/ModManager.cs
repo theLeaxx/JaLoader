@@ -15,6 +15,7 @@ namespace JaLoader
     public static class ModManager
     {
         internal static Dictionary<MonoBehaviour, ModDataForManager> Mods = new Dictionary<MonoBehaviour, ModDataForManager>();
+        internal static int ModFilesCount = 0;
 
         internal static List<MonoBehaviour> loadOrderList = new List<MonoBehaviour>();
 
@@ -82,7 +83,8 @@ namespace JaLoader
                 Console.LogMessage("JaLoader", $"No mods found!");
                 Console.Instance.ToggleVisibility(true);
 
-                UIManager.Instance.NoMods();
+                if(ModFilesCount == 0)
+                    UIManager.Instance.NoMods();
 
                 DebugUtils.SignalFinishedLoading();
 
@@ -107,6 +109,22 @@ namespace JaLoader
             UIManager.Instance.WriteConsoleStartMessage();
 
             CheckAllModsForUpdates();
+        }
+
+        public static bool IsModEnabled(string ID, string author, string name = "")
+        {
+            if (string.IsNullOrEmpty(ID) || string.IsNullOrEmpty(author))
+            {
+                Debug.LogError("Invalid parameters provided to IsModEnabled.");
+                Console.LogError("JaLoader", "Invalid parameters provided to IsModEnabled. ID and author cannot be null or empty.");
+                throw new ModException("Invalid parameters provided to IsModEnabled. ID and author cannot be null or empty.", "", 104);
+            }
+
+            MonoBehaviour mod = FindMod(author, ID, name);
+            if (mod == null)
+                return false;
+
+            return Mods[mod].IsEnabled;
         }
 
         internal static void CheckAllModsForUpdates()
@@ -134,7 +152,7 @@ namespace JaLoader
 
         internal static int GetDisabledModsCount()
         {
-            return SettingsManager.DisabledMods.Count;
+            return JaLoaderSettings.DisabledMods.Count;
         }
 
         internal static int GetBepinExModsCount()
@@ -248,7 +266,7 @@ namespace JaLoader
 
         internal static void LoadDisabledStatus()
         {
-            foreach (var mod in SettingsManager.DisabledMods)
+            foreach (var mod in JaLoaderSettings.DisabledMods)
             {
                 string[] modInfo = mod.Split('_');
 
@@ -348,9 +366,9 @@ namespace JaLoader
 
                 if (dependency.Item1 == "JaLoader" && dependency.Item2 == "Leaxx")
                 {
-                    if (SettingsManager.GetVersion() < version)
+                    if (JaLoaderSettings.GetVersion() < version)
                     {
-                        UIManager.Instance.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires JaLoader version {dependency.Item3} or higher. You are currently using version {SettingsManager.GetVersionString()}. The mod may still load, but not function correctly.");
+                        UIManager.Instance.ShowNotice("Dependency required", $"The mod \"{mod.ModName}\" requires JaLoader version {dependency.Item3} or higher. You are currently using version {JaLoaderSettings.GetVersionString()}. The mod may still load, but not function correctly.");
 
                         UIManager.Instance.AddWarningToMod(UIManager.Instance.modEntries[Mods[mod].GenericModData], $"Requires JaLoader >= {dependency.Item3}!");
                     }

@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using JaLoader.Common;
+using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -209,7 +210,7 @@ namespace JaLoader
                 return;
             }
 
-            if(current.buildIndex == 0 && SettingsManager.SkipLanguage && SettingsManager.selectedLanguage)
+            if(current.buildIndex == 0 && JaLoaderSettings.SkipLanguage && JaLoaderSettings.SelectedLanguage)
             {
                 SceneManager.LoadScene("MainMenu");
             }                

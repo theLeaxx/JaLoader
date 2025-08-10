@@ -67,7 +67,8 @@ namespace JaLoader
 
             gameObject.AddComponent<HarmonyManager>();
             gameObject.AddComponent<EventsManager>();
-            SettingsManager.Initialize();
+            RuntimeVariables.Logger = Console.Instance;
+			SettingsManager.Initialize();
             ModManager.Initialize();
             utilities.AddComponent<CustomRadioController>();
             gameObject.AddComponent<ReferencesLoader>();

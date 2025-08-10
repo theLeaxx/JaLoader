@@ -1,4 +1,5 @@
-﻿using NLayer;
+﻿using JaLoader.Common;
+using NLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -32,7 +33,7 @@ namespace JaLoader
             if (!Directory.Exists(folderPath))
                 Directory.CreateDirectory(folderPath);
 
-            if (SettingsManager.UseCustomSongs)
+            if (JaLoaderSettings.UseCustomSongs)
                 WarnAboutBadFormats();
 
             EventsManager.Instance.OnGameLoad += OnGameLoad;
@@ -48,7 +49,7 @@ namespace JaLoader
 
         void Update()
         {
-            if(SettingsManager.DebugMode)
+            if(JaLoaderSettings.DebugMode)
                 if (Input.GetKeyDown(KeyCode.F6))
                     FindObjectOfType<RadioFreqLogicC>().NextSong();
         }
@@ -139,7 +140,7 @@ namespace JaLoader
             menuVolumeChanger = RadioFreq.AddComponent<MenuVolumeChanger>();
             menuVolumeChanger.muted = true;
 
-            UpdateMenuMusic(!SettingsManager.DisableMenuMusic, (float)SettingsManager.MenuMusicVolume / 100);
+            UpdateMenuMusic(!JaLoaderSettings.DisableMenuMusic, (float)JaLoaderSettings.MenuMusicVolume / 100);
 
             StartCoroutine(AddSongsToRadioWithDelay());
         }
@@ -162,7 +163,7 @@ namespace JaLoader
 
             radio.enabled = false;
 
-            if (SettingsManager.CustomSongsBehaviour == CustomSongsBehaviour.Add)
+            if (JaLoaderSettings.CustomSongsBehaviour == CustomSongsBehaviour.Add)
             {
                 var songListings = radio.songListings.ToList();
 

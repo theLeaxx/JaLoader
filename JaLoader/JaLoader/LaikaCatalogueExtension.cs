@@ -320,9 +320,8 @@ namespace JaLoader
                     }
 
                     var identif = obj.GetComponent<ObjectIdentification>();
-                    Debug.Log(identif == null);
-                    Debug.Log(identif.Author);
-                    Debug.Log(identif.ModID);
+                    if (!identif.CanBuyInDealership)
+                        continue;
 
                     var objInfo = obj.GetComponent<CustomObjectInfo>();
                     if (!objInfo.isPaintJob)

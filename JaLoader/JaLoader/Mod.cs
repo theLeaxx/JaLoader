@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using JaLoader.Common;
+using JetBrains.Annotations;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ using UnityEngine.UI;
 
 namespace JaLoader
 {
-    public class Mod : MonoBehaviour
+    public class Mod : MonoBehaviour, IMod
     {
         public virtual string ModID { get; set; }
         public virtual string ModName { get; set; }
@@ -30,18 +31,37 @@ namespace JaLoader
 
         public virtual List<(string, string, string)> Incompatibilities { get; set; } = new List<(string, string, string)>();
 
-        public string AssetsPath { get; set; }
+        public string AssetsPath
+        {
+            get { return _assetsPath; }
+        }
 
-        public List<string> settingsIDS = new List<string>();
-        private Dictionary<string, string> settingsValues = new Dictionary<string, string>();
+        internal string _assetsPath;
+
+        public List<string> settingsIDS
+        {
+            get { return _settingIDS; }
+        }
+
+        public Dictionary<string, string> settingsValues
+        {
+            get { return _settingsValues; }
+        }
+
+        public Dictionary<string, string> valuesAfterLoad
+        {
+            get { return _valuesAfterLoad; }
+        }
+
+        internal List<string> _settingIDS = new List<string>();
+        internal Dictionary<string, string> _settingsValues = new Dictionary<string, string>();
+        internal Dictionary<string, string> _valuesAfterLoad = new Dictionary<string, string>();
+
         [Serializable] class SettingsValues : SerializableDictionary<string, string> { }
-
-        private Dictionary<string, string> valuesAfterLoad = new Dictionary<string, string>();
 
         public virtual void EventsDeclaration() { }
         public virtual void SettingsDeclaration() { }
         public virtual void CustomObjectsRegistration() { }
-
         public virtual void Update() { }
         public virtual void Start() { }
         public virtual void Awake() { }
@@ -50,12 +70,10 @@ namespace JaLoader
         public virtual void OnDisable() { }
         public virtual void OnDestroy() { }
         public virtual void OnReload() { }
-
         public virtual void OnSettingsSaved() { }
         public virtual void OnSettingValueChanged(string ID) { }
         public virtual void OnSettingsReset() { }
         public virtual void OnSettingsLoaded() { }
-
         public virtual void OnExtraAttached(string extraName) {}
 
         /// <summary>
@@ -728,15 +746,9 @@ namespace JaLoader
                 }
             }
 
-            valuesAfterLoad = values;
+            _valuesAfterLoad = values;
 
             OnSettingsLoaded();
         }
     } 
-
-    public enum WhenToInit
-    {
-        InMenu,
-        InGame
-    }
 }

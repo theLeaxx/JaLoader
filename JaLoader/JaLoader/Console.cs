@@ -5,28 +5,13 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine;
 using System.IO;
+using JaLoader.Common;
+using JaLoader.Common.Interfaces;
+using ILogger = JaLoader.Common.Interfaces.ILogger;
 
 namespace JaLoader
 {
-    [Serializable]
-    public enum ConsolePositions
-    {
-        TopLeft,
-        TopRight,
-        BottomLeft,
-        BottomRight
-    }
-
-    [Serializable]
-    public enum ConsoleModes
-    {
-        Default,
-        ErrorsWarnings,
-        Errors,
-        Disabled
-    }
-
-    public class Console : MonoBehaviour
+    public class Console : MonoBehaviour, ILogger
     {
         #region Singleton
         public static Console Instance { get; private set; }
@@ -197,7 +182,7 @@ namespace JaLoader
 
         public void ToggleVisibility(bool visible)
         {
-            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled)
             {
                 uiManager.JLConsole.SetActive(false);
                 return;
@@ -239,7 +224,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogMessage(object message)
         {
-            if (SettingsManager.ConsoleMode != ConsoleModes.Default)
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
                 return;
 
             Instance.LogMessage("/", message, "aqua");
@@ -252,7 +237,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogMessage(object sender, object message)
         {
-            if (SettingsManager.ConsoleMode != ConsoleModes.Default)
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
                 return;
 
             Instance.LogMessage(sender, message, "aqua");
@@ -377,7 +362,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogWarning(object sender, object message)
         {
-            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || SettingsManager.ConsoleMode == ConsoleModes.Errors)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || JaLoaderSettings.ConsoleMode == ConsoleModes.Errors)
             {
                 LogWarningOnlyToFile(message);
                 return;
@@ -392,7 +377,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogWarning(object message)
         {
-            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || SettingsManager.ConsoleMode == ConsoleModes.Errors)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || JaLoaderSettings.ConsoleMode == ConsoleModes.Errors)
             {
                 LogWarningOnlyToFile(message);
                 return;
@@ -408,7 +393,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogError(object sender, object message)
         {
-            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled)
             {
                 LogErrorOnlyToFile(message);
                 return;
@@ -423,7 +408,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogError(object message)
         {
-            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled)
             {
                 LogErrorOnlyToFile(message);
                 return;
@@ -439,7 +424,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogDebug(object sender, object message)
         {
-            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.DebugMode)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || !JaLoaderSettings.DebugMode)
             {
                 LogDebugOnlyToFile(message);
                 return;
@@ -454,7 +439,7 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogDebug(object message)
         {
-            if (SettingsManager.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.DebugMode)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || !JaLoaderSettings.DebugMode)
             {
                 LogDebugOnlyToFile(message);
                 return;
@@ -815,11 +800,11 @@ namespace JaLoader
 
         private void ToggleDebug()
         {
-            SettingsManager.DebugMode = !SettingsManager.DebugMode;
+            JaLoaderSettings.DebugMode = !JaLoaderSettings.DebugMode;
             SettingsManager.SaveSettings();
             uiManager.SetOptionsValues();
 
-            switch (SettingsManager.DebugMode)
+            switch (JaLoaderSettings.DebugMode)
             {
                 case true:
                     LogMessage("/", "Any future debug messages sent from now on will be <i>shown.</i>");
@@ -843,12 +828,12 @@ namespace JaLoader
 
         private void SendPath()
         {
-            LogMessage("/", SettingsManager.ModFolderLocation);
+            LogMessage("/", JaLoaderSettings.ModFolderLocation);
         }
 
         private void SendVersion()
         {
-            LogMessage("/", SettingsManager.GetVersionString());
+            LogMessage("/", JaLoaderSettings.GetVersionString());
         }
 
         private void Clear()
@@ -856,6 +841,26 @@ namespace JaLoader
             foreach (Transform message in uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0))
                 if (message.name != "MessageTemplate")
                     Destroy(message.gameObject);
+        }
+
+        public void Log(string message, string author = null)
+        {
+            Log(message, author);
+        }
+
+        public void LogWarning(string message, string author = null)
+        {
+            LogWarning(message, author);
+        }
+
+        public void LogError(string message, string author = null)
+        {
+            LogError(message, author);
+        }
+
+        public void LogDebug(string message, string author = null)
+        {
+            LogDebug(message, author);
         }
     }
 }
