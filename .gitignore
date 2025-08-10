@@ -381,3 +381,13 @@ JaPreLoader/JaPreLoader/packages
 Download Files/
 JaLoaderUnity4/*
 /JaLoaderUnity4/JaLoaderUnity4/
+/JaLoaderUnity4/JaLoaderUnity4/DebugCamera.cs
+/JaLoaderUnity4/JaLoaderUnity4/EnhancedMovement.cs
+/JaLoaderUnity4/JaLoaderUnity4/EventsManager.cs
+/JaLoaderUnity4/JaLoaderUnity4/ModHelper.cs
+/JaLoaderUnity4/JaLoaderUnity4/ModLoader.cs
+/JaLoaderUnity4/JaLoaderUnity4/ModUnity4.cs
+/JaLoaderUnity4/JaLoaderUnity4/ReferencesLoader.cs
+/JaLoaderUnity4/JaLoaderUnity4/SettingsManager.cs
+/JaLoaderUnity4/JaLoaderUnity4/UIManager.cs
+/JaLoaderUnity4/JaLoaderUnity4/Properties/AssemblyInfo.cs
