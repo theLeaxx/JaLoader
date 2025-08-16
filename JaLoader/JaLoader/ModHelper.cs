@@ -50,6 +50,8 @@ namespace JaLoader
         private bool createdDebugCamera;
         public GameObject debugCam;
 
+        internal bool ShouldLoadInventory = true;
+
         public GameObject CardboardBoxBig;
         public GameObject CardboardBoxMed;
         public GameObject CardboardBoxSmall;
@@ -146,6 +148,21 @@ namespace JaLoader
             }
         }
 
+        public void DontLoadInventoryOnGameLoad()
+        {
+            ShouldLoadInventory = false;
+        }
+
+        public void ReloadInventories()
+        {
+            MethodInfo clearBootInventoryMethod = typeof(MainMenuC).GetMethod("ClearBootInventory", BindingFlags.NonPublic | BindingFlags.Instance);
+            clearBootInventoryMethod.Invoke(MainMenuC.Global, null);
+            ShouldLoadInventory = true;
+
+            //MainMenuC.Global.StartCoroutine("LoadBootInventory");
+            CustomObjectsManager.Instance.LoadData(false, true);
+        }
+
         public void GetAllBodyParts(bool wait = true)
         {
             laika = GameObject.Find("FrameHolder");
@@ -183,8 +200,7 @@ namespace JaLoader
 
         private void OnGameLoad()
         {
-            if (JaLoaderSettings.DebugMode)
-                Camera.main.gameObject.AddComponent<DebugCamera>();
+            Camera.main.gameObject.AddComponent<DebugCamera>();
 
             RefreshPartHolders();
 
@@ -1227,14 +1243,10 @@ namespace JaLoader
             audio.priority = 128;
         }
 
-    
-
         public void OpenURL(string URL)
         {
             Application.OpenURL(URL);
         }
-
-        
     }
 
     #region Part Types

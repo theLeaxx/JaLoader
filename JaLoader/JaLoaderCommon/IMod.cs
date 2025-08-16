@@ -15,7 +15,7 @@ namespace JaLoader.Common
         string GitHubLink { get; }
         string NexusModsLink { get; }
         bool UseAssets { get; }
-        WhenToInit WhenToInit { get; }
+        WhenToInit WhenToInitMod { get; }
 
         List<(string, string, string)> Dependencies { get; }
 

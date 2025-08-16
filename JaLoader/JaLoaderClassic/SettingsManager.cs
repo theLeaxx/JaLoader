@@ -1,23 +1,25 @@
-﻿using System.IO;
+﻿using JaLoader.Common;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using UnityEngine;
-using BepInEx;
-using JaLoader.BepInExWrapper;
-using JaLoader.Common;
 
-namespace JaLoader
+namespace JaLoaderClassic
 {
     public static class SettingsManager
     {
-        internal static void Initialize()
+        public static void Initialize()
         {
-            JaLoaderSettings.JaLoaderVersion = "5.0.0";
+            JaLoaderSettings.JaLoaderVersion = "1.0.0";
             JaLoaderSettings.IsPreReleaseVersion = false;
 
             ReadSettings();
             JaLoaderSettings.SetVersionRegistryKey();
             JaLoaderSettings.GetUpdateCheckRegistryKey();
 
-            JaLoaderSettings.CompareAssemblyVersion();
+            //JaLoaderSettings.CompareAssemblyVersion();
         }
 
         [SerializeField] private static SerializableJaLoaderSettings _settings = new SerializableJaLoaderSettings();
@@ -46,7 +48,9 @@ namespace JaLoader
         {
             JaLoaderSettings.LoadSettings(_settings);
 
-            EventsManager.Instance.OnSettingsLoad();
+            Console.InternalLog(_settings.LicensePlateText);
+
+            //EventsManager.Instance.OnSettingsLoad();
         }
 
         public static void SaveSettings(bool includeDisabledMods = true)
@@ -56,18 +60,18 @@ namespace JaLoader
 
             JaLoaderSettings.SaveSettings(_settings);
 
-            if (includeDisabledMods)
+            /*if (includeDisabledMods)
             {
                 foreach (var mod in ModManager.Mods)
                 {
                     if (!mod.Value.IsEnabled)
                     {
-                        if (mod.Key is Mod)
+                        if (mod.Key is ModClassic)
                         {
-                            var modReference = mod.Key as Mod;
+                            var modReference = mod.Key as ModClassic;
                             JaLoaderSettings.DisabledMods.Add($"{modReference.ModAuthor}_{modReference.ModID}_{modReference.ModName}");
                         }
-                        else if (mod.Key is BaseUnityPlugin)
+                        /*else if (mod.Key is BaseUnityPlugin)
                         {
                             var modReference = mod.Key as BaseUnityPlugin;
                             ModInfo modInfo = modReference.gameObject.GetComponent<ModInfo>();
@@ -77,11 +81,11 @@ namespace JaLoader
                 }
             }
 
-            _settings.DisabledMods = JaLoaderSettings.DisabledMods;
+            _settings.DisabledMods = JaLoaderSettings.DisabledMods;*/
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
 
-            EventsManager.Instance.OnSettingsSave();
+            //EventsManager.Instance.OnSettingsSave();
+        }
         }
     }
-}

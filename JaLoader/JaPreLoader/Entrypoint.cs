@@ -1,10 +1,12 @@
-﻿using UnityEngine;
-using JaLoader;
-using Object = UnityEngine.Object;
+﻿using System;
+using System.Diagnostics;
 using System.Reflection;
-using System.IO;
-using System;
 using System.Windows.Forms;
+using UnityEngine;
+using Object = UnityEngine.Object;
+using Debug = UnityEngine.Debug;
+using JaLoader.Common;
+using System.IO;
 
 namespace Doorstop
 {
@@ -15,8 +17,8 @@ namespace Doorstop
 
         public static void Start()
         {
-            string unityExePath = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-            System.Diagnostics.FileVersionInfo fileVersionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(unityExePath);
+            string unityExePath = Process.GetCurrentProcess().MainModule.FileName;
+            FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(unityExePath);
             unityVersion = fileVersionInfo.ProductVersion;
 
             if (unityVersion.StartsWith("4"))
@@ -38,12 +40,12 @@ namespace Doorstop
             {
                 AppDomain.CurrentDomain.AssemblyLoad -= OnAssemblyLoadUnity4;
 
+                CheckForMissingDLLS();
+
                 Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoader.Common.dll");
                 Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoaderClassic.dll");
 
                 GameObject obj = (GameObject)Object.Instantiate(new GameObject());
-                Debug.Log("Created object");
-                obj.name = "JaPreLoader";
                 obj.AddComponent<AddJaLoaderClassicCore>();
                 Object.DontDestroyOnLoad(obj);
             }
@@ -53,9 +55,11 @@ namespace Doorstop
         {
             i++;
 
-            if(i == 66)
+            if (i == 66)
             {
                 AppDomain.CurrentDomain.AssemblyLoad -= OnAssemblyLoadUnity5;
+
+                CheckForMissingDLLS();
 
                 Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoader.Common.dll");
                 Assembly.LoadFile($@"{UnityEngine.Application.dataPath}\Managed\JaLoader.dll");
@@ -63,15 +67,44 @@ namespace Doorstop
                 GameObject obj = (GameObject)Object.Instantiate(new GameObject());
                 obj.AddComponent<AddJaLoaderCore>();
                 Object.DontDestroyOnLoad(obj);
-            } 
+            }
+        }
+
+        static bool CheckForMissingDLLS()
+        {
+            string[] requiredDLLs = new string[]
+            {
+                "0Harmony.dll",
+                "HarmonyXInterop.dll",
+                "NLayer.dll",
+                "Mono.Cecil.dll",
+                "Mono.Cecil.Mdb.dll",
+                "Mono.Cecil.Pdb.dll",
+                "Mono.Cecil.Rocks.dll",
+                "ValueTupleBridge.dll",
+                "MonoMod.RuntimeDetour.dll",
+                "MonoMod.Utils.dll",
+                "MonoMod.ILHelpers.dll"
+            };
+
+            var path = $@"{UnityEngine.Application.dataPath}\Managed";
+
+            foreach (string dll in requiredDLLs)
+            {
+                if (!File.Exists($@"{path}\{dll}"))
+                {
+                    MessageBox.Show($"DLL {dll} was not found. Please reinstall JaLoader.\n", "JaLoader", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    UnityEngine.Application.Quit();
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
     public class AddJaLoaderCore : MonoBehaviour
     {
-        private EventInfo logMessageReceivedEvent;
-        private Delegate delegateInstance;
-
         void Awake()
         {
             Debug.Log("JaLoader found!");
@@ -82,15 +115,10 @@ namespace Doorstop
             Debug.Log($"JaLoader version: {jaLoaderDllFileVersion}");
 
             Assembly unityAssembly = Assembly.Load("UnityEngine.CoreModule");
-
             Type applicationType = unityAssembly.GetType("UnityEngine.SceneManagement.SceneManager", false, true);
-
             var sceneLoadedEvent = applicationType.GetEvent("sceneLoaded");
-
             Type delegateType = sceneLoadedEvent.EventHandlerType;
-
             var delegateInstance = Delegate.CreateDelegate(delegateType, this, typeof(AddJaLoaderCore).GetMethod("LoadModLoader"));
-
             sceneLoadedEvent.AddEventHandler(null, delegateInstance);
         }
 
@@ -126,10 +154,8 @@ namespace Doorstop
     {
         private void Start()
         {
-            Debug.Log("Compatibility mode enabled! JaLoader is not yet fully stable on Unity 4, please report any issues on GitHub!");
-            Debug.Log("JaLoader found! (Compatibility mode, Unity 4 detected)");
-
-            GameObject obj = (GameObject)Object.Instantiate(new GameObject());
+            Debug.Log("Compatibility mode enabled! JaLoader Classic is not yet fully stable on Unity 4, please report any issues on GitHub!");
+            Debug.Log("JaLoader Classic found!");
 
             Assembly assembly = null;
 

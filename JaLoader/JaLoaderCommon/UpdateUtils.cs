@@ -37,7 +37,7 @@ namespace JaLoader.Common
 
             if (latestVersion == "-1")
             {
-                RuntimeVariables.Logger.LogError("Couldn't check for updates!");
+                RuntimeVariables.Logger.ILogError("Couldn't check for updates!");
                 return false;
             }
 
@@ -84,7 +84,7 @@ namespace JaLoader.Common
             if (!CanCheckForUpdatesInternal())
                 return "0";
 
-            string latestVersion = "-1";//ModHelper.Instance.GetLatestTagFromApiUrl(URL);
+            string latestVersion = RuntimeVariables.GitHubReleaseUtils.GetLatestTagFromAPIURL(URL);
             int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
 
             if (latestVersion == "-1")

@@ -2,10 +2,11 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using JaLoader.Common;
+using System.Reflection;
 
 namespace JaLoader
 {
-    public class JaLoaderCore : MonoBehaviour, ICore
+    public class JaLoaderCore : MonoBehaviour
     {
         public static JaLoaderCore Instance { get; private set; }
 
@@ -23,18 +24,13 @@ namespace JaLoader
             }
 
             gameObject.name = "JaLoader";
+            HarmonyManager.CreateHarmony();
             RuntimeVariables.ApplicationDataPath = Application.dataPath;
-
-            if (CoreUtils.AnyMissingDLLs() != "None")
-            {
-                CreateErrorMessage($"\n\nDLL {CoreUtils.AnyMissingDLLs()} was not found. You can try:", "Reinstalling JaLoader with JaPatcher\n\n\nCopying the files from JaPatcher's directory/Assets/Managed to Jalopy_Data/Managed");
-                SceneManager.LoadScene("MainMenu");
-                return;
-            }
+            RuntimeVariables.GitHubReleaseUtils = GitHubUtils.Instance;
 
             AddEssentialScripts();
 
-            Debug.Log("JaLoader Core initialized!");
+            Console.LogDebug("JaLoader", "JaLoader Core initialized!");
 
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
             EventsManager.Instance.OnUILoadFinished += OnUILoadFinished;
@@ -44,7 +40,7 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
-            Debug.Log($"Selected language: {Language.CurrentLanguage()}");
+            Console.LogDebug("Jalopy", $"Selected language: {Language.CurrentLanguage()}");
         }
 
         private void OnUILoadFinished()
@@ -65,19 +61,18 @@ namespace JaLoader
             DontDestroyOnLoad(console);
             console.transform.SetParent(gameObject.transform);
 
-            gameObject.AddComponent<HarmonyManager>();
+            gameObject.AddComponent<CoroutineManager>();
             gameObject.AddComponent<EventsManager>();
             RuntimeVariables.Logger = Console.Instance;
 			SettingsManager.Initialize();
             ModManager.Initialize();
             utilities.AddComponent<CustomRadioController>();
-            gameObject.AddComponent<ReferencesLoader>();
             gameObject.AddComponent<UIManager>();
             gameObject.AddComponent<ModLoader>();
+            RuntimeVariables.ModLoader = ModLoader.Instance;
             gameObject.AddComponent<CustomObjectsManager>();
             gameObject.AddComponent<ExtrasManager>();
 
-            gameObject.AddComponent<DebugUtils>();
             utilities.AddComponent<ModHelper>();
             utilities.AddComponent<UncleHelper>();
             utilities.AddComponent<DebugObjectSpawner>();

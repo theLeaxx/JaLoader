@@ -154,7 +154,6 @@ namespace JaLoader
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<MenuMouseInteractionsC>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<MainMenuCReceiver>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<MotelsReceiver>());
-                Destroy(cameraObj.transform.GetChild(0).GetComponent<HarmonyManager>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<CoroutineManager>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<LaikaCatalogueExtension>());
 
@@ -250,9 +249,9 @@ namespace JaLoader
                 return;
             }
 
-            if (JaLoaderSettings.UseExperimentalCharacterController)
+            if (JaLoaderSettings.UseExperimentalCharacterController && SceneManager.GetActiveScene().buildIndex == 3)
                 mainCameraObj.transform.parent.GetComponent<EnhancedMovement>().isDebugCameraEnabled = isCameraEnabled;
-            else
+            else if (!JaLoaderSettings.UseExperimentalCharacterController && SceneManager.GetActiveScene().buildIndex == 3)
                 mainCameraObj.transform.parent.GetComponent<Rigidbody>().isKinematic = isCameraEnabled;
         }
 

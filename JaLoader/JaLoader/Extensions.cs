@@ -1,8 +1,9 @@
 using JaLoader;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-public static class SearchingExtensions
+public static class Extensions
 {
     public static Transform FindDeepChild(this Transform parent, string name)
     {
@@ -181,5 +182,25 @@ public static class SearchingExtensions
     {
         Transform child = parent.transform.FindDeepChild(name);
         return child?.gameObject;
+    }
+
+    public static GameObject GetChild(this GameObject parent, int index)
+    {
+        if (index < 0 || index >= parent.transform.childCount)
+        {
+            Debug.LogError("Index out of bounds for GetChild method.");
+            return null;
+        }
+        return parent.transform.GetChild(index).gameObject;
+    }
+
+    public static Color ToColor(this ValueTuple<byte, byte, byte, byte> colorTuple)
+    {
+        return new Color32(
+            colorTuple.Item1,
+            colorTuple.Item2,
+            colorTuple.Item3,
+            colorTuple.Item4
+        );
     }
 }

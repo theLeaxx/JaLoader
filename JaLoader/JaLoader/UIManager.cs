@@ -84,6 +84,8 @@ namespace JaLoader
         internal GameObject ObjectsList;
         internal GameObject ObjectEntryTemplate;
         internal Text CurrentSelectedObjectText;
+        internal ScrollRect ConsoleScrollRect;
+        internal Transform ConsoleList;
 
         public GameObject ModSettingsHolder;
         public GameObject ModSettingsNameTemplate;
@@ -169,12 +171,12 @@ namespace JaLoader
 
                 GreenToolMaterial = new Material(Shader.Find("Legacy Shaders/Diffuse"))
                 {
-                    color = CommonColors.MenuGreenToolColor
+                    color = CommonColors.MenuGreenToolColor.ToColor()
                 };
 
                 GlowGreenToolMaterial = new Material(Shader.Find("Toony Gooch/Toony Gooch RimLight"))
                 {
-                    color = CommonColors.MenuGreenToolColor
+                    color = CommonColors.MenuGreenToolColor.ToColor()
                 };
             }
 
@@ -278,6 +280,8 @@ namespace JaLoader
             JLModsPanel = JLCanvas.FindDeepChildObject("JLModsPanel");
             JLSettingsPanel = JLCanvas.FindDeepChildObject("JLSettingsPanel");
             JLConsole = JLCanvas.FindDeepChildObject("Console");
+            ConsoleList = JLConsole.GetChild(1).GetChild(0).GetChild(0).transform;
+            ConsoleScrollRect = JLConsole.GetChild(1).GetComponent<ScrollRect>();
             JLNoticePanel = JLCanvas.FindDeepChildObject("JLNotice");
             JLCatalogue = JLCanvas.FindDeepChildObject("JLCatalogue");
             JLObjectsList = JLCanvas.FindDeepChildObject("JLObjectsList");
@@ -313,8 +317,8 @@ namespace JaLoader
             JLFPSText = JLCanvas.FindObject("FPSCounter");
             JLDebugText = JLCanvas.FindObject("DebugInfo");
 
-            ModsSettingsList.FindButton("SaveButton").onClick.AddListener(SaveModSettings);
-            ModsSettingsList.FindButton("ResetButton").onClick.AddListener(ResetModSettings);
+            ModsSettingsList.FindButton("SaveButton").onClick.AddListener(ModManager.SaveModSettings);
+            ModsSettingsList.FindButton("ResetButton").onClick.AddListener(ModManager.ResetModSettings);
 
             ModSettingsHolder = ModsSettingsContent.Find("SettingsHolder").gameObject;
             ModSettingsNameTemplate = ModsSettingsContent.Find("ModName").gameObject;
@@ -395,10 +399,31 @@ namespace JaLoader
             AllSettingsSliders.Add("MenuMusicVolume", TweaksSettings.FindDeepSlider("MenuMusicVolume"));
             AllSettingsInputFields.Add("LicensePlateText", TweaksSettings.FindDeepInputField("InputField"));
 
-            AccessibilitySettings.FindDeepButton("SwitchLanguage").onClick.AddListener(SwitchLanguage);
-            AccessibilitySettings.FindDeepButton("OpenModsFolder").onClick.AddListener(OpenModsFolder);
-            AccessibilitySettings.FindDeepButton("OpenSavesFolder").onClick.AddListener(OpenSavesFolder);
-            AccessibilitySettings.FindDeepButton("OpenOutputLog").onClick.AddListener(OpenOutputLog);
+            AccessibilitySettings.FindDeepButton("SwitchLanguage").onClick.AddListener(delegate {
+                SaveAndApplyValues();
+
+                ToggleModLoaderSettings_Accessibility();
+                ToggleModLoaderSettings_Main();
+                Console.Instance.ToggleVisibility(false);
+
+                GameUtils.SwitchLanguage();
+                isObstructing = false;
+            });
+            AccessibilitySettings.FindDeepButton("OpenModsFolder").onClick.AddListener(delegate
+            {
+                PlayClickSound();
+                GameUtils.OpenModsFolder();
+            });
+            AccessibilitySettings.FindDeepButton("OpenSavesFolder").onClick.AddListener(delegate
+            {
+                PlayClickSound();
+                GameUtils.OpenSavesFolder();
+            });
+            AccessibilitySettings.FindDeepButton("OpenOutputLog").onClick.AddListener(delegate
+            {
+                PlayClickSound();
+                GameUtils.OpenOutputLog();
+            });
         }
 
         private void SetConsolePosition(ConsolePositions pos)
@@ -577,9 +602,9 @@ namespace JaLoader
             {
                 Console.LogMessage("JaLoader", $"JaLoader {JaLoaderSettings.GetVersionString()} failed to load!");
                 DebugUtils.StopCounting();
-                Debug.Log($"Failed to load JaLoader UI!");
+                Console.LogError("JaLoader", $"Failed to load JaLoader UI!");
 
-                Debug.Log($"Exception: {e}");
+                Console.LogError("JaLoader", $"Exception: {e}");
 
                 FindObjectOfType<LoadingScreen>().DeleteLoadingScreen();
 
@@ -802,84 +827,7 @@ namespace JaLoader
             wrench.GetComponent<MeshRenderer>().material = GreenToolMaterial;
         }
 
-        private void SaveModSettings()
-        {
-            for (int i = 0; i < ModsSettingsContent.transform.childCount; i++)
-            {
-                if (ModsSettingsContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(ModsSettingsContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
-                {
-                    string fullName = ModsSettingsContent.transform.GetChild(i).gameObject.name;
-
-                    string modAuthor;
-                    string modID;
-                    string modName;
-
-                    string[] parts = fullName.Split('_');
-
-                    modAuthor = parts[0];
-                    modID = parts[1];
-
-                    modName = parts[2];
-                    modName = modName.Remove(modName.Length - 15);
-
-                    if (string.IsNullOrEmpty(modName))
-                        modName = modID;
-
-                    var mod = ModManager.FindMod(modAuthor, modID, modName);
-
-                    if(mod != null && mod is Mod)
-                    {
-                        var modClass = mod as Mod;
-                        modClass.SaveModSettings();
-                    }
-                    else if (mod != null && mod is BaseUnityPlugin)
-                    {
-                        var modClass = mod as BaseUnityPlugin;
-                        modClass.SaveBIXPluginSettings();
-                    }
-                }
-            }
-        }
-
-        private void ResetModSettings()
-        {
-            for (int i = 0; i < ModsSettingsContent.transform.childCount; i++)
-            {
-                if (ModsSettingsContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(ModsSettingsContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
-                {
-                    string fullName = ModsSettingsContent.transform.GetChild(i).gameObject.name;
-
-                    string modAuthor;
-                    string modID;
-                    string modName;
-
-                    string[] parts = fullName.Split('_');
-
-                    modAuthor = parts[0];
-                    modID = parts[1];
-
-                    modName = parts[2];
-                    modName = modName.Remove(modName.Length - 15);
-
-                    if (string.IsNullOrEmpty(modName))
-                        modName = modID;
-
-                    var mod = ModManager.FindMod(modAuthor, modID, modName);
-
-                    if (mod != null && mod is Mod)
-                    {
-                        var modClass = mod as Mod;
-                        modClass.ResetModSettings();
-                    }
-                    else if (mod != null && mod is BaseUnityPlugin)
-                    {
-                        var modClass = mod as BaseUnityPlugin;
-                        modClass.SaveBIXPluginSettings();
-                    }
-                }
-            }
-        }
-
+        
         public void SetOptionsValues()
         {
             AllSettingsDropdowns["ConsoleMode"].value = (int)JaLoaderSettings.ConsoleMode;
@@ -914,46 +862,9 @@ namespace JaLoader
             ShowDisabledMods();
         }
 
-        private void SwitchLanguage()
-        {
-            JaLoaderSettings.SelectedLanguage = false;
-
-            SaveAndApplyValues();
-
-            ToggleModLoaderSettings_Accessibility();
-            ToggleModLoaderSettings_Main();
-            Console.Instance.ToggleVisibility(false);
-
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
-            isObstructing = false;
-        }
-
-        private void OpenModsFolder()
-        {
-            PlayClickSound();
-
-            Application.OpenURL(JaLoaderSettings.ModFolderLocation);
-        }
-
-        private void OpenOutputLog()
-        {
-            PlayClickSound();
-
-            string path = Path.Combine(Application.persistentDataPath, "output_log.txt");
-
-            Process.Start(path);
-        }
-
         private void PlayClickSound()
         {
             audioSource.PlayOneShot(buttonClickSound);
-        }
-
-        private void OpenSavesFolder()
-        {
-            PlayClickSound();
-
-            Application.OpenURL(Application.persistentDataPath);
         }
 
         private void RefreshUI()
@@ -1142,7 +1053,7 @@ namespace JaLoader
 
         public void AddWarningToMod(GameObject entry, string warningText, bool blockLoadOrder = false)
         {
-            entry.transform.Find("BasicInfo/ModName").GetComponent<Text>().color = CommonColors.ErrorRed;
+            entry.transform.Find("BasicInfo/ModName").GetComponent<Text>().color = CommonColors.ErrorRed.ToColor();
 
             var warningIcon = entry.transform.Find("WarningIcon").gameObject;
 
@@ -1180,35 +1091,7 @@ namespace JaLoader
             var author = modURL.Split('/')[3];
             var repo = modURL.Split('/')[4];
 
-            StartCoroutine(CheckIfModInstalled(author, repo));
-        }
-
-        private IEnumerator CheckIfModInstalled(string author, string repo)
-        {
-            var maximumTime = 60;
-            var currentTime = 0;
-
-            author = author.Replace("\n", "").Replace("\r", "");
-            repo = repo.Replace("\n", "").Replace("\r", "");
-
-            while (!File.Exists(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt")))
-            {
-                if(maximumTime == currentTime)
-                {
-                    ShowNotice("MOD INSTALLATION FAILED", "The mod installation failed. Please make sure you have the correct URL and that your internet connection is stable.", ignoreObstructRayChange: true);
-                    yield break;
-                }
-
-                currentTime++;
-                yield return new WaitForSeconds(1);
-            }
-
-            var dllName = File.ReadAllText(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
-            File.Delete(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
-
-            ReferencesLoader.Instance.StartCoroutine(ReferencesLoader.Instance.LoadAssemblies());
-            ModLoader.Instance.InitializeMod(out _, certainModFile: dllName);
-            yield return null;
+            StartCoroutine(ModLoader.Instance.CheckIfModInstalled(author, repo));
         }
 
         private void OnInputValueChanged_ModsList()

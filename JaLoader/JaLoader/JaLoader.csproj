@@ -70,11 +70,6 @@
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\JaLoader.Common.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="MonoMod.Backports, Version=1.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\MonoMod.Backports.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="MonoMod.ILHelpers, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\MonoMod.ILHelpers.dll</HintPath>
@@ -173,6 +168,10 @@
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\New\UnityEngine.VehiclesModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="ValueTupleBridge, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\ValueTupleBridge.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Target Name="FixAssemblyBindings" BeforeTargets="ResolveAssemblyReferences">
     <ItemGroup>
@@ -199,7 +198,6 @@
     <Compile Include="DebugCamera.cs" />
     <Compile Include="DebugObjectSpawner.cs" />
     <Compile Include="DebugInfo.cs" />
-    <Compile Include="DebugUtils.cs" />
     <Compile Include="DiscordController.cs" />
     <Compile Include="Discord\ActivityManager.cs" />
     <Compile Include="Discord\Constants.cs" />
@@ -234,10 +232,10 @@
     <Compile Include="PartIconManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MenuVolumeChanger.cs" />
-    <Compile Include="ReferencesLoader.cs" />
+    <Compile Include="GitHubUtils.cs" />
     <Compile Include="SerializableDictionary.cs" />
     <Compile Include="SettingsManager.cs" />
-    <Compile Include="SearchingExtensions.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="UIManager.cs" />
     <Compile Include="UncleHelper.cs" />
   </ItemGroup>

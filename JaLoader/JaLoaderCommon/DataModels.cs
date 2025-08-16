@@ -72,7 +72,7 @@ namespace JaLoader.Common
             string dllVersion = $"{version.Major}.{version.Minor}.{version.Build}";
 
             if (dllVersion != JaLoaderVersion)
-                RuntimeVariables.Logger.LogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {dllVersion}");
+                RuntimeVariables.Logger.ILogWarning($"JaLoader version mismatch! Expected: {JaLoaderVersion}, Found: {dllVersion}");
         }
 
         public static int GetVersion()
@@ -315,5 +315,13 @@ namespace JaLoader.Common
         DiplomaticRed,
         DiplomaticBlue,
         WhiteOnBlack
+    }
+
+    public static class CommonColors
+    {
+        public static ValueTuple<byte, byte, byte, byte> ErrorRed = (255, 83, 83, 255);
+        public static ValueTuple<byte, byte, byte, byte> EnabledModColor = (255, 255, 255, 255);
+        public static ValueTuple<byte, byte, byte, byte> DisabledModColor = (120, 120, 120, 255);
+        public static ValueTuple<byte, byte, byte, byte> MenuGreenToolColor = (120, 255, 85, 255);
     }
 }

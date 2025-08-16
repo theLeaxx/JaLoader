@@ -6,5 +6,7 @@ namespace JaLoader.Common
     {
         public static string ApplicationDataPath;
         public static ILogger Logger;
+        public static IModLoader ModLoader;
+        public static IGitHubReleaseUtils GitHubReleaseUtils;
     }
 }

@@ -14,7 +14,7 @@ using JaLoader.Common;
 
 namespace JaLoader
 {
-    public class ModLoader : MonoBehaviour
+    public class ModLoader : MonoBehaviour, IModLoader
     {
         #region Singleton
         public static ModLoader Instance { get; private set; }
@@ -33,26 +33,43 @@ namespace JaLoader
 
         #endregion
 
-        private static readonly Regex BannedCharacters = new Regex(@"[_|]", RegexOptions.Compiled);
-
         private void Start()
         {
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
+                Console.LogDebug("JaLoader", $"Resolving assembly: {args.Name}");
+
                 Assembly loadedAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(assembly => assembly.FullName == args.Name);
                 if (loadedAssembly != null)
                     return loadedAssembly;
 
-                // try to redirect the bepinex assembly to this assembly
                 if (args.Name.StartsWith("BepInEx"))
                     return Assembly.GetExecutingAssembly();
 
                 if (args.Name.StartsWith("Harmony"))
                     return Assembly.LoadFrom(Path.Combine(Application.dataPath, @"Managed\0Harmony.dll"));
 
-                // replaced Theraot.Core with MonoMod.Backports, so redirect it to that
                 if (args.Name.StartsWith("Theraot"))
-                    return Assembly.LoadFrom(Path.Combine(Application.dataPath, @"Managed\MonoMod.Backports.dll"));
+                    return Assembly.LoadFrom(Path.Combine(Application.dataPath, @"Managed\ValueTupleBridge.dll"));
+
+                if (args.Name.StartsWith("MonoMod.Back"))
+                    return Assembly.LoadFrom(Path.Combine(Application.dataPath, @"Managed\ValueTupleBridge.dll"));
+
+                var assembliesToIgnore = new[]
+                {
+                    "SMDiagnostics",
+                    "System.Runtime",
+                    "System.Dynamic.Runtime",
+                    "MonoProfilerLoader"
+                };
+
+                if(assembliesToIgnore.Any(assembly => args.Name.StartsWith(assembly)))
+                {
+                    Console.LogDebug("JaLoader", $"Ignoring assembly: {args.Name}");
+                    return null;
+                }
+
+                Console.LogError("JaLoader", $"Failed to resolve assembly: {args.Name}");
 
                 return null;
             };
@@ -121,7 +138,7 @@ namespace JaLoader
                     modType = allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "Mod");
                 }
 
-                Debug.Log($"Loading mod {(modFile == null ? modType.Name : modFile.Name)}...");
+                Console.LogDebug("JaLoader", $"Loading mod {(modFile == null ? modType.Name : modFile.Name)}...");
 
                 #region BepInEx Loading
                 if (modType == null)
@@ -130,17 +147,16 @@ namespace JaLoader
 
                     if (modType == null)
                     {
-                        if (allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ClassicMod") != null)
+                        if (allModTypes.FirstOrDefault(t => t.BaseType != null && t.BaseType.Name == "ModClassic") != null)
                         {
                             Console.LogWarning("JaLoader", $"Mod {modFile.Name} is designed for an older version of Jalopy (1.0) and is not compatible with your current game version.");
                             throw new ModException($"Mod {modFile.Name} is built for 1.0 and is not compatible with this version of the game.", null, 101);
                         }
                         else
                         {
-                            Console.LogError("JaLoader", $"Mod {modFile.Name} does not contain any class derived from Mod, ClassicMod or BaseUnityPlugin.");
+                            Console.LogError("JaLoader", $"Mod {modFile.Name} does not contain any class derived from Mod, ModClassic or BaseUnityPlugin.");
                             throw new ModException($"No valid mod class found for mod {modFile.Name}.", null, 102);
                         }
-
                     }
 
                     isBepInExMod = true;
@@ -206,9 +222,9 @@ namespace JaLoader
 
                     var genericBIXModData = new GenericModData(ModID, ModName, ModVersion, ModDescription, authorName, null, bix_mod, isBIXMod: true);
                     var BIXtext = UIManager.Instance.CreateModEntryReturnText(genericBIXModData);
-                    ModManager.AddMod(bix_mod, WhenToInit.InMenu, BIXtext, genericBIXModData);
+                    ModManager.AddMod(bix_mod, Common.WhenToInit.InMenu, BIXtext, genericBIXModData);
 
-                    Debug.Log($"Part 1/2 of initialization for BepInEx mod {ModName} completed");
+                    Console.LogDebug("JaLoader", $"Part 1/2 of initialization for BepInEx mod {ModName} completed");
 
                     if (certainModFile != "")
                         ModManager.FinishLoadingMod(bix_mod);
@@ -238,7 +254,7 @@ namespace JaLoader
                     throw new ModException("Invalid ModID/ModName/ModAuthor/ModVersion!", null, 100);
                 }
 
-                if (BannedCharacters.IsMatch(mod.ModID) || BannedCharacters.IsMatch(mod.ModName) || BannedCharacters.IsMatch(mod.ModAuthor))
+                if (CoreUtils.BannedCharacters.IsMatch(mod.ModID) || CoreUtils.BannedCharacters.IsMatch(mod.ModName) || CoreUtils.BannedCharacters.IsMatch(mod.ModAuthor))
                 {
                     Console.LogError(modFile.Name, $"{modFile.Name} contains invalid characters (_ or |) in its ID, name or author. Please remove them and try again.");
                     throw new ModException("Invalid characters in ModID/ModName/ModAuthor!", null, 103);
@@ -259,26 +275,27 @@ namespace JaLoader
 
                 var genericModData = new GenericModData(mod.ModID, mod.ModName, mod.ModVersion, mod.ModDescription, mod.ModAuthor, mod.GitHubLink, mod);
                 var text = UIManager.Instance.CreateModEntryReturnText(genericModData);
-                ModManager.AddMod(mod, mod.WhenToInit, text, genericModData);
+#pragma warning disable CS0618
+                ModManager.AddMod(mod, (Common.WhenToInit)(int)mod.WhenToInit, text, genericModData);
 
-                Debug.Log($"Part 1/2 of initialization for mod {mod.ModName} completed");
+                Console.LogDebug("JaLoader", $"Part 1/2 of initialization for mod {mod.ModName} completed");
 
                 if (certainModFile != "")
                 {
-                    if (mod.WhenToInit == WhenToInit.InMenu)
+                    if ((Common.WhenToInit)(int)mod.WhenToInit == Common.WhenToInit.InMenu)
                         ModManager.FinishLoadingMod(mod);
-                    else if (mod.WhenToInit == WhenToInit.InGame && SceneManager.GetActiveScene().buildIndex == 3)
+                    else if ((Common.WhenToInit)(int)mod.WhenToInit == Common.WhenToInit.InGame && SceneManager.GetActiveScene().buildIndex == 3)
                         ModManager.FinishLoadingMod(mod);
                     else
                         ModManager.FinishLoadingMod(mod, false);
                 }
+#pragma warning restore CS0618
 
                 outMod = mod;
                 #endregion
             }
             catch (Exception ex)
             {
-                Debug.Log($"Failed to initialize mod {modFile.Name}");
                 Console.LogError("JaLoader", $"An error occured while trying to initialize mod \"{modFile.Name}\": ");
 
                 var obj = UIManager.Instance.CreateModEntryReturnEntry(new GenericModData(modFile.Name, modFile.Name, "Failed to load", $"{modFile.Name} experienced an issue during loading and couldn't be initialized. You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.", "Unknown", "", null));
@@ -297,39 +314,40 @@ namespace JaLoader
                             string versionSection = parts[1].Trim();
 
                             int versionIndex = versionSection.IndexOf("Version=");
-                            if (versionIndex != -1)
+
+                            UIManager.Instance.AddWarningToMod(obj, $"Missing assembly: {dllName}", true);
+
+                            if (versionIndex == -1)
+                            {
+                                errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}";
+                            }
+                            else
                             {
                                 string versionNumber = versionSection.Substring(versionIndex + "Version=".Length).Trim();
-
-                                UIManager.Instance.AddWarningToMod(obj, $"Missing assembly: {dllName}", true);
-
                                 errorMessage = $"\"{modFile.Name}\" requires the following DLL: {dllName}, version {versionNumber}";
-                                Debug.Log(errorMessage);
-                                Console.LogError("JaLoader", errorMessage);
-                                Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                             }
+
+
+                            Console.LogError("JaLoader", errorMessage);
+                            Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                         }
                         break;
 
                     case ReflectionTypeLoadException typeLoadException:
                         errorMessage = $"{modFile.Name} has a type load exception. This may be caused by a missing reference. Contact the mod author.";
                         UIManager.Instance.AddWarningToMod(obj, errorMessage, true);
-                        Debug.LogError(errorMessage);
-                        Debug.LogError(typeLoadException);
                         Console.LogError("JaLoader", errorMessage);
+                        Console.LogError("JaLoader", typeLoadException);
                         Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                         break;
 
                     case ModException modLoadException:
                         UIManager.Instance.AddWarningToMod(obj, $"Mod Load Exception: {modLoadException.Message}", true);
-                        Debug.LogError($"Mod Load Exception: {modLoadException.Message}");
                         Console.LogError("JaLoader", $"Mod Load Exception: {modLoadException.Message}");
                         break;
 
                     default:
                         Console.LogError("JaLoader", ex);
-                        Debug.Log(ex);
-                        Debug.Log("You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
                         Console.LogError("JaLoader", "You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.");
 
                         if (isBepInExMod)
@@ -356,9 +374,42 @@ namespace JaLoader
             return true;
         }
 
+        public void StartInitializeMods()
+        {
+            StartCoroutine(InitializeMods());
+        }
+
+        internal IEnumerator CheckIfModInstalled(string author, string repo)
+        {
+            var maximumTime = 60;
+            var currentTime = 0;
+
+            author = author.Replace("\n", "").Replace("\r", "");
+            repo = repo.Replace("\n", "").Replace("\r", "");
+
+            while (!File.Exists(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt")))
+            {
+                if (maximumTime == currentTime)
+                {
+                    UIManager.Instance.ShowNotice("MOD INSTALLATION FAILED", "The mod installation failed. Please make sure you have the correct URL and that your internet connection is stable.", ignoreObstructRayChange: true);
+                    yield break;
+                }
+
+                currentTime++;
+                yield return new WaitForSeconds(1);
+            }
+
+            var dllName = File.ReadAllText(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
+            File.Delete(Path.Combine(JaLoaderSettings.ModFolderLocation, $"{author}_{repo}_Installed.txt"));
+
+            StartCoroutine(ReferencesLoader.LoadAssemblies());
+            InitializeMod(out _, certainModFile: dllName);
+            yield return null;
+        }
+
         public IEnumerator InitializeMods()
         {
-            while (!ReferencesLoader.Instance.canLoadMods)
+            while (!ReferencesLoader.CanLoadMods)
                 yield return null;
 
             DebugUtils.SignalStartInit();
@@ -384,22 +435,25 @@ namespace JaLoader
             List<Mod> reloadedMods = new List<Mod>();
 
             foreach (var script in ModManager.Mods)
-                if (script.Value.InitTime == WhenToInit.InGame)
-                {
-                    var mod = (Mod)script.Key;
+            {
+                if (script.Value.InitTime == Common.WhenToInit.InMenu)
+                    continue;
 
-                    modsToRemove.Add(script.Value);
-                    modObjAndType.Add(mod.gameObject, mod.GetType());
+                var mod = (Mod)script.Key;
 
-                    Destroy(mod);
-                    if (UIManager.Instance.ModsSettingsContent.Find($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"))
-                        Destroy(UIManager.Instance.ModsSettingsContent.Find($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder").gameObject);
+                modsToRemove.Add(script.Value);
+                modObjAndType.Add(mod.gameObject, mod.GetType());
 
-                    Destroy(UIManager.Instance.modEntries[script.Value.GenericModData]);
-                    UIManager.Instance.modEntries.Remove(script.Value.GenericModData);
+                Destroy(mod);
+                if (UIManager.Instance.ModsSettingsContent.Find($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"))
+                    Destroy(UIManager.Instance.ModsSettingsContent.Find($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder").gameObject);
 
-                    Console.Instance.RemoveCommandsFromMod(mod);
-                }
+                Destroy(UIManager.Instance.modEntries[script.Value.GenericModData]);
+                UIManager.Instance.modEntries.Remove(script.Value.GenericModData);
+
+                Console.Instance.RemoveCommandsFromMod(mod);
+            }
+                
 
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
@@ -408,12 +462,12 @@ namespace JaLoader
             {
                 foreach (var mod in ModManager.Mods)
                 {
-                    if (mod.Value.GenericModData == toRemove.GenericModData)
-                    {
-                        ModManager.Mods.Remove(mod.Key);
-                        ModManager.loadOrderList.Remove(mod.Key);
-                        break;
-                    }
+                    if (mod.Value.GenericModData != toRemove.GenericModData)
+                        continue;
+
+                    ModManager.Mods.Remove(mod.Key);
+                    ModManager.loadOrderList.Remove(mod.Key);
+                    break;
                 }
 
                 foreach (KeyValuePair<GameObject, Type> modObj in modObjAndType)
@@ -429,18 +483,19 @@ namespace JaLoader
                 CustomObjectsManager.Instance.ignoreAlreadyExists = true;
                 foreach (var mod in reloadedMods)
                 {
-                    if (ModManager.Mods[mod].GenericModData.IsEnabled == true)
+                    if (!ModManager.Mods[mod].GenericModData.IsEnabled)
+                        continue;
+
+                    try
                     {
-                        try
-                        {
-                            mod.OnReload();
+                        mod.OnReload();
 
-                            ModManager.FinishLoadingMod(mod);
-                        }
-                        catch (Exception)
-                        {
-
-                        }
+                        ModManager.FinishLoadingMod(mod);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.LogError("JaLoader", $"An error occurred while reloading mod {mod.ModName}: {ex.Message}");
+                        UIManager.Instance.AddWarningToMod(UIManager.Instance.CreateModEntryReturnEntry(ModManager.Mods[mod].GenericModData), $"Failed to reload mod: {ex.Message}", true);
                     }
                 }
                 CustomObjectsManager.Instance.ignoreAlreadyExists = false;

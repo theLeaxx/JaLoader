@@ -8,6 +8,7 @@ using System.IO;
 using JaLoader.Common;
 using JaLoader.Common.Interfaces;
 using ILogger = JaLoader.Common.Interfaces.ILogger;
+using UnityEngine.Experimental.UIElements;
 
 namespace JaLoader
 {
@@ -72,13 +73,13 @@ namespace JaLoader
         private static readonly List<(string, string, string)> queuedLogs = new List<(string, string, string)>();
         private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
         private readonly List<string> enteredCommands = new List<string>();
-        
+
         public bool Visible
         {
             get { return uiManager.JLConsole.activeSelf; }
             private set { }
         }
-        
+
         public void Init()
         {
             uiManager = UIManager.Instance;
@@ -101,7 +102,7 @@ namespace JaLoader
                 }
             }
 
-            customCommands.Add((commandName, description ,methodName), mod);
+            customCommands.Add((commandName, description, methodName), mod);
         }
 
         public void RemoveCommandsFromMod(Mod mod)
@@ -172,12 +173,16 @@ namespace JaLoader
             }
         }
 
-        public void UpdateConsole(float value)
+        public void Keep100MessagesLimit()
         {
-            if (uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0).childCount > 100)
-                Destroy(uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0).GetChild(1).gameObject);
+            if (uiManager.ConsoleList.childCount > 100)
+                DestroyImmediate(uiManager.ConsoleList.GetChild(1).gameObject);
+        }
 
-            StartCoroutine(ApplyScrollPosition(uiManager.JLConsole.transform.GetChild(1).GetComponent<ScrollRect>(), value));
+        public void UpdateConsole()
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)uiManager.ConsoleScrollRect.transform);
+            uiManager.ConsoleScrollRect.verticalNormalizedPosition = 0f;
         }
 
         public void ToggleVisibility(bool visible)
@@ -189,13 +194,6 @@ namespace JaLoader
             }
 
             uiManager.JLConsole.SetActive(visible);
-        }
-
-        IEnumerator ApplyScrollPosition(ScrollRect sr, float verticalPos)
-        {
-            yield return new WaitForEndOfFrame();
-            sr.verticalNormalizedPosition = verticalPos;
-            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)sr.transform);
         }
 
         #region Logging
@@ -227,7 +225,23 @@ namespace JaLoader
             if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
                 return;
 
-            Instance.LogMessage("/", message, "aqua");
+            Instance.InternalLogMessage("/", message, "aqua");
+        }
+
+        internal static void LogMessage(object message, bool debugLog)
+        {
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
+                return;
+
+            Instance.InternalLogMessage("/", message, "aqua", debugLog);
+        }
+
+        internal static void LogMessage(object sender, object message, bool debugLog)
+        {
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
+                return;
+
+            Instance.InternalLogMessage(sender, message, "aqua", debugLog);
         }
 
         /// <summary>
@@ -240,7 +254,7 @@ namespace JaLoader
             if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
                 return;
 
-            Instance.LogMessage(sender, message, "aqua");
+            Instance.InternalLogMessage(sender, message, "aqua");
         }
 
         /// <summary>
@@ -249,6 +263,7 @@ namespace JaLoader
         /// <param name="message"></param>
         public static void LogOnlyToFile(object message)
         {
+            Debug.Log($"'/': {message}");
             log.Add($"{DateTime.Now} > '/': '{message}'");
             Instance.WriteLog();
         }
@@ -259,6 +274,7 @@ namespace JaLoader
         /// <param name="message"></param>
         public static void LogWarningOnlyToFile(object message)
         {
+            Debug.LogWarning($"[WARNING] '/': {message}");
             log.Add($"{DateTime.Now} >! '/': '{message}'");
             Instance.WriteLog();
         }
@@ -269,6 +285,7 @@ namespace JaLoader
         /// <param name="message"></param>"
         public static void LogErrorOnlyToFile(object message)
         {
+            Debug.LogError($"[ERROR] '/': {message}");
             log.Add($"{DateTime.Now} >!! '/': '{message}'");
             Instance.WriteLog();
         }
@@ -279,6 +296,7 @@ namespace JaLoader
         /// <param name="message"></param>"
         public static void LogDebugOnlyToFile(object message)
         {
+            Debug.Log($"[DEBUG] '/': {message}");
             log.Add($"{DateTime.Now} * '/': '{message}'");
             Instance.WriteLog();
         }
@@ -287,14 +305,23 @@ namespace JaLoader
         {
             foreach ((string, string, string) log in queuedLogs)
             {
-                LogMessage(log.Item1, log.Item2, log.Item3);
+                InternalLogMessage(log.Item1, log.Item2, log.Item3);
             }
 
             queuedLogs.Clear();
         }
 
-        private void LogMessage(object sender, object message, string color)
+        internal void InternalLogMessage(object sender, object message, string color, bool debugLog = true)
         {
+            if (sender == null && message == null)
+                return;
+
+            if (sender == null)
+                sender = "/";
+
+            if (message == null)
+                message = "null";
+            
             if (!init)
             {
                 queuedLogs.Add((sender.ToString(), message.ToString(), color));
@@ -302,18 +329,26 @@ namespace JaLoader
                 switch (color)
                 {
                     case "grey":
+                        if(debugLog)
+                            Debug.Log($"[DEBUG] [{sender}] {message}");
                         log.Add($"{DateTime.Now} * '{sender}': '{message}'");
                         break;
 
                     case "red":
+                        if(debugLog)
+                            Debug.LogError($"[ERROR] [{sender}] {message}");
                         log.Add($"{DateTime.Now} >!! '{sender}': '{message}'");
                         break;
 
                     case "yellow":
+                        if(debugLog)
+                            Debug.LogWarning($"[WARNING] [{sender}] {message}");
                         log.Add($"{DateTime.Now} >! '{sender}': '{message}'");
                         break;
 
                     case "aqua":
+                        if(debugLog)
+                            Debug.Log($"[INFO] [{sender}] {message}");
                         log.Add($"{DateTime.Now} > '/': '{message}'");
                         break;
                 }
@@ -322,28 +357,34 @@ namespace JaLoader
 
             ToggleVisibility(true);
 
-            float _value = UIManager.Instance.JLConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
-
             GameObject _msg = Instantiate(uiManager.ConsoleMessageTemplate);
             _msg.transform.SetParent(uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
             switch (color)
             {
                 case "grey":
+                    if (debugLog)
+                        Debug.Log($"[DEBUG] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=grey>{sender}: {message}</color>";
                     log.Add($"{DateTime.Now} * '{sender}': '{message}'");
                     break;
 
                 case "red":
+                    if (debugLog)
+                        Debug.LogError($"[ERROR] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: <color=red>{message}</color>";
                     log.Add($"{DateTime.Now} >!! '{sender}': '{message}'");
                     break;
 
                 case "yellow":
+                    if (debugLog)
+                        Debug.LogWarning($"[WARNING] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: <color=yellow>{message}</color>";
                     log.Add($"{DateTime.Now} >! '{sender}': '{message}'");
                     break;
 
                 case "aqua":
+                    if (debugLog)
+                        Debug.Log($"[INFO] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: {message}";
                     log.Add($"{DateTime.Now} > '/': '{message}'");
                     break;
@@ -351,7 +392,8 @@ namespace JaLoader
 
             _msg.SetActive(true);
 
-            UpdateConsole(_value);
+            Keep100MessagesLimit();
+            UpdateConsole();
             WriteLog();
         }
 
@@ -368,7 +410,7 @@ namespace JaLoader
                 return;
             }
 
-            Instance.LogMessage(sender, message, "yellow");
+            Instance.InternalLogMessage(sender, message, "yellow");
         }
 
         /// <summary>
@@ -383,7 +425,7 @@ namespace JaLoader
                 return;
             }
 
-            Instance.LogMessage("/", message, "yellow");
+            Instance.InternalLogMessage("/", message, "yellow");
         }
 
         /// <summary>
@@ -399,7 +441,7 @@ namespace JaLoader
                 return;
             }
 
-            Instance.LogMessage(sender, message, "red");
+            Instance.InternalLogMessage(sender, message, "red");
         }
 
         /// <summary>
@@ -414,7 +456,7 @@ namespace JaLoader
                 return;
             }
 
-            Instance.LogMessage("/", message, "red");
+            Instance.InternalLogMessage("/", message, "red");
         }
 
         /// <summary>
@@ -430,7 +472,7 @@ namespace JaLoader
                 return;
             }
 
-            Instance.LogMessage(sender, message, "grey");
+            Instance.InternalLogMessage(sender, message, "grey");
         }
 
         /// <summary>
@@ -445,7 +487,7 @@ namespace JaLoader
                 return;
             }
 
-            Instance.LogMessage("/", message, "grey");
+            Instance.InternalLogMessage("/", message, "grey");
         }
 
         private void OnApplicationQuit()
@@ -613,7 +655,7 @@ namespace JaLoader
                         string time = inputWords[2].ToLower();
                         int hours = 0, minutes = 0;
 
-                        if(time != "day" && time != "night")
+                        if (time != "day" && time != "night")
                         {
                             if (!time.Contains(":"))
                             {
@@ -639,7 +681,7 @@ namespace JaLoader
                         if (time == "day")
                             hours = 12;
 
-                        if(time == "night")
+                        if (time == "night")
                             hours = 20;
 
                         switch (inputWords[1])
@@ -702,7 +744,7 @@ namespace JaLoader
             car.transform.position = player.transform.position + player.transform.forward * 8 + new Vector3(0, 2, 0);
             car.transform.rotation = player.transform.rotation;
             script.SendMessage("SavePause");
-            if(script.isPaused == 0)
+            if (script.isPaused == 0)
                 script.SendMessage("UpdateTime", 1f);
 
             Log("/", "Teleported laika to player!");
@@ -720,34 +762,30 @@ namespace JaLoader
 
         private void ShowHelp()
         {
-            LogMessage("'help' - Shows this");
-            LogMessage("'clear' - Clears the console");
-            LogMessage("'mods' - Toggles the mod list");
-            LogMessage("'path' - Prints the mods path");
-            LogMessage("'version' - Prints the modloader's version");
-            LogMessage("'debug' - Toggle debug messages");
-            LogMessage("Cheat commands (only work in-game)", "");
-            LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet");
-            LogMessage("/", "'time set {hr:min/day/night}' - Sets the time to the specified hour/day/night");
-            LogMessage("'repairkit' - Spawns a repair kit near you");
-            LogMessage("'gascan' - Spawns a filled gas can near you");
-            LogMessage("'repairall' - Restores every installed part to full condition");
-            LogMessage("/", "'laika' - Teleports the Laika in front of you");
-            LogMessage("/", "'tolaika' - Teleports you to the Laika");
-            LogMessage("Debug commands", "");
-            LogMessage("/", "`freecam` - Toggles freecam");
-            LogMessage("/", "`tofreecam` - Teleports the player to the freecam's position");
+            LogMessage("'help' - Shows this", false);
+            LogMessage("'clear' - Clears the console", false);
+            LogMessage("'mods' - Toggles the mod list", false);
+            LogMessage("'path' - Prints the mods path", false);
+            LogMessage("'version' - Prints the modloader's version", false);
+            LogMessage("'debug' - Toggle debug messages", false);
+            LogMessage("Cheat commands (only work in-game)", "", false);
+            LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet", false);
+            LogMessage("/", "'time set {hr:min/day/night}' - Sets the time to the specified hour/day/night", false);
+            LogMessage("'repairkit' - Spawns a repair kit near you", false);
+            LogMessage("'gascan' - Spawns a filled gas can near you", false);
+            LogMessage("'repairall' - Restores every installed part to full condition", false);
+            LogMessage("'laika' - Teleports the Laika in front of you", false);
+            LogMessage("'tolaika' - Teleports you to the Laika", false);
+            LogMessage("Debug commands", "", false);
+            LogMessage("`freecam` - Toggles freecam", false);
+            LogMessage("`tofreecam` - Teleports the player to the freecam's position", false);
 
-            if(customCommands.Count > 0)
+            if (customCommands.Count > 0)
             {
                 LogMessage("Mods commands", "");
                 foreach ((string, string, string) pair in customCommands.Keys)
                     LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
             }
-
-            float _value = UIManager.Instance.JLConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
-
-            UpdateConsole(_value);
         }
 
         private void SpawnRepairKit()
@@ -843,24 +881,54 @@ namespace JaLoader
                     Destroy(message.gameObject);
         }
 
-        public void Log(string message, string author = null)
+        public void ILog(object author, object message)
         {
-            Log(message, author);
+            Log(author, message);
         }
 
-        public void LogWarning(string message, string author = null)
+        public void ILogMessage(object author, object message)
         {
-            LogWarning(message, author);
+            LogMessage(author, message);
         }
 
-        public void LogError(string message, string author = null)
+        public void ILogWarning(object author, object message)
         {
-            LogError(message, author);
+            LogWarning(author, message);
         }
 
-        public void LogDebug(string message, string author = null)
+        public void ILogError(object author, object message)
         {
-            LogDebug(message, author);
+            LogError(author, message);
+        }
+
+        public void ILogDebug(object author, object message)
+        {
+            LogDebug(author, message);
+        }
+
+        public void ILog(object message)
+        {
+            LogMessage(message);
+        }
+
+        public void ILogMessage(object message)
+        {
+            LogMessage(message);
+        }
+
+        public void ILogWarning(object message)
+        {
+            LogWarning(message);
+        }
+
+        public void ILogError(object message)
+        {
+            LogError(message);
+        }
+
+        public void ILogDebug(object message)
+        {
+            LogDebug(message);
         }
     }
 }

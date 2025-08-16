@@ -4,6 +4,7 @@ using MonoMod.RuntimeDetour;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -12,38 +13,23 @@ using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using Random = UnityEngine.Random;
+using Debug = UnityEngine.Debug;
 
 namespace JaLoader
 {
-    public class HarmonyManager : MonoBehaviour
+    public class HarmonyManager
     {
-        #region Singleton
-        public static HarmonyManager Instance { get; private set; }
         private static Harmony harmony;
-        private void Awake()
+
+        internal static void CreateHarmony()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-            }
-            else
-            {
-                Instance = this;
-            }
-
-            gameObject.AddComponent<CoroutineManager>();
-
             harmony = new Harmony("Leaxx.JaLoader");
-            PatchAll();
-        }
-        #endregion
-
-        public void PatchAll()
-        {
             harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            Debug.Log("Harmony patches applied successfully!");
         }
 
-        public static void SetArgumentsFromScript(ref ObjectEventArgs args, ObjectPickupC script)
+        internal static void SetArgumentsFromScript(ref ObjectEventArgs args, ObjectPickupC script)
         {
             args.gameObject = script.gameObject;
             args.gameObjectName = script.gameObject.name;
@@ -92,6 +78,33 @@ namespace JaLoader
         }
     }
 
+    // This patch is essential for the adding extra space/slots feature
+
+    [HarmonyPatch(typeof(MonoBehaviour), "StartCoroutine", typeof(IEnumerator))]
+    public static class StartCoroutineStackPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(IEnumerator routine)
+        {
+            var stackTrace = new StackTrace();
+            for (int i = 1; i < stackTrace.FrameCount; i++)
+            {
+                var methodBase = stackTrace.GetFrame(i).GetMethod();
+                var type = methodBase.DeclaringType;
+                if (type == typeof(MainMenuC))
+                {
+                    if (routine is IEnumerator && routine.ToString().ToLowerInvariant().Contains("loadbootinventory"))
+                    {
+                        if(!ModHelper.Instance.ShouldLoadInventory)
+                            return false; 
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(InventoryLogicC), "Update")]
     public static class InventoryLogicC_Update_Patch
     {
@@ -101,8 +114,7 @@ namespace JaLoader
             if (__instance.gameObject.name == "Boot")
             {
                 var inventoryClickBlock = __instance.GetType().GetField("inventoryClickBlock", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (inventoryClickBlock != null)
-                    inventoryClickBlock.SetValue(__instance, false);
+                inventoryClickBlock?.SetValue(__instance, false);
             }
         }
     }
@@ -610,17 +622,6 @@ namespace JaLoader
             bool radioAds = false;
 
             radioAds = JaLoaderSettings.RadioAds;
-            /*Transform[] allObjects = GameObject.FindObjectsOfType<Transform>();
-
-            foreach (Transform obj in allObjects)
-            {
-                if (obj.name == "JaLoader" && obj.gameObject.layer == 0 && obj.tag == "Untagged" && obj.transform.parent == null)
-                {
-                    var utilitiesObj = obj.transform.Find("JaLoader Utilities");
-                    var component = utilitiesObj.GetComponents<MonoBehaviour>()[1];
-                    radioAds = (bool)component.GetType().GetField("RadioAds", BindingFlags.Instance | BindingFlags.Public).GetValue(component);
-                }
-            }*/
 
             if (!radioAds)
             {
@@ -846,8 +847,7 @@ namespace JaLoader
         {
             GameTweaks.Instance.isDialogueActive = false;
 
-            if (GameObject.FindObjectOfType<DialogueReceiver>() != null)
-                GameObject.FindObjectOfType<DialogueReceiver>().TextFinished();
+            GameObject.FindObjectOfType<DialogueReceiver>()?.TextFinished();
         }
     }
 

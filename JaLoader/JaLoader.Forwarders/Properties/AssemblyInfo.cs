@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("JaLoaderClassic")]
+[assembly: AssemblyTitle("JaLoader.Forwarders")]
 [assembly: AssemblyDescription("A mod loader & manager for Jalopy")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Leaxx")]
-[assembly: AssemblyProduct("JaLoader")]
+[assembly: AssemblyProduct("JaLoader.Forwarders")]
 [assembly: AssemblyCopyright("Copyright © 2024-2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("9e5f22b6-97b7-4b68-bbb4-9cde89904a20")]
+[assembly: Guid("5f32c857-15fe-475a-a408-1aa5cd83398c")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -31,3 +31,5 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyVersion("1.0.0")]
 [assembly: AssemblyFileVersion("1.0.0")]
+[assembly: TypeForwardedTo(typeof(JaLoader.Common.WhenToInit))]
+

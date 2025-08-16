@@ -5,7 +5,8 @@ using System.Text;
 
 namespace JaLoader.Common
 {
-    public interface ISettingsManager
+    public interface IGitHubReleaseUtils
     {
+        string GetLatestTagFromAPIURL(string URL, string modName = null);
     }
 }

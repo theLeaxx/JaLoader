@@ -76,11 +76,11 @@ namespace JaLoader
 
             FileInfo[] MP3Songs = dir.GetFiles("*.mp3");
 
-            UnityEngine.Debug.Log($"Found {MP3Songs.Length} .mp3 files, loading audio clips!");
+            Console.LogDebug("JaLoader", $"Found {MP3Songs.Length} .mp3 files, loading audio clips!");
 
             foreach (FileInfo file in MP3Songs) 
             {
-                UnityEngine.Debug.Log($"Loading song {file.Name}!");
+                Console.LogDebug("JaLoader", $"Loading song {file.Name}!");
 
                 try
                 {
@@ -96,7 +96,7 @@ namespace JaLoader
 
                     if (clip.frequency != 44100)
                     {
-                        Console.LogError($"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
+                        Console.LogError("JaLoader", $"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
 
                         continue;
                     }
@@ -107,19 +107,16 @@ namespace JaLoader
                 }
                 catch (Exception ex)
                 {
-                    Console.LogError($"Failed to load song '{file.Name}'! A common cause is the song being too long.");
+                    Console.LogError("JaLoader", $"Failed to load song '{file.Name}'! A common cause is the song being too long.");
                     Console.LogError(ex);
-
-                    UnityEngine.Debug.LogError($"Failed to load song {file.Name}!");
-                    UnityEngine.Debug.LogError(ex.Message);
 
                     continue;
                 }
 
-                UnityEngine.Debug.Log($"Loaded song {file.Name}!");
+                Console.LogDebug("JaLoader", $"Loaded song {file.Name}!");
             }
 
-            UnityEngine.Debug.Log($"Song loading complete ({loadedSongs.Count} songs)!");
+            Console.LogDebug("JaLoader", $"Song loading complete ({loadedSongs.Count} songs)!");
 
             while (SceneManager.GetActiveScene().buildIndex != 1)
                 yield return null;
@@ -150,7 +147,7 @@ namespace JaLoader
             if (SceneManager.GetActiveScene().buildIndex != 1)
                 return;
 
-            RadioFreq.SetActive(enabled);
+            RadioFreq.SetActive(enable);
             menuVolumeChanger.volume = volume;
         }
 

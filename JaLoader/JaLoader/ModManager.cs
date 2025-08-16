@@ -1,14 +1,15 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using JaLoader.BepInExWrapper;
+using JaLoader.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
-using JaLoader.Common;
 
 namespace JaLoader
 {
@@ -25,7 +26,6 @@ namespace JaLoader
         internal static void Initialize()
         {
             EventsManager.Instance.OnModsInitialized += LoadModOrder;
-
             EventsManager.Instance.OnGameLoad += EnableGameMods;
             EventsManager.Instance.OnGameUnload += UnloadGameMods;
             EventsManager.Instance.OnMenuLoad += UnloadGameMods;
@@ -39,7 +39,7 @@ namespace JaLoader
             reloadGameModsRequired = true;
 
             foreach (var script in Mods)
-                if (script.Value.InitTime == WhenToInit.InGame && script.Value.IsEnabled)
+                if (script.Value.InitTime == Common.WhenToInit.InGame && script.Value.IsEnabled)
                     script.Key.gameObject.SetActive(false);
         }
 
@@ -57,7 +57,7 @@ namespace JaLoader
             }
 
             foreach (var script in Mods)
-                if (script.Value.InitTime == WhenToInit.InGame && script.Value.IsEnabled)
+                if (script.Value.InitTime == Common.WhenToInit.InGame && script.Value.IsEnabled)
                     script.Key.gameObject.SetActive(true);
         }
 
@@ -97,7 +97,7 @@ namespace JaLoader
 
             foreach (var script in Mods)
             {
-                if(script.Value.InitTime == WhenToInit.InMenu)
+                if(script.Value.InitTime == Common.WhenToInit.InMenu)
                     FinishLoadingMod(script.Key);
                 else
                     FinishLoadingMod(script.Key, false);
@@ -115,7 +115,6 @@ namespace JaLoader
         {
             if (string.IsNullOrEmpty(ID) || string.IsNullOrEmpty(author))
             {
-                Debug.LogError("Invalid parameters provided to IsModEnabled.");
                 Console.LogError("JaLoader", "Invalid parameters provided to IsModEnabled. ID and author cannot be null or empty.");
                 throw new ModException("Invalid parameters provided to IsModEnabled. ID and author cannot be null or empty.", "", 104);
             }
@@ -191,7 +190,7 @@ namespace JaLoader
                         mod.SaveModSettings();
                     }
 
-                    Debug.Log($"Part 2/2 of initialization for mod {mod.ModName} completed");
+                    Console.LogDebug("JaLoader", $"Part 2/2 of initialization for mod {mod.ModName} completed");
 
                     if (!enableMod)
                         return;
@@ -199,7 +198,7 @@ namespace JaLoader
                     if (Mods[mod].IsEnabled)
                         mod.gameObject.SetActive(true);
 
-                    Debug.Log($"Loaded mod {mod.ModName}");
+                    Console.LogDebug("JaLoader", $"Loaded mod {mod.ModName}");
                 }
                 catch (Exception _ex)
                 {
@@ -218,7 +217,7 @@ namespace JaLoader
                 {
                     plugin.InstantiateBIXPluginSettings();
 
-                    Debug.Log($"Part 2/2 of initialization for BepInEx mod {modInfo.Name} completed");
+                    Console.LogDebug("JaLoader", $"Part 2/2 of initialization for BepInEx mod {modInfo.Name} completed");
 
                     if (Mods[plugin].IsEnabled)
                         plugin.gameObject.SetActive(true);
@@ -240,7 +239,7 @@ namespace JaLoader
                     if (plugin.configEntries.Count > 0)
                         plugin.LoadBIXPluginSettings();
 
-                    Debug.Log($"Loaded BepInEx mod {modInfo.Name}");
+                    Console.LogDebug("JaLoader", $"Loaded BepInEx mod {modInfo.Name}");
 
                 }
                 catch (Exception _ex)
@@ -254,11 +253,9 @@ namespace JaLoader
             {
                 script.gameObject.SetActive(false);
 
-                Debug.Log($"Part 2/2 of initialization for {(isBepInEx == true ? "BepInEx " : "")}mod {modName} failed");
-                Debug.Log($"Failed to load {(isBepInEx == true ? "BepInEx " : "")}mod {modName}. An error occoured while enabling the mod.");
-                Debug.Log(ex);
-
-                Console.LogError("JaLoader", $"An error occured while trying to load {(isBepInEx == true ? "BepInEx " : "")}mod \"{modName}\"");
+                Console.LogError("JaLoader", $"Part 2/2 of initialization for {(isBepInEx == true ? "BepInEx " : "")}mod {modName} failed");
+                Console.LogError("JaLoader", $"Failed to load {(isBepInEx == true ? "BepInEx " : "")}mod {modName}. An error occoured while enabling the mod.");
+                Console.LogError("JaLoader", ex);
 
                 Mods.Remove(script);
             }
@@ -277,11 +274,11 @@ namespace JaLoader
             }
         }
 
-        internal static void AddMod(MonoBehaviour mod, WhenToInit initTime, Text displayText, GenericModData data)
+        internal static void AddMod(MonoBehaviour mod, Common.WhenToInit initTime, Text displayText, GenericModData data)
         {
             if (Mods.ContainsKey(mod))
             {
-                Debug.LogWarning($"Mod {mod.name} is already registered in the ModManager.");
+                Console.LogWarning("JaLoader", $"Mod {mod.name} is already registered in the ModManager.");
                 return;
             }
 
@@ -302,22 +299,22 @@ namespace JaLoader
 
             if (enabledStatus)
             {
-                managerData.IsEnabled = false;
+                data.IsEnabled = false;
                 toggleBtn.text = "Enable";
-                modEntry.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = CommonColors.DisabledModColor;
-                modEntry.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = CommonColors.DisabledModColor;
+                modEntry.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = CommonColors.DisabledModColor.ToColor();
+                modEntry.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = CommonColors.DisabledModColor.ToColor();
 
-                if (managerData.InitTime == WhenToInit.InMenu)
+                if (managerData.InitTime == Common.WhenToInit.InMenu)
                     managerData.GenericModData.Mod.gameObject.SetActive(false);
             }
             else if (!enabledStatus)
             {
-                managerData.IsEnabled = true;
+                data.IsEnabled = true;
                 toggleBtn.text = "Disable";
-                modEntry.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = CommonColors.EnabledModColor;
-                modEntry.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = CommonColors.EnabledModColor;
+                modEntry.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = CommonColors.EnabledModColor.ToColor();
+                modEntry.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = CommonColors.EnabledModColor.ToColor();
 
-                if (managerData.InitTime == WhenToInit.InMenu)
+                if (managerData.InitTime == Common.WhenToInit.InMenu)
                     managerData.GenericModData.Mod.gameObject.SetActive(true);
             }
 
@@ -412,7 +409,7 @@ namespace JaLoader
             }
             else
             {
-                Debug.LogError($"Mod {data.ModName} not found in ModManager.");
+                Console.LogError("JaLoader", $"Mod {data.ModName} not found in ModManager.");
                 return null;
             }
         }
@@ -428,7 +425,6 @@ namespace JaLoader
         {
             if (string.IsNullOrEmpty(author) || string.IsNullOrEmpty(ID))
             {
-                Debug.LogError("Invalid parameters provided to FindMod.");
                 Console.LogError("JaLoader", "Invalid parameters provided to FindMod.");
                 throw new ModException("Invalid parameters provided to FindMod. Author and ID cannot be null or empty.", "", 104);
             }
@@ -505,12 +501,90 @@ namespace JaLoader
                 }
             }
 
-            Debug.Log("Saved mods order");
+            Console.LogDebug("JaLoader", "Saved mods order");
         }
 
         internal static void LoadModOrder()
         {
             LoadModOrder(true);
+        }
+
+        internal static void SaveModSettings()
+        {
+            for (int i = 0; i < UIManager.Instance.ModsSettingsContent.transform.childCount; i++)
+            {
+                if (UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
+                {
+                    string fullName = UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.name;
+
+                    string modAuthor;
+                    string modID;
+                    string modName;
+
+                    string[] parts = fullName.Split('_');
+
+                    modAuthor = parts[0];
+                    modID = parts[1];
+
+                    modName = parts[2];
+                    modName = modName.Remove(modName.Length - 15);
+
+                    if (string.IsNullOrEmpty(modName))
+                        modName = modID;
+
+                    var mod = ModManager.FindMod(modAuthor, modID, modName);
+
+                    if (mod != null && mod is Mod)
+                    {
+                        var modClass = mod as Mod;
+                        modClass.SaveModSettings();
+                    }
+                    else if (mod != null && mod is BaseUnityPlugin)
+                    {
+                        var modClass = mod as BaseUnityPlugin;
+                        modClass.SaveBIXPluginSettings();
+                    }
+                }
+            }
+        }
+
+        internal static void ResetModSettings()
+        {
+            for (int i = 0; i < UIManager.Instance.ModsSettingsContent.transform.childCount; i++)
+            {
+                if (UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
+                {
+                    string fullName = UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.name;
+
+                    string modAuthor;
+                    string modID;
+                    string modName;
+
+                    string[] parts = fullName.Split('_');
+
+                    modAuthor = parts[0];
+                    modID = parts[1];
+
+                    modName = parts[2];
+                    modName = modName.Remove(modName.Length - 15);
+
+                    if (string.IsNullOrEmpty(modName))
+                        modName = modID;
+
+                    var mod = ModManager.FindMod(modAuthor, modID, modName);
+
+                    if (mod != null && mod is Mod)
+                    {
+                        var modClass = mod as Mod;
+                        modClass.ResetModSettings();
+                    }
+                    else if (mod != null && mod is BaseUnityPlugin)
+                    {
+                        var modClass = mod as BaseUnityPlugin;
+                        modClass.SaveBIXPluginSettings();
+                    }
+                }
+            }
         }
 
         internal static void LoadModOrder(bool loadMods = true)
@@ -551,7 +625,7 @@ namespace JaLoader
             else
                 SaveModsOrder();
 
-            Debug.Log("Loaded mods order");
+            Console.LogDebug("JaLoader", "Loaded mods order");
 
             if(loadMods)
                 LoadMods();

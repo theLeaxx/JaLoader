@@ -401,7 +401,7 @@ namespace JaLoader
             EventsManager.Instance.OnCustomObjectsSave();
         }
 
-        public void LoadData(bool full)
+        public void LoadData(bool full, bool loadTrunkOnly = false)
         {
             if (database.Count == 0 || database == null)
                 return;
@@ -444,9 +444,9 @@ namespace JaLoader
                     {
                         obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
                     }
-
+                    
                     #region Load In Engine
-                    if (tuple.Item1.Equals(true))
+                    if (tuple.Item1.Equals(true) && !loadTrunkOnly)
                     {
                         switch (tuple.Item2)
                         {
@@ -489,7 +489,7 @@ namespace JaLoader
                     #endregion
                     else
                     {
-                        if (!full)
+                        if (!full && !loadTrunkOnly)
                             continue;
 
                         if (isUsingOldSaveSystem)
@@ -521,7 +521,7 @@ namespace JaLoader
                     }
                 }
             }
-
+            // see if loadTrunkOnly should not call this later
             EventsManager.Instance.OnCustomObjectsLoad();
         }
 

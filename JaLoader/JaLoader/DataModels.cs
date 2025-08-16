@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using JaLoader.Common;
@@ -11,19 +7,26 @@ namespace JaLoader
 {
     internal class ModDataForManager
     {
-        public WhenToInit InitTime { get; set; }
+        public Common.WhenToInit InitTime { get; set; }
         public bool IsEnabled { get; set; }
         public Text DisplayText { get; set; }
 
         public GenericModData GenericModData { get;}
 
-        public ModDataForManager(WhenToInit initTime, bool isEnabled, Text displayText, GenericModData data)
+        public ModDataForManager(Common.WhenToInit initTime, bool isEnabled, Text displayText, GenericModData data)
         {
             InitTime = initTime;
             IsEnabled = isEnabled;
             DisplayText = displayText;
             GenericModData = data;
         }
+    }
+
+    // bridger for new WhenToInit enum from Common namespace
+    public enum WhenToInit
+    {
+        InMenu,
+        InGame
     }
 
     public class GenericModData
@@ -105,14 +108,4 @@ namespace JaLoader
         }
 
     }
-
-    public static class CommonColors
-    {
-        public static Color ErrorRed = new Color32(255, 83, 83, 255);
-        public static Color EnabledModColor = new Color32(255, 255, 255, 255);
-        public static Color DisabledModColor = new Color32(120, 120, 120, 255);
-        public static Color MenuGreenToolColor = new Color32(120, 255, 85, 255);
-    }
-
-
 }

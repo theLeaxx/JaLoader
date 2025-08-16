@@ -5,36 +5,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using UnityEngine;
-using UnityEngine.SceneManagement;
 
-namespace JaLoader
+namespace JaLoader.Common
 {
-    public class ReferencesLoader : MonoBehaviour
+    public static class ReferencesLoader
     {
-        public static ReferencesLoader Instance { get; private set; }
+        internal static List<string> LoadedReferences = new List<string>();
 
-        private List<string> loadedReferences = new List<string>();
-        private bool loadedAlready = false;
+        internal static bool LoadedAlready = false;
+        public static bool CanLoadMods = false;
 
-        public bool canLoadMods = false;
-
-        private void Awake()
+        public static IEnumerator LoadAssemblies()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-            }
-            else
-            {
-                Instance = this;
-            }
-        }
-
-        public IEnumerator LoadAssemblies()
-        {
-            canLoadMods = false;
+            CanLoadMods = false;
             
             DebugUtils.SignalStartRefLoading();
 
@@ -46,9 +29,9 @@ namespace JaLoader
 
             for (int i = 0; i < asm.Count; i++)
             {
-                for (int j = 0; j < loadedReferences.Count; j++)
+                for (int j = 0; j < LoadedReferences.Count; j++)
                 {
-                    if (asm[i].Name == loadedReferences[j])
+                    if (asm[i].Name == LoadedReferences[j])
                     {
                         asm.RemoveAt(i);
                         i--;
@@ -65,35 +48,34 @@ namespace JaLoader
                 try
                 {
                     Assembly.LoadFrom(asmFile.FullName);
-                    Debug.Log($"Loaded assembly {asmFile.Name}!");
+                    RuntimeVariables.Logger.ILogDebug("JaLoader", $"Loaded assembly {asmFile.Name}!");
                     loadedAsm++;
 
-                    loadedReferences.Add(asmFile.Name);
+                    LoadedReferences.Add(asmFile.Name);
 
                 }
                 catch (Exception ex)
                 {
-                    Console.LogError(ex);
-                    Console.LogError(asmFile.Name, $"Assembly {asmFile.Name} is not a valid assembly!");
+                    RuntimeVariables.Logger.ILogError(ex);
+                    RuntimeVariables.Logger.ILogError(asmFile.Name, $"Assembly {asmFile.Name} is not a valid assembly!");
                     validAsm--;
-                    throw;
                 }
             }
-            canLoadMods = true;
+            CanLoadMods = true;
 
-            if (loadedAlready)
+            if (LoadedAlready)
                 yield break;
 
             if (loadedAsm == 1)
-                Console.LogMessage("JaLoader", $"1 assembly found and loaded!");
+                RuntimeVariables.Logger.ILogMessage("JaLoader", $"1 assembly found and loaded!");
             else if (loadedAsm > 1)
-                Console.LogMessage("JaLoader", $"{loadedAsm} assemblies found and loaded!");
+                RuntimeVariables.Logger.ILogMessage("JaLoader", $"{loadedAsm} assemblies found and loaded!");
             
-            loadedAlready = true;
+            LoadedAlready = true;
 
             DebugUtils.SignalFinishedRefLoading();
 
-            StartCoroutine(ModLoader.Instance.InitializeMods());
+            RuntimeVariables.ModLoader.StartInitializeMods();
             yield return null;
         }
     }

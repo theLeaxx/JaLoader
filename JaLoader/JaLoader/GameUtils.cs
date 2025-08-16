@@ -1,9 +1,12 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace JaLoader
 {
@@ -35,6 +38,29 @@ namespace JaLoader
                 }
 
             return false;
+        }
+
+        internal static void SwitchLanguage()
+        {
+            JaLoaderSettings.SelectedLanguage = false;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+        }
+
+        internal static void OpenModsFolder()
+        {
+            Application.OpenURL(JaLoaderSettings.ModFolderLocation);
+        }
+
+        internal static void OpenOutputLog()
+        {
+            string path = Path.Combine(Application.persistentDataPath, "output_log.txt");
+
+            Process.Start(path);
+        }
+
+        internal static void OpenSavesFolder()
+        {
+            Application.OpenURL(Application.persistentDataPath);
         }
     }
 }

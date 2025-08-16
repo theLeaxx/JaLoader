@@ -47,7 +47,7 @@ namespace JaLoader
 
                 PaintJobs.Add(paintJob);
 
-                Console.LogDebug($"Loaded paintjob: {paintJob.Name}");
+                Console.LogDebug("JaLoader", $"Loaded paintjob: {paintJob.Name}");
             }
 
             Console.Log("JaLoader", $"Loaded {PaintJobs.Count} paintjobs!");
