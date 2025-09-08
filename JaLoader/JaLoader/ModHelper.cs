@@ -159,7 +159,6 @@ namespace JaLoader
             clearBootInventoryMethod.Invoke(MainMenuC.Global, null);
             ShouldLoadInventory = true;
 
-            //MainMenuC.Global.StartCoroutine("LoadBootInventory");
             CustomObjectsManager.Instance.LoadData(false, true);
         }
 

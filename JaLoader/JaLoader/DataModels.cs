@@ -23,6 +23,7 @@ namespace JaLoader
     }
 
     // bridger for new WhenToInit enum from Common namespace
+    [Obsolete("Use JaLoader.Common.WhenToInit instead.")]
     public enum WhenToInit
     {
         InMenu,

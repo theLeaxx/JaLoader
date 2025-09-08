@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using Debug = UnityEngine.Debug;
-using JaLoader.Common;
 using System.IO;
 
 namespace Doorstop
@@ -154,7 +153,7 @@ namespace Doorstop
     {
         private void Start()
         {
-            Debug.Log("Compatibility mode enabled! JaLoader Classic is not yet fully stable on Unity 4, please report any issues on GitHub!");
+            Debug.Log("Compatibility mode enabled! JaLoader Classic is not yet fully stable, please report any issues on GitHub!");
             Debug.Log("JaLoader Classic found!");
 
             Assembly assembly = null;

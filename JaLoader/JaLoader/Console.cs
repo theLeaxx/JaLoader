@@ -840,7 +840,6 @@ namespace JaLoader
         {
             JaLoaderSettings.DebugMode = !JaLoaderSettings.DebugMode;
             SettingsManager.SaveSettings();
-            uiManager.SetOptionsValues();
 
             switch (JaLoaderSettings.DebugMode)
             {

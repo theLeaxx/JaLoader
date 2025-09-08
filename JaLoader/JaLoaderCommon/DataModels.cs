@@ -16,12 +16,12 @@ namespace JaLoader.Common
         InGame
     }
 
-    public static class Constants
+    internal static class Constants
     {
         public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
     }
 
-    public static class JaLoaderSettings
+    internal static class JaLoaderSettings
     {
         public static string JaLoaderVersion { get; internal set; }
         public static bool IsPreReleaseVersion { get; internal set; }

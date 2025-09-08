@@ -31,14 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="JaLoader">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\JaLoader.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="JaLoader.Common">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\JaLoader.Common.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="JaLoaderClassic">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy_Data\Managed\JaLoaderClassic.dll</HintPath>
       <Private>False</Private>

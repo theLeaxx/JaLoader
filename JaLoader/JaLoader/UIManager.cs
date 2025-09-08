@@ -40,6 +40,7 @@ namespace JaLoader
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
             EventsManager.Instance.OnLoadStart += OnLoadStart;
             EventsManager.Instance.OnGameLoad += OnGameLoad;
+            EventsManager.Instance.OnSettingsSaved += SetOptionsValues;
 
             values = (int[])Enum.GetValues(typeof(KeyCode));
             keys = new bool[values.Length];
