@@ -16,9 +16,6 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Expected behavior**
-A clear and concise description of what actually happened.
-
 **Screenshots/Videos**
 If applicable, add screenshots or videos to help explain your problem.
 
