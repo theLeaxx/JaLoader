@@ -27,7 +27,8 @@ namespace JaLoader
     public enum WhenToInit
     {
         InMenu,
-        InGame
+        InGame,
+        None
     }
 
     public class GenericModData

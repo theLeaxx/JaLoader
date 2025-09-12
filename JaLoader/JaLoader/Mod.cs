@@ -57,7 +57,7 @@ namespace JaLoader
         /// </summary>
         public virtual bool UseAssets { get; set; }
         [Obsolete("Use WhenToInitMod instead.")]
-        public virtual WhenToInit WhenToInit { get; set; }
+        public virtual WhenToInit WhenToInit { get; set; } = WhenToInit.None;
         /// <summary>
         /// When to initialize the mod.
         /// InGame: When the game is loaded, stops functioning in the main menu.
@@ -95,6 +95,16 @@ namespace JaLoader
         {
             get { return _settingIDS; }
         }
+
+#pragma warning disable CS0618
+        internal JaLoader.Common.WhenToInit GetWhenToInit()
+        {
+            if (WhenToInit == WhenToInit.None)
+                return WhenToInitMod;
+
+            return (Common.WhenToInit)(int)WhenToInit;
+        }
+#pragma warning restore CS0618
 
         public Dictionary<string, string> settingsValues
         {
@@ -724,7 +734,7 @@ namespace JaLoader
 
             File.WriteAllText(Path.Combine(Application.persistentDataPath, $@"ModSaves\{ModID}\{ModID}_save.json"), JsonUtility.ToJson(values, true));
 
-            OnSettingsSaved();
+            SafeOnSettingsSaved();
 
             // compare values with valuesAfterLoad, and if they are different, call OnSettingValueChanged(ID)
             foreach (var ID in settingsIDS)
@@ -733,7 +743,7 @@ namespace JaLoader
                 {
                     if (valuesAfterLoad[ID] != values[ID])
                     {
-                        OnSettingValueChanged(ID);
+                        SafeOnSettingValueChanged(ID);
 
                         valuesAfterLoad[ID] = values[ID];
                     }
@@ -742,7 +752,7 @@ namespace JaLoader
                 {
                     if (valuesAfterLoad[$"{ID}_primary"] != values[$"{ID}_primary"])
                     {
-                        OnSettingValueChanged(ID);
+                        SafeOnSettingValueChanged(ID);
                         valuesAfterLoad[ID] = values[ID];
                     }
                 }
@@ -750,10 +760,58 @@ namespace JaLoader
                 {
                     if (valuesAfterLoad[$"{ID}_secondary"] != values[$"{ID}_secondary"])
                     {
-                        OnSettingValueChanged(ID);
+                        SafeOnSettingValueChanged(ID);
                         valuesAfterLoad[ID] = values[ID];
                     }
                 }
+            }
+        }
+
+        internal void SafeOnSettingValueChanged(string ID)
+        {
+            try
+            {
+                OnSettingValueChanged(ID);
+            }
+            catch (Exception ex)
+            {
+                Console.LogError("JaLoader", $"Mod {ModID} threw an exception in OnSettingValueChanged for setting {ID}:\n{ex}");
+            }
+        }
+
+        internal void SafeOnSettingsSaved()
+        {
+            try
+            {
+                OnSettingsSaved();
+            }
+            catch (Exception ex)
+            {
+                Console.LogError("JaLoader", $"Mod {ModID} threw an exception in OnSettingsSaved:\n{ex}");
+            }
+        }
+
+        internal void SafeOnSettingsReset()
+        {
+            try
+            {
+                OnSettingsReset();
+            }
+            catch (Exception ex)
+            {
+                Console.LogError("JaLoader", $"Mod {ModID} threw an exception in OnSettingsReset:\n{ex}");
+            }
+        }
+
+        internal void SafeOnSettingsLoaded()
+        {
+            try
+            {
+                OnSettingsLoaded();
+            }
+            catch (Exception ex)
+            {
+                Console.LogError("JaLoader", $"Mod {ModID} threw an exception in OnSettingsLoaded:\n{ex}");
             }
         }
 
@@ -794,7 +852,7 @@ namespace JaLoader
                 }
             }
 
-            OnSettingsReset();
+            SafeOnSettingsReset();
 
             SaveModSettings();
 
@@ -850,7 +908,7 @@ namespace JaLoader
 
             _valuesAfterLoad = values;
 
-            OnSettingsLoaded();
+            SafeOnSettingsLoaded();
         }
     } 
 }

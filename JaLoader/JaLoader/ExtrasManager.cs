@@ -397,7 +397,7 @@ namespace JaLoader
 
             SpawnedExtras[ID].Item1.GetComponent<ExtraReceiverC>().Action();
 
-            if (SceneManager.GetActiveScene().buildIndex == 3)
+            if (SceneManager.GetActiveScene().buildIndex == 3 && SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Installed == false)
             {
                 FindObjectOfType<CarPerformanceC>().carExtrasWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;
                 FindObjectOfType<CarPerformanceC>().totalCarWeight += SpawnedExtras[ID].Item1.GetComponent<HolderInformation>().Weight;

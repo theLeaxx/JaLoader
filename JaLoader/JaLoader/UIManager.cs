@@ -828,8 +828,12 @@ namespace JaLoader
             wrench.GetComponent<MeshRenderer>().material = GreenToolMaterial;
         }
 
-        
         public void SetOptionsValues()
+        {
+            SetOptionsValues(false);
+        }
+        
+        public void SetOptionsValues(bool showDisabledMods = false)
         {
             AllSettingsDropdowns["ConsoleMode"].value = (int)JaLoaderSettings.ConsoleMode;
             AllSettingsDropdowns["ConsolePosition"].value = (int)JaLoaderSettings.ConsolePosition;
@@ -860,7 +864,8 @@ namespace JaLoader
             JLFPSText.SetActive(JaLoaderSettings.ShowFPSCounter);
             JLDebugText.SetActive(JaLoaderSettings.DebugMode);
 
-            ShowDisabledMods();
+            if(showDisabledMods)
+                ShowDisabledMods();
         }
 
         private void PlayClickSound()

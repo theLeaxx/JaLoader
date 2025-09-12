@@ -276,15 +276,15 @@ namespace JaLoader
                 var genericModData = new GenericModData(mod.ModID, mod.ModName, mod.ModVersion, mod.ModDescription, mod.ModAuthor, mod.GitHubLink, mod);
                 var text = UIManager.Instance.CreateModEntryReturnText(genericModData);
 #pragma warning disable CS0618
-                ModManager.AddMod(mod, (Common.WhenToInit)(int)mod.WhenToInit, text, genericModData);
+                ModManager.AddMod(mod, mod.GetWhenToInit(), text, genericModData);
 
                 Console.LogDebug("JaLoader", $"Part 1/2 of initialization for mod {mod.ModName} completed");
 
                 if (certainModFile != "")
                 {
-                    if ((Common.WhenToInit)(int)mod.WhenToInit == Common.WhenToInit.InMenu)
+                    if (mod.GetWhenToInit() == Common.WhenToInit.InMenu)
                         ModManager.FinishLoadingMod(mod);
-                    else if ((Common.WhenToInit)(int)mod.WhenToInit == Common.WhenToInit.InGame && SceneManager.GetActiveScene().buildIndex == 3)
+                    else if (mod.GetWhenToInit() == Common.WhenToInit.InGame && SceneManager.GetActiveScene().buildIndex == 3)
                         ModManager.FinishLoadingMod(mod);
                     else
                         ModManager.FinishLoadingMod(mod, false);
