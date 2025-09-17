@@ -26,6 +26,7 @@ You can report any issues and/or ideas in the [issues](https://github.com/theLea
 * [BepInEx](https://github.com/BepInEx/BepInEx) (**LGPL 2.1**)
 * [HarmonyX](https://github.com/BepInEx/HarmonyX) (**MIT**)
 * [MonoMod](https://github.com/MonoMod/MonoMod) (**MIT**)
+* [ValueTupleBridge](https://www.nuget.org/packages/ValueTupleBridge/)
 
 ## Contact
 You can contact me on Discord at `@leaxx`. Feel free to suggest new features/mod ideas.

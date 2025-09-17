@@ -30,9 +30,6 @@ namespace JaLoader
 
             radioSource.volume = volume;
 
-            if (Input.GetKeyDown(KeyCode.F6) && !SettingsManager.Instance.DebugMode)
-                FindObjectOfType<RadioFreqLogicC>().NextSong();
-
             if (Input.GetKeyDown(KeyCode.F7))
                 muted = !muted;
 

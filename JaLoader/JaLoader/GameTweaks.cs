@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +7,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using CursorMode = JaLoader.Common.CursorMode;
 
 namespace JaLoader
 {
@@ -25,8 +27,6 @@ namespace JaLoader
                 Instance = this;
             }
 
-            settingsManager = SettingsManager.Instance;
-
             EventsManager.Instance.OnGameLoad += OnGameLoad;
             EventsManager.Instance.OnRouteGenerated += OnRouteGenerated;
             EventsManager.Instance.OnSleep += OnSleep;
@@ -34,14 +34,14 @@ namespace JaLoader
 
         #endregion
 
-        private SettingsManager settingsManager;
-
         public bool ResettingPickingUp = false;
 
         private Texture2D defaultCursorTexture;
         private Texture2D emptyTexture;
         private VfCursorManager cursorManager;
         private VfAnimCursor cursorToChange;
+
+        private bool skippedIntro = false;
 
         public bool isDialogueActive = false;
         private void OnSleep()
@@ -52,8 +52,23 @@ namespace JaLoader
         private void OnGameLoad()
         {
             StartCoroutine(OnGameLoadDelay());
+
+            if (JaLoaderSettings.UseExperimentalCharacterController)
+                GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
+
+            GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.AddComponent<EnableCursorOnEnable>();
         }
-        
+
+        internal void SkipLanguage()
+        {
+            if (JaLoaderSettings.SkipLanguage && !skippedIntro)
+            {
+                skippedIntro = true;
+                JaLoaderSettings.SelectedLanguage = true;
+                SceneManager.LoadScene("MainMenu");
+            }
+        }
+
         private void ResetBeds()
         {
             var beds = FindObjectsOfType<BedLogicC>();
@@ -73,19 +88,19 @@ namespace JaLoader
             emptyTexture = new Texture2D(1, 1, TextureFormat.Alpha8, false);
             emptyTexture.SetPixel(0, 0, Color.clear);
 
-            ChangeCursor(settingsManager.CursorMode);
+            ChangeCursor(JaLoaderSettings.CursorMode);
 
             yield return new WaitForSeconds(3);
             UpdateMirrors();
             FixBorderFlags();
 
-            if (settingsManager.FixLaikaShopMusic)
+            if (JaLoaderSettings.FixLaikaShopMusic)
             {
                 yield return new WaitForSeconds(2);
                 FixLaikaDealershipSong();
             }
 
-            if (settingsManager.FixBorderGuardsFlags)
+            if (JaLoaderSettings.FixBorderGuardsFlags)
             {
                 yield return new WaitForSeconds(2);
                 FixBorderGuardsFlags();
@@ -126,10 +141,10 @@ namespace JaLoader
         {
             FixBorderFlags();
 
-            if (settingsManager.FixLaikaShopMusic)
+            if (JaLoaderSettings.FixLaikaShopMusic)
                 Invoke("FixLaikaDealershipSong", 5);
 
-            if (settingsManager.FixBorderGuardsFlags)
+            if (JaLoaderSettings.FixBorderGuardsFlags)
                 Invoke("FixBorderGuardsFlags", 5);
 
             SceneManager.GetActiveScene().GetRootGameObjects().ToList().ForEach(go =>
@@ -193,7 +208,7 @@ namespace JaLoader
 
         public void UpdateMirrors()
         {
-            UpdateMirrors(settingsManager.MirrorDistances);
+            UpdateMirrors(JaLoaderSettings.MirrorDistances);
         }
 
         public void UpdateMirrors(MirrorDistances value)

@@ -97,12 +97,16 @@ namespace JalopyModLoader
             "Mono.Cecil.Mdb.dll",
             "Mono.Cecil.Pdb.dll",
             "Mono.Cecil.Rocks.dll",
-            "MonoMod.Backports.dll",
+            "ValueTupleBridge.dll",
             "MonoMod.RuntimeDetour.dll",
             "MonoMod.Utils.dll",
             "JaLoader.dll",
             "JaPreLoader.dll",
             "JaLoader.xml",
+            "JaLoaderClassic.dll",
+            "JaLoaderClassic.xml",
+            "JaLoader.Common.dll",
+            "JaLoader.Common.xml",
             "MonoMod.ILHelpers.dll"
         };
 
@@ -118,7 +122,8 @@ namespace JalopyModLoader
         {
             "JaLoader_UI.unity3d",
             "JaLoader_AdjustmentsEditor.unity3d",
-            "defaultPaintjobTexture.png"
+            "defaultPaintjobTexture.png",
+            "defaultExtraTexture.png"
         };
 
         private readonly string updater = Path.Combine(Directory.GetCurrentDirectory(), "JaUpdater.exe");
@@ -133,6 +138,7 @@ namespace JalopyModLoader
             @"E:\Program Files\Steam\steamapps\common\Jalopy\Jalopy.exe",
             @"F:\Program Files (x86)\Steam\steamapps\common\Jalopy\Jalopy.exe",
             @"F:\Program Files\Steam\steamapps\common\Jalopy\Jalopy.exe",
+            @"C:\SteamLibrary\steamapps\common\Jalopy\Jalopy.exe",
             @"D:\SteamLibrary\steamapps\common\Jalopy\Jalopy.exe",
             @"E:\SteamLibrary\steamapps\common\Jalopy\Jalopy.exe",
             @"F:\SteamLibrary\steamapps\common\Jalopy\Jalopy.exe"

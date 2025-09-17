@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using JaLoader.Common;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -149,12 +150,10 @@ namespace JaLoader
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<CopyToScreenRT>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<DebugCamera>());
-                Destroy(cameraObj.transform.GetChild(0).GetComponent<DragRigidbodyC_ModExtension>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<ModsPageToggle>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<MenuMouseInteractionsC>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<MainMenuCReceiver>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<MotelsReceiver>());
-                Destroy(cameraObj.transform.GetChild(0).GetComponent<HarmonyManager>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<CoroutineManager>());
                 Destroy(cameraObj.transform.GetChild(0).GetComponent<LaikaCatalogueExtension>());
 
@@ -250,9 +249,9 @@ namespace JaLoader
                 return;
             }
 
-            if (SettingsManager.Instance.UseExperimentalCharacterController)
+            if (JaLoaderSettings.UseExperimentalCharacterController && SceneManager.GetActiveScene().buildIndex == 3)
                 mainCameraObj.transform.parent.GetComponent<EnhancedMovement>().isDebugCameraEnabled = isCameraEnabled;
-            else
+            else if (!JaLoaderSettings.UseExperimentalCharacterController && SceneManager.GetActiveScene().buildIndex == 3)
                 mainCameraObj.transform.parent.GetComponent<Rigidbody>().isKinematic = isCameraEnabled;
         }
 
@@ -298,7 +297,7 @@ namespace JaLoader
 
         void Update()
         {
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.C) && SettingsManager.Instance.DebugMode)
+            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.C) && JaLoaderSettings.DebugMode)
             {
                 if (SceneManager.GetActiveScene().buildIndex == 3 && firstTimeOpening)
                 {
@@ -336,7 +335,7 @@ namespace JaLoader
                 return;
             }
 
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.P) && canUsePPCamera && SettingsManager.Instance.DebugMode)
+            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.P) && canUsePPCamera && JaLoaderSettings.DebugMode)
             {
                 postCamera = !postCamera;
                 cameraObj.transform.GetChild(1).gameObject.SetActive(!postCamera);
@@ -353,7 +352,7 @@ namespace JaLoader
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.F7) && SettingsManager.Instance.DebugMode)
+            if (Input.GetKeyDown(KeyCode.F7) && JaLoaderSettings.DebugMode)
             {
                 if (SceneManager.GetActiveScene().buildIndex == 3)
                 {

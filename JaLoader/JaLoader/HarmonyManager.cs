@@ -1,8 +1,10 @@
 ﻿using HarmonyLib;
+using JaLoader.Common;
 using MonoMod.RuntimeDetour;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -11,38 +13,23 @@ using System.Xml.Linq;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using Random = UnityEngine.Random;
+using Debug = UnityEngine.Debug;
 
 namespace JaLoader
 {
-    public class HarmonyManager : MonoBehaviour
+    public class HarmonyManager
     {
-        #region Singleton
-        public static HarmonyManager Instance { get; private set; }
         private static Harmony harmony;
-        private void Awake()
+
+        internal static void CreateHarmony()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-            }
-            else
-            {
-                Instance = this;
-            }
-
-            gameObject.AddComponent<CoroutineManager>();
-
             harmony = new Harmony("Leaxx.JaLoader");
-            PatchAll();
-        }
-        #endregion
-
-        public void PatchAll()
-        {
             harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            Debug.Log("Harmony patches applied successfully!");
         }
 
-        public static void SetArgumentsFromScript(ref ObjectEventArgs args, ObjectPickupC script)
+        internal static void SetArgumentsFromScript(ref ObjectEventArgs args, ObjectPickupC script)
         {
             args.gameObject = script.gameObject;
             args.gameObjectName = script.gameObject.name;
@@ -91,6 +78,33 @@ namespace JaLoader
         }
     }
 
+    // This patch is essential for the adding extra space/slots feature
+
+    [HarmonyPatch(typeof(MonoBehaviour), "StartCoroutine", typeof(IEnumerator))]
+    public static class StartCoroutineStackPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(IEnumerator routine)
+        {
+            var stackTrace = new StackTrace();
+            for (int i = 1; i < stackTrace.FrameCount; i++)
+            {
+                var methodBase = stackTrace.GetFrame(i).GetMethod();
+                var type = methodBase.DeclaringType;
+                if (type == typeof(MainMenuC))
+                {
+                    if (routine is IEnumerator && routine.ToString().ToLowerInvariant().Contains("loadbootinventory"))
+                    {
+                        if(!ModHelper.Instance.ShouldLoadInventory)
+                            return false; 
+                    }
+                }
+            }
+
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(InventoryLogicC), "Update")]
     public static class InventoryLogicC_Update_Patch
     {
@@ -100,8 +114,7 @@ namespace JaLoader
             if (__instance.gameObject.name == "Boot")
             {
                 var inventoryClickBlock = __instance.GetType().GetField("inventoryClickBlock", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (inventoryClickBlock != null)
-                    inventoryClickBlock.SetValue(__instance, false);
+                inventoryClickBlock?.SetValue(__instance, false);
             }
         }
     }
@@ -161,6 +174,37 @@ namespace JaLoader
         {
             ModHelper.Instance.wallet.GetComponent<ObjectPickupC>().ThrowLogic();
             EventsManager.Instance.CallTransaction("laika");
+        }
+    }
+
+    [HarmonyPatch(typeof(BoxContentsC), "Start")]
+    public static class BoxContentsC_Start_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(BoxContentsC __instance)
+        {
+            var custom = __instance.gameObject.AddComponent<CustomBoxContentsC>();
+            custom.Init(__instance);
+
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(BorderLogicC), "GuardArrivedAtBoot")]
+    public static class BorderLogicC_GuardArrivedAtBoot_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(BorderLogicC __instance)
+        {
+            if ((bool)SettingsManager.GetSettingValue("RemoveSmugglingPunishments") == true)
+            {
+                __instance.searchState = 0;
+                __instance.rotateGuard = true;
+                __instance.StartCoroutine("NoSearch");
+                return false;
+            }
+
+            return true;
         }
     }
 
@@ -271,6 +315,26 @@ namespace JaLoader
             objectEventArgs.movedTo = GameObject.FindObjectOfType<DragRigidbodyC>().holdingParent3;
 
             EventsManager.Instance.OnHeldObjectPositionChange(objectEventArgs);
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuClickersC), "StartNewGame")]
+    public static class MainMenuClickersC_StartNewGame_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            EventsManager.Instance.OnNewGameStart();
+        }
+    }
+
+    [HarmonyPatch(typeof(MainMenuClickersC), "StartNewGameSkipTutorial")]
+    public static class MainMenuClickersC_StartNewGameSkipTutorial_Patch
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            EventsManager.Instance.OnNewGameStart();
         }
     }
 
@@ -588,16 +652,7 @@ namespace JaLoader
         {
             bool radioAds = false;
 
-            Transform[] allObjects = GameObject.FindObjectsOfType<Transform>();
-
-            foreach (Transform obj in allObjects)
-            {
-                if (obj.name == "JaLoader" && obj.gameObject.layer == 0 && obj.tag == "Untagged" && obj.transform.parent == null)
-                {
-                    var component = obj.GetComponents<MonoBehaviour>()[1];
-                    radioAds = (bool)component.GetType().GetField("RadioAds", BindingFlags.Instance | BindingFlags.Public).GetValue(component);
-                }
-            }
+            radioAds = JaLoaderSettings.RadioAds;
 
             if (!radioAds)
             {
@@ -666,24 +721,34 @@ namespace JaLoader
         [HarmonyPostfix]
         public static void Postfix(RouteGeneratorC __instance)
         {
-            string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
-            if (info.Length > 0 && info[0] != "" && info[0] != string.Empty)
+            try
             {
-                string destination = info[2];
-                string start = info[0];
-                if (destination == "M.")
+                string[] info = Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text.Split(' ');
+                if (info.Length > 0 && info[0] != "" && info[0] != string.Empty)
                 {
-                    destination = "Malko Tarnovo";
+                    string destination = info[2];
+                    string start = info[0];
+                    if (destination == "M.")
+                    {
+                        destination = "Malko Tarnovo";
+                    }
+                    else if (start == "M.")
+                    {
+                        start = "Malko Tarnovo";
+                        destination = info[3];
+                    }
+                    EventsManager.Instance.CallRoute(start, destination, __instance.routeChosenLength * 70);
                 }
-                else if (start == "M.")
-                {
-                    start = "Malko Tarnovo";
-                    destination = info[3];
-                }
-                EventsManager.Instance.CallRoute(start, destination, __instance.routeChosenLength * 70);
+                else
+                    EventsManager.Instance.CallRoute("Berlin", "Dresden", __instance.routeChosenLength * 70);
             }
-            else
+            catch (Exception ex)
+            {
+                Console.LogError("JaLoader", "Failed to get route information: " + ex.Message);
+                Console.LogError("JaLoader", "Using default route information. Please report this issue.");
+                Console.LogError("JaLoader", Camera.main.transform.Find("MapHolder/Location").GetComponent<TextMesh>().text);
                 EventsManager.Instance.CallRoute("Berlin", "Dresden", __instance.routeChosenLength * 70);
+            }
         }
     }
 
@@ -702,6 +767,109 @@ namespace JaLoader
         }
     }
 
+    [HarmonyPatch(typeof(ScrapYardC), "Start")]
+    public static class ScrapYardC_Start_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(ScrapYardC __instance)
+        {
+            foreach (var objName in CustomObjectsManager.Instance.database.Keys)
+            {
+                var obj = CustomObjectsManager.Instance.GetObject(objName);
+
+                if (!obj.GetComponent<EngineComponentC>())
+                    continue;
+
+                if (!obj.GetComponent<ObjectIdentification>().CanFindInJunkCars)
+                    continue;
+
+                __instance.spawnCatalogue.Add(obj);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(AbandonCarC), "Start")]
+    public static class AbandonCarC_Start_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(AbandonCarC __instance)
+        {
+            var enginesList = __instance.engineBlocks.ToList();
+            var fuelTanksList = __instance.fuelTanks.ToList();
+            var carburettorsList = __instance.carburettors.ToList();
+            var airFiltersList = __instance.airFilters.ToList();
+            var ignitionCoilsList = __instance.ignitionCoils.ToList();
+            var batteriesList = __instance.batteries.ToList();
+            var waterTanksList = __instance.waterTanks.ToList();
+
+            foreach (var objName in CustomObjectsManager.Instance.database.Keys)
+            {
+                var obj = CustomObjectsManager.Instance.GetObject(objName);
+
+                if (!obj.GetComponent<EngineComponentC>())
+                    continue;
+
+                if (!obj.GetComponent<ObjectIdentification>().CanFindInJunkCars)
+                    continue;
+
+                switch (obj.GetComponent<ObjectPickupC>().engineString)
+                {
+                    case "EngineBlock":
+                        enginesList.Add(obj);
+                        break;
+
+                    case "FuelTank":
+                        fuelTanksList.Add(obj);
+                        break;
+
+                    case "Carburettor":
+                        carburettorsList.Add(obj);
+                        break;
+
+                    case "AirFilter":
+                        airFiltersList.Add(obj);
+                        break;
+
+                    case "IgnitionCoil":
+                        ignitionCoilsList.Add(obj);
+                        break;
+
+                    case "Battery":
+                        batteriesList.Add(obj);
+                        break;
+
+                    case "WaterContainer":
+                        waterTanksList.Add(obj);
+                        break;
+                }
+            }
+
+            __instance.engineBlocks = enginesList.ToArray();
+            __instance.fuelTanks = fuelTanksList.ToArray();
+            __instance.carburettors = carburettorsList.ToArray();
+            __instance.airFilters = airFiltersList.ToArray();
+            __instance.ignitionCoils = ignitionCoilsList.ToArray();
+            __instance.batteries = batteriesList.ToArray();
+            __instance.waterTanks = waterTanksList.ToArray();
+        }
+    }
+
+    [HarmonyPatch(typeof(Language), "Get", new Type[] { typeof(string), typeof(string) })]
+    public static class Language_Get_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(string key, string sheetTitle, ref string __result)
+        {
+            if (key.StartsWith("MOD_"))
+            {
+                __result = key.Substring(4);
+
+                return false;
+            }
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(DialogueStuffsC), "StopTypeText")]
     public static class DialogueStuffsC_StopTypeText_Patch
     {
@@ -710,8 +878,7 @@ namespace JaLoader
         {
             GameTweaks.Instance.isDialogueActive = false;
 
-            if (GameObject.FindObjectOfType<DialogueReceiver>() != null)
-                GameObject.FindObjectOfType<DialogueReceiver>().TextFinished();
+            GameObject.FindObjectOfType<DialogueReceiver>()?.TextFinished();
         }
     }
 

@@ -39,11 +39,11 @@ namespace BepInEx
 
         public void InstantiateBIXPluginSettings()
         {
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsHolder);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsHolder);
             obj.name = $"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder";
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform, false);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.transform, false);
 
-            GameObject name = Instantiate(UIManager.Instance.modOptionsNameTemplate);
+            GameObject name = Instantiate(UIManager.Instance.ModSettingsNameTemplate);
             name.transform.SetParent(obj.transform, false);
             name.GetComponentInChildren<Text>().text = $"{PluginAttribute.Name} Settings";
             name.SetActive(true);
@@ -53,8 +53,8 @@ namespace BepInEx
 
         public void AddBIXPluginHeader(string text)
         {
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsHeaderTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsHeaderTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
             obj.GetComponentInChildren<Text>().text = text;
             obj.SetActive(true);
         }
@@ -63,8 +63,8 @@ namespace BepInEx
         {
             //Console.Log($"Adding toggle {ID} to {PluginAttribute.Name} settings");
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsToggleTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsToggleTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
             obj.name = $"{ID}_Toggle";
 
             List<Dropdown.OptionData> optionData = new List<Dropdown.OptionData>
@@ -85,8 +85,8 @@ namespace BepInEx
         {
             //Console.Log($"Adding keybind {ID} to {PluginAttribute.Name} settings");
 
-            GameObject obj = Instantiate(UIManager.Instance.modOptionsKeybindTemplate);
-            obj.transform.SetParent(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
+            GameObject obj = Instantiate(UIManager.Instance.ModSettingsKeybindTemplate);
+            obj.transform.SetParent(UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder"), false);
             obj.name = $"{ID}_Keybind";
 
             obj.SetActive(true);
@@ -104,8 +104,8 @@ namespace BepInEx
 
         public Dropdown GetBIXPluginToggle(string ID)
         {
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Toggle"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Toggle").GetComponentInChildren<Dropdown>();
+            if (UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Toggle"))
+                return UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Toggle").GetComponentInChildren<Dropdown>();
             else
                 return null;
         }
@@ -113,10 +113,10 @@ namespace BepInEx
         public KeyCode GetBIXPluginKeybind(string ID)
         {
             //Console.Log(ID);
-            //Console.Log(UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind"));
+            //Console.Log(UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind"));
 
-            if (UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind"))
-                return UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().SelectedKey;
+            if (UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind"))
+                return UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}_Keybind").GetComponent<CustomKeybind>().SelectedKey;
             else
                 return KeyCode.None;
         }
@@ -139,25 +139,25 @@ namespace BepInEx
 
             foreach (var ID in BIXPlugin_settingsIDS)
             {
-                //Console.Log($"Saving {ID} to {PluginAttribute.Name} settings with value {UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value}");
+                //Console.Log($"Saving {ID} to {PluginAttribute.Name} settings with value {UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value}");
                 string type = Regex.Match(ID, @"(.{6})\s*$").ToString();
 
                 switch (type)
                 {
                     case "opdown":
-                        values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value);
+                        values.Add(ID, UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value);
                         break;
 
                     case "Toggle":
-                        values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value);
+                        values.Add(ID, UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value);
                         break;
 
                     case "Slider":
-                        values.Add(ID, UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value);
+                        values.Add(ID, UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value);
                         break;
 
                     case "eybind":
-                        values.Add($"{ID}_primary", (int)UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SelectedKey);
+                        values.Add($"{ID}_primary", (int)UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SelectedKey);
                         break;
 
                     default:
@@ -188,19 +188,19 @@ namespace BepInEx
                 switch (type)
                 {
                     case "opdown":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(BIXPlugin_settingsValues[ID]);
+                        UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(BIXPlugin_settingsValues[ID]);
                         break;
 
                     case "Toggle":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(BIXPlugin_settingsValues[ID]);
+                        UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = int.Parse(BIXPlugin_settingsValues[ID]);
                         break;
 
                     case "Slider":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(BIXPlugin_settingsValues[ID]);
+                        UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = float.Parse(BIXPlugin_settingsValues[ID]);
                         break;
 
                     case "eybind":
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)Enum.Parse(typeof(KeyCode), BIXPlugin_settingsValues[$"{ID}_primary"]));
+                        UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)Enum.Parse(typeof(KeyCode), BIXPlugin_settingsValues[$"{ID}_primary"]));
                         break;
 
                     default:
@@ -227,15 +227,15 @@ namespace BepInEx
                         switch (type)
                         {
                             case "opdown":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)values[ID];
+                                UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)values[ID];
                                 break;
 
                             case "Toggle":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)values[ID];
+                                UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Dropdown>().value = (int)values[ID];
                                 break;
 
                             case "Slider":
-                                UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = values[ID];
+                                UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponentInChildren<Slider>().value = values[ID];
                                 break;
 
                             default:
@@ -244,7 +244,7 @@ namespace BepInEx
                     }
                     else if (values.ContainsKey($"{ID}_primary"))
                     {
-                        UIManager.Instance.modSettingsScrollViewContent.transform.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)values[$"{ID}_primary"]);
+                        UIManager.Instance.ModsSettingsContent.Find($"BepInEx_CompatLayer_{PluginAttribute.GUID}-SettingsHolder/{ID}").GetComponent<CustomKeybind>().SetPrimaryKey((KeyCode)values[$"{ID}_primary"]);
                     }
                 }
             }

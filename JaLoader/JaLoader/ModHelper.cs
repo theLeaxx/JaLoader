@@ -9,7 +9,8 @@ using System.Xml.Linq;
 using System.Data.SqlTypes;
 using System.Linq;
 using System.Collections;
-using Steamworks;
+using JaLoader.Common;
+using System.IO.IsolatedStorage;
 
 namespace JaLoader
 {
@@ -49,6 +50,8 @@ namespace JaLoader
         private bool addedExtensions;
         private bool createdDebugCamera;
         public GameObject debugCam;
+
+        internal bool ShouldLoadInventory = true;
 
         public GameObject CardboardBoxBig;
         public GameObject CardboardBoxMed;
@@ -146,6 +149,20 @@ namespace JaLoader
             }
         }
 
+        public void DontLoadInventoryOnGameLoad()
+        {
+            ShouldLoadInventory = false;
+        }
+
+        public void ReloadInventories()
+        {
+            MethodInfo clearBootInventoryMethod = typeof(MainMenuC).GetMethod("ClearBootInventory", BindingFlags.NonPublic | BindingFlags.Instance);
+            clearBootInventoryMethod.Invoke(MainMenuC.Global, null);
+            ShouldLoadInventory = true;
+
+            CustomObjectsManager.Instance.LoadData(false, true);
+        }
+
         public void GetAllBodyParts(bool wait = true)
         {
             laika = GameObject.Find("FrameHolder");
@@ -183,14 +200,12 @@ namespace JaLoader
 
         private void OnGameLoad()
         {
-            if (SettingsManager.Instance.DebugMode)
-                Camera.main.gameObject.AddComponent<DebugCamera>();
+            Camera.main.gameObject.AddComponent<DebugCamera>();
 
             RefreshPartHolders();
 
             if (!addedExtensions)
             {
-                Camera.main.gameObject.AddComponent<DragRigidbodyC_ModExtension>();
                 player = Camera.main.transform.parent.gameObject;
                 GetAllBodyParts();
                 wallet = FindObjectOfType<WalletC>();
@@ -210,7 +225,7 @@ namespace JaLoader
 
                 Camera.main.gameObject.AddComponent<LaikaCatalogueExtension>();
 
-                if (SettingsManager.IsPreReleaseVersion)
+                if (JaLoaderSettings.IsPreReleaseVersion)
                 {
                     var obj = Instantiate(new GameObject());
                     obj.name = "JaLoader Game Scripts";
@@ -253,9 +268,25 @@ namespace JaLoader
         /// <param name="objDescription">The description that will pop up in the notebook</param>
         /// <param name="price">The price of the object in stores (only effective if it is buyable)</param>
         /// <param name="weight">The weight of the object</param>
-        /// <param name="canFindInCrates">(Not implemented yet) Should this object be findable in crates?</param>
+        /// <param name="canFindInCrates">Should this object be findable in crates?</param>
         /// <param name="canBuyInStore">(Not implemented yet) Is this object buyable?</param>
         public void AddBasicObjectLogic(GameObject obj, string objName, string objDescription, int price, int weight, bool canFindInCrates, bool canBuyInStore)
+        {
+            AddBasicObjectLogic(obj, objName, objDescription, price, weight, canFindInCrates, canBuyInStore, GoodType.None);
+        }
+
+        /// <summary>
+        /// Make the specified object able to be used in-game
+        /// </summary>
+        /// <param name="obj">The object you want to bring to life</param>
+        /// <param name="objName">The name that will pop up in the notebook</param>
+        /// <param name="objDescription">The description that will pop up in the notebook</param>
+        /// <param name="price">The price of the object in stores (only effective if it is buyable)</param>
+        /// <param name="weight">The weight of the object</param>
+        /// <param name="canFindInCrates">Should this object be findable in crates?</param>
+        /// <param name="canBuyInStore">(Not implemented yet) Is this object buyable?</param>
+        /// <param name="goodType">The type of good this is, used in border checks as in vanilla. Use None if you're making an engine part, or none of the types fit.</param>
+        public void AddBasicObjectLogic(GameObject obj, string objName, string objDescription, int price, int weight, bool canFindInCrates, bool canBuyInStore, GoodType goodType)
         {
             if (obj == null)
             {
@@ -264,8 +295,14 @@ namespace JaLoader
             }
 
             obj.SetActive(false);
+            ObjectIdentification identif = null;
 
-            if (obj.GetComponent<ObjectIdentification>() && obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic)
+            if(!obj.GetComponent<ObjectIdentification>())
+                identif = obj.AddComponent<ObjectIdentification>();
+            else
+                identif = obj.GetComponent<ObjectIdentification>();
+
+            if (identif.HasReceivedBasicLogic)
                 return;
 
             if (!obj.GetComponent<Collider>())
@@ -301,14 +338,17 @@ namespace JaLoader
 
             ob.buyValue = price;
             ob.sellValue = price;
-            ob.flavourText = string.Empty;
-            ob.componentHeader = string.Empty;
+            ob.flavourText = "MOD_" + objDescription;
+            ob.componentHeader = "MOD_" + objName;
             ob.rigidMass = weight;
 
             CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
             fix.objDescription = objDescription;
             fix.objName = objName;
-            obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic = true;
+            fix.CanBuyInShop = identif.CanBuyInShop = canBuyInStore;
+            fix.CanFindInCrates = identif.CanFindInCrates = canFindInCrates;
+            fix.SupplyType = identif.SupplyType = goodType;
+            identif.HasReceivedBasicLogic = true;
         }
 
         private void AddBoxLogic(GameObject obj, string objName, string objDescription, int price, int weight)
@@ -343,8 +383,8 @@ namespace JaLoader
 
             ob.buyValue = price;
             ob.sellValue = (int)(price * 0.8f);
-            ob.flavourText = string.Empty;
-            ob.componentHeader = string.Empty;
+            ob.flavourText = "MOD_" + objDescription;
+            ob.componentHeader = "MOD_" + objName;
             ob.rigidMass = weight;
 
             CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
@@ -438,7 +478,7 @@ namespace JaLoader
         /// <param name="type">What type of engine component is this?</param>
         /// <param name="durability">Max durability</param>
         /// <param name="canBuyInDealership">Can this object be bought in laika dealerships?</param>
-        /// <param name="canFindInJunkCars">(Not implemented yet) Can this object be found at scrapyards/abandoned cars?</param>
+        /// <param name="canFindInJunkCars">Can this object be found at scrapyards/abandoned cars?</param>
         public void AddEnginePartLogic(GameObject obj, PartTypes type, int durability, bool canBuyInDealership, bool canFindInJunkCars)
         {
             if(type == PartTypes.Wheel)
@@ -457,7 +497,10 @@ namespace JaLoader
                 return;
 
             if (!obj.GetComponent<ObjectPickupC>())
+            {
+                Console.LogError("You need to add basic object logic before adding engine part logic!");
                 return;
+            }
 
             ObjectPickupC ob = obj.GetComponent<ObjectPickupC>();
             ob.isEngineComponent = true;
@@ -468,8 +511,17 @@ namespace JaLoader
             ec.weight = ob.rigidMass;
             ec.durability = durability;
 
+            ec.flavourText = ob.flavourText;
+            ec.componentHeader = ob.componentHeader;
+
             var identif = obj.GetComponent<ObjectIdentification>();
+            var info = obj.GetComponent<CustomObjectInfo>();
             identif.PartIconScaleAdjustment = obj.transform.localScale;
+
+            info.CanBuyInDealership = identif.CanBuyInDealership = canBuyInDealership;
+            info.CanFindInJunkCars = identif.CanFindInJunkCars = canFindInJunkCars;
+            info.CanFindInCrates = identif.CanFindInCrates = info.CanBuyInShop = identif.CanBuyInShop = false;
+            info.SupplyType = identif.SupplyType = GoodType.None;
 
             var template = GameObject.Find("EngineBlock");
             var template_ec = template.GetComponent<EngineComponentC>();
@@ -551,7 +603,6 @@ namespace JaLoader
             }
 
             obj.GetComponent<ObjectIdentification>().HasReceivedPartLogic = true;
-
         }
 
         /// <summary>
@@ -696,16 +747,19 @@ namespace JaLoader
             boxIdentif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
             identif.ExtraID = ExtrasManager.Instance.GetExtraID(extraHolder.name);
 
-            AddBoxLogic(boxObject, name, description, price, ConvertToPositive(weight));
+            AddBoxLogic(boxObject, name, description, price, ConvertToPositiveOrNonNull(weight));
             AddEnginePartLogic(boxObject, PartTypes.Extra, 3, true, false);
 
             DontDestroyOnLoad(boxObject);
-            boxesToCreateInGame.Add((boxObject, name, description, price, ConvertToPositive(weight)));
+            boxesToCreateInGame.Add((boxObject, name, description, price, ConvertToPositiveOrNonNull(weight)));
 
             return boxObject;
         }
-        public static int ConvertToPositive(int i)
+        public static int ConvertToPositiveOrNonNull(int i)
         {
+            if (i == 0)
+                return 1;
+
             return (i + (i >> 31)) ^ (i >> 31);
         }
 
@@ -762,7 +816,7 @@ namespace JaLoader
             var modName = identif.ModName;
             var version = identif.Version;
 
-            var mod = (Mod)ModLoader.Instance.FindMod(author, modID, modName);
+            var mod = (Mod)ModManager.FindMod(author, modID, modName);
 
             var extraHolder = Instantiate(new GameObject());
             extraHolder.name = $"Extra_{objOnCar.name.Substring(0, objOnCar.name.Length - 7)}_{identif.ModID}_{identif.Author}";
@@ -1217,82 +1271,10 @@ namespace JaLoader
             audio.priority = 128;
         }
 
-        public string GetLatestTagFromApiUrl(string URL, string modName)
-        {
-            UnityWebRequest request = UnityWebRequest.Get(URL);
-            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
-            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
-
-            request.SendWebRequest();
-
-            while (!request.isDone)
-            {
-                // wait for the request to complete
-            }
-
-            if (request.isHttpError || request.error == "Generic/unknown HTTP error")
-                return "0";
-
-            string tagName = null;
-
-            if (!request.isNetworkError)
-            {
-                string json = request.downloadHandler.text;
-                Release release = JsonUtility.FromJson<Release>(json);
-                tagName = release.tag_name;
-            }
-            else if (request.isNetworkError)
-                return "-1";
-            else
-            {
-                Console.LogError(modName, $"Error getting response for URL \"{URL}\": {request.error}");
-                return "-1";
-            }
-
-            return tagName;
-        }
-
         public void OpenURL(string URL)
         {
             Application.OpenURL(URL);
         }
-
-        public string GetLatestTagFromApiUrl(string URL)
-        {
-            UnityWebRequest request = UnityWebRequest.Get(URL);
-            request.SetRequestHeader("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)");
-            request.SetRequestHeader("Accept", "application/vnd.github.v3+json");
-
-            request.SendWebRequest();
-
-            while (!request.isDone)
-            {
-                // wait for the request to complete
-            }
-
-            // probably rate limited by github
-            if (request.isHttpError || request.error == "Generic/unknown HTTP error")
-                return "0";
-
-            string tagName = null;
-
-            if (!request.isNetworkError && !request.isHttpError)
-            {
-                string json = request.downloadHandler.text;
-                Release release = JsonUtility.FromJson<Release>(json);
-                tagName = release.tag_name;
-            }
-            else if (request.isNetworkError)
-                return "-1";
-            else
-            {
-                Console.LogError($"Error getting response for URL \"{URL}\": {request.error}");
-                return "-1";
-            }
-
-            return tagName;
-        }
-
     }
 
     #region Part Types

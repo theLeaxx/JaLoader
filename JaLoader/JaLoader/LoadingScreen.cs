@@ -5,6 +5,7 @@ using System.Text;
 using UnityEngine.UI;
 using UnityEngine;
 using System.Collections;
+using JaLoader.Common;
 
 namespace JaLoader
 {
@@ -117,7 +118,7 @@ namespace JaLoader
             canvasGroup.alpha = 0;
             isFading = false;
 
-            SettingsManager.Instance.loadedFirstTime = true;
+            JaLoaderSettings.LoadedFirstTime = true;
 
             Destroy(GameObject.Find("JaLoader Loading Screen Canvas"));
             Destroy(gameObject.GetComponent<LoadingScreen>());

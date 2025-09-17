@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -35,6 +36,7 @@ namespace JaLoader
 
         public readonly Dictionary<string, GameObject> database = new Dictionary<string, GameObject>();
         private Dictionary<(string, int), GameObject> spawnedDatabase = new Dictionary<(string, int), GameObject>();
+        internal Dictionary<GoodType, List<GameObject>> goodsObjects = new Dictionary<GoodType, List<GameObject>>();
 
         // TODO: Add custom wheels support
         private List<Transform> bootSlots = new List<Transform>();
@@ -43,12 +45,11 @@ namespace JaLoader
         private int currentFreeID = 0;
         private bool allObjectsRegistered;
 
-        private SettingsManager settingsManager = SettingsManager.Instance;
         public bool ignoreAlreadyExists;
 
         private void Update()
         {
-            if (!settingsManager.DebugMode)
+            if (!JaLoaderSettings.DebugMode)
                 return;
 
             if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))
@@ -70,6 +71,14 @@ namespace JaLoader
         {
             if (!allObjectsRegistered)
                 StartCoroutine(WaitUntilLoadFinished());
+
+            goodsObjects[GoodType.Alcohol] = new List<GameObject>();
+            goodsObjects[GoodType.Meds] = new List<GameObject>();
+            goodsObjects[GoodType.Coffee] = new List<GameObject>();
+            goodsObjects[GoodType.Textiles] = new List<GameObject>();
+            goodsObjects[GoodType.Tobacco] = new List<GameObject>();
+            goodsObjects[GoodType.Meat] = new List<GameObject>();
+            goodsObjects[GoodType.None] = new List<GameObject>();
         }
 
         private void OnSave()
@@ -109,7 +118,7 @@ namespace JaLoader
 
             ModHelper.Instance.RefreshPartHolders();
 
-            StartCoroutine(LoadDelay(1f, true));
+            StartCoroutine(LoadDelay(3f, true));
         }
 
         /// <summary>
@@ -118,6 +127,11 @@ namespace JaLoader
         /// <param name="obj">The object in question</param>
         /// <param name="registryName">Internal object name</param>
         public void RegisterObject(GameObject obj, string registryName)
+        {
+            RegisterObject(obj, registryName, false);
+        }
+
+        internal void RegisterObject(GameObject obj, string registryName, bool isPaintJob = false)
         {
             if (obj == null)
             {
@@ -139,20 +153,54 @@ namespace JaLoader
             }
 
             obj.SetActive(false);
-            obj.GetComponent<CustomObjectInfo>().objRegistryName = registryName;
+            var info = obj.GetComponent<CustomObjectInfo>();
+            info.objRegistryName = registryName;
+
+            if (isPaintJob)
+                info.isPaintJob = true;
 
             database.Add($"{registryName}", obj);
             Console.LogDebug("CustomObjectsManager", $"Registered object with the registry key {registryName}!");
             DontDestroyOnLoad(obj);
 
-            if (allObjectsRegistered)
+            if (info.CanFindInCrates)
             {
-                // compare debugobjectsspawner.instance.spawnedcustomobjects with the registryNames from databas, and print them to the console
-                
+                switch (info.SupplyType)
+                {
+                    case GoodType.Alcohol:
+                        goodsObjects[GoodType.Alcohol].Add(obj);
+                        break;
+
+                    case GoodType.Meds:
+                        goodsObjects[GoodType.Meds].Add(obj);
+                        break;
+
+                    case GoodType.Coffee:
+                        goodsObjects[GoodType.Coffee].Add(obj);
+                        break;
+
+                    case GoodType.Textiles:
+                        goodsObjects[GoodType.Textiles].Add(obj);
+                        break;
+
+                    case GoodType.Tobacco:
+                        goodsObjects[GoodType.Tobacco].Add(obj);
+                        break;
+
+                    case GoodType.Meat:
+                        goodsObjects[GoodType.Meat].Add(obj);
+                        break;
+
+                    case GoodType.None:
+                        goodsObjects[GoodType.None].Add(obj);
+                        break;
+                }
+            }
+
+            if (allObjectsRegistered)
                 foreach(var entry in database)
                     if (!DebugObjectSpawner.Instance.addedCustomObjects.Contains(entry.Key))
                         DebugObjectSpawner.Instance.AddObjectToList(entry.Key, "");
-            }
         }
 
         /// <summary>
@@ -201,7 +249,7 @@ namespace JaLoader
 
             IncrementID(registryName, spawnedObj);
 
-            Console.LogDebug("1 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
+            Console.LogDebug("CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -253,7 +301,7 @@ namespace JaLoader
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
-            Console.LogDebug("2 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
+            Console.LogDebug("CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -308,7 +356,7 @@ namespace JaLoader
             spawnedObj.SetActive(true);
 
             IncrementID(registryName, spawnedObj);
-            Console.LogDebug("3 - CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
+            Console.LogDebug("CustomObjectsManager", $"Spawned object with the registry key {registryName}! -- {(new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().Name}");
 
             return spawnedObj;
         }
@@ -330,7 +378,7 @@ namespace JaLoader
                 List<float> parameters = new List<float>();
                 PartTypes type = PartTypes.Default;
                 bool inEngine = spawnedDatabase[entry].GetComponent<ObjectPickupC>().isInEngine;
-                string json = "";
+                string json;
                 int trunkPos = -1;
                 if (!inEngine && spawnedDatabase[entry].GetComponent<ObjectPickupC>().inventoryPlacedAt == null)
                     continue;
@@ -397,7 +445,7 @@ namespace JaLoader
             EventsManager.Instance.OnCustomObjectsSave();
         }
 
-        public void LoadData(bool full)
+        public void LoadData(bool full, bool loadTrunkOnly = false)
         {
             if (database.Count == 0 || database == null)
                 return;
@@ -414,7 +462,6 @@ namespace JaLoader
                 foreach (string entry in data.Keys)
                 {
                     string name = entry.Split('_')[0];
-                    string id = entry.Split('_')[1];
 
                     if (!database.ContainsKey(name))
                         continue;
@@ -441,9 +488,9 @@ namespace JaLoader
                     {
                         obj.GetComponent<EngineComponentC>().condition = tuple.Item3[0];
                     }
-
+                    
                     #region Load In Engine
-                    if (tuple.Item1.Equals(true))
+                    if (tuple.Item1.Equals(true) && !loadTrunkOnly)
                     {
                         switch (tuple.Item2)
                         {
@@ -486,7 +533,7 @@ namespace JaLoader
                     #endregion
                     else
                     {
-                        if (!full)
+                        if (!full && !loadTrunkOnly)
                             continue;
 
                         if (isUsingOldSaveSystem)
@@ -518,7 +565,7 @@ namespace JaLoader
                     }
                 }
             }
-
+            // see if loadTrunkOnly should not call this later
             EventsManager.Instance.OnCustomObjectsLoad();
         }
 
@@ -617,7 +664,7 @@ namespace JaLoader
 
         private IEnumerator WaitUntilLoadFinished()
         {
-            while (!ModLoader.Instance.finishedInitializingPartTwoMods)
+            while (!ModManager.FinishedLoadingMenuMods)
                 yield return null;
 
             allObjectsRegistered = true;
@@ -636,7 +683,7 @@ namespace JaLoader
 
             LoadData(fullLoad);
             if(fullLoad)
-                LaikaCatalogueExtension.Instance.AddPages("", "", 0);
+                LaikaCatalogueExtension.Instance.AddPages();
         }
     }
 

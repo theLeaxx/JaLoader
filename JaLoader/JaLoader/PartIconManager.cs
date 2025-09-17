@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using JaLoader.Common;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -30,7 +31,6 @@ namespace JaLoader
         public int CachedItemsCount { get; private set; }
 
         private CustomObjectsManager objectsManager = CustomObjectsManager.Instance;
-        private SettingsManager settingsManager = SettingsManager.Instance;
 
         private Camera camera;
         private Light lightComponent;
@@ -72,7 +72,7 @@ namespace JaLoader
         {
             if(DefaultExtraTexture == null)
             {
-                byte[] bytes = File.ReadAllBytes(Path.Combine(SettingsManager.Instance.ModFolderLocation, @"Required\defaultExtraTexture.png"));
+                byte[] bytes = File.ReadAllBytes(Path.Combine(JaLoaderSettings.ModFolderLocation, @"Required\defaultExtraTexture.png"));
 
                 Texture2D texture = new Texture2D(128, 128, TextureFormat.ARGB32, false);
                 texture.LoadImage(bytes);
@@ -83,8 +83,8 @@ namespace JaLoader
             if(cachedItems)
                 return;
 
-            if (!Directory.Exists($@"{settingsManager.ModFolderLocation}\CachedImages"))
-                Directory.CreateDirectory($@"{settingsManager.ModFolderLocation}\CachedImages");
+            if (!Directory.Exists($@"{JaLoaderSettings.ModFolderLocation}\CachedImages"))
+                Directory.CreateDirectory($@"{JaLoaderSettings.ModFolderLocation}\CachedImages");
 
             lightComponent.enabled = true;
 
@@ -97,6 +97,11 @@ namespace JaLoader
                 ModHelper.RemoveAllComponents(obj, typeof(MeshFilter), typeof(MeshRenderer), typeof(ObjectIdentification));
 
                 var comp = obj.GetComponent<ObjectIdentification>();
+                if (!comp.CanBuyInDealership)
+                {
+                    DestroyImmediate(obj);
+                    continue;
+                }
 
                 obj.layer = 21;
 
@@ -190,7 +195,7 @@ namespace JaLoader
 
         public Texture2D GetTexture(string name)
         {
-            if (File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png") == false)
+            if (File.Exists($@"{JaLoaderSettings.ModFolderLocation}\CachedImages\{name}.png") == false)
             {
                 if (extrasCustomIcons.ContainsKey(name.Split('_')[1]))
                 {
@@ -204,7 +209,7 @@ namespace JaLoader
                 return DefaultExtraTexture;
             }
 
-            byte[] bytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{name}.png");
+            byte[] bytes = File.ReadAllBytes($@"{JaLoaderSettings.ModFolderLocation}\CachedImages\{name}.png");
 
             Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
             texture.LoadImage(bytes);
@@ -224,8 +229,8 @@ namespace JaLoader
             byte[] byteArray = renderedTexture.EncodeToPNG();
             byte[] existingPhotoBytes = null;
 
-            if(File.Exists($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png"))
-                existingPhotoBytes = File.ReadAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png");
+            if(File.Exists($@"{JaLoaderSettings.ModFolderLocation}\CachedImages\{entry}.png"))
+                existingPhotoBytes = File.ReadAllBytes($@"{JaLoaderSettings.ModFolderLocation}\CachedImages\{entry}.png");
 
             if (existingPhotoBytes != null)
             {
@@ -238,7 +243,7 @@ namespace JaLoader
             }
 
             Console.LogDebug($"Cached image for {entry}");
-            File.WriteAllBytes($@"{settingsManager.ModFolderLocation}\CachedImages\{entry}.png", byteArray);
+            File.WriteAllBytes($@"{JaLoaderSettings.ModFolderLocation}\CachedImages\{entry}.png", byteArray);
         }
     }
 }

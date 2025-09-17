@@ -6,13 +6,13 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using JaLoader.Common;
 
 namespace JaLoader
 {
     public class LicensePlateCustomizer : MonoBehaviour
     {
         private ModHelper modHelper = ModHelper.Instance;
-        private SettingsManager settingsManager = SettingsManager.Instance;
 
         private GameObject rearText;
         private GameObject frontText;
@@ -44,10 +44,10 @@ namespace JaLoader
 
             EventsManager.Instance.OnSettingsSaved += OnSettingsSave;
 
-            if (settingsManager.ChangeLicensePlateText == LicensePlateStyles.None)
+            if (JaLoaderSettings.ChangeLicensePlateText == LicensePlateStyles.None)
                 return;
 
-            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+            SetPlateText(JaLoaderSettings.LicensePlateText, JaLoaderSettings.ChangeLicensePlateText);
         }
 
         private void OnDestroy()
@@ -57,13 +57,13 @@ namespace JaLoader
 
         private void OnSettingsSave()
         {
-            SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+            SetPlateText(JaLoaderSettings.LicensePlateText, JaLoaderSettings.ChangeLicensePlateText);
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F5) && settingsManager.DebugMode)
-                SetPlateText(settingsManager.LicensePlateText, settingsManager.ChangeLicensePlateText);
+            if (Input.GetKeyDown(KeyCode.F5) && JaLoaderSettings.DebugMode)
+                SetPlateText(JaLoaderSettings.LicensePlateText, JaLoaderSettings.ChangeLicensePlateText);
         }
 
         public void SetPlateText(string plateText, LicensePlateStyles style)
@@ -142,14 +142,5 @@ namespace JaLoader
                     break;
             }
         }
-    }
-
-    public enum LicensePlateStyles
-    {
-        None,
-        Default,
-        DiplomaticRed,
-        DiplomaticBlue,
-        WhiteOnBlack
     }
 }

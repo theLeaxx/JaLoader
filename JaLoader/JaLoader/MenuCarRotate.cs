@@ -4,16 +4,33 @@ using System.Linq;
 using System.Net.Configuration;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace JaLoader
 {
     public class MenuCarRotate : MonoBehaviour
     {
-        private readonly GameObject car = GameObject.Find("FrameHolder");
+        private GameObject car;
         private float speed = 1f;
+        private bool isInMenu = false;
 
-        void Start()
+        void Awake()
         {
+            EventsManager.Instance.OnMenuLoad += OnMenuLoad;
+            EventsManager.Instance.OnLoadStart += OnLoadStart;
+            isInMenu = true;
+        }
+
+        private void OnLoadStart()
+        {
+            isInMenu = false;
+        }
+
+        private void OnMenuLoad()
+        {
+            isInMenu = true;
+            car = GameObject.Find("FrameHolder");
+
             if (AdjustmentsEditor.Instance.loadedViewingEditor)
                 return;
 
@@ -22,6 +39,9 @@ namespace JaLoader
 
         void Update() 
         {
+            if (!isInMenu)
+                return;
+
             if (Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.RightShift))
                 return;
 
@@ -35,7 +55,6 @@ namespace JaLoader
 
             if (Input.GetKey(KeyCode.LeftArrow))
                 car.transform.Rotate(Vector3.down * speed);
-
 
             if (AdjustmentsEditor.Instance.loadedViewingEditor)
                 return;

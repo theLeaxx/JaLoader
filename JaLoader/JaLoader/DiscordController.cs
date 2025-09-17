@@ -6,6 +6,7 @@ using System.Text;
 using UnityEngine;
 using Discord;
 using UnityEngine.SceneManagement;
+using JaLoader.Common;
 
 namespace JaLoader
 {
@@ -17,18 +18,24 @@ namespace JaLoader
         private string State;
         private string Details;
         private string LargeText;
-
-        private SettingsManager settings = SettingsManager.Instance;
         
         void Start()
         {
-            if (!settings.UseDiscordRichPresence)
+            if (!JaLoaderSettings.UseDiscordRichPresence)
             {
                 Destroy(this);
                 return;
             }
 
-            discord = new Discord.Discord(1104362708134006827, (ulong)CreateFlags.NoRequireDiscord);
+            try
+            {
+				discord = new Discord.Discord(1104362708134006827, (ulong)CreateFlags.NoRequireDiscord);
+			}
+            catch (Exception)
+            {
+                // discord is not running, cancel
+                Destroy(this);
+			}
 
             time = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalSeconds;
 
@@ -93,7 +100,7 @@ namespace JaLoader
                         LargeImage = "jalopy",
                         LargeText = LargeText,
                         SmallImage = "wrenchright",
-                        SmallText = $"JaLoader {SettingsManager.Instance.GetVersionString()} - {ModLoader.Instance.modsNumber} mods loaded"
+                        SmallText = $"JaLoader {JaLoaderSettings.GetVersionString()} - {ModManager.Mods.Count} mods loaded"
                     },
                     Timestamps =
                     {
@@ -103,7 +110,7 @@ namespace JaLoader
 
                 activityManager.UpdateActivity(activity, (res) =>
                 {
-                    if (res != Result.Ok && SettingsManager.Instance.DebugMode)
+                    if (res != Result.Ok && JaLoaderSettings.DebugMode)
                         Console.LogError("Failed connecting to Discord!");
                 });
             }

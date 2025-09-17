@@ -5,31 +5,14 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine;
 using System.IO;
-using System.Diagnostics;
-using System.Linq;
-using UnityEngine.EventSystems;
+using JaLoader.Common;
+using JaLoader.Common.Interfaces;
+using ILogger = JaLoader.Common.Interfaces.ILogger;
+using UnityEngine.Experimental.UIElements;
 
 namespace JaLoader
 {
-    [Serializable]
-    public enum ConsolePositions
-    {
-        TopLeft,
-        TopRight,
-        BottomLeft,
-        BottomRight
-    }
-
-    [Serializable]
-    public enum ConsoleModes
-    {
-        Default,
-        ErrorsWarnings,
-        Errors,
-        Disabled
-    }
-
-    public class Console : MonoBehaviour
+    public class Console : MonoBehaviour, ILogger
     {
         #region Singleton
         public static Console Instance { get; private set; }
@@ -45,8 +28,6 @@ namespace JaLoader
                 Instance = this;
             }
 
-            settingsManager = SettingsManager.Instance;
-            uiManager = UIManager.Instance;
             Application.logMessageReceived += HandleLog;
         }
 
@@ -80,127 +61,34 @@ namespace JaLoader
         }
         #endregion
 
-        private InputField inputField;
-        private SettingsManager settingsManager;
         private UIManager uiManager;
-        private RectTransform consoleRectTransform;
+        private InputField inputField;
 
-        private readonly List<string> log = new List<string>();
-        private readonly List<string> enteredCommands = new List<string>();
         private int currentInList = 0;
 
-        private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
-
+        public bool LogEverythingFromDebug = false;
         private bool init = false;
 
-        private readonly List<(string, string, string)> queuedLogs = new List<(string, string, string)>();
+        private static readonly List<string> log = new List<string>();
+        private static readonly List<(string, string, string)> queuedLogs = new List<(string, string, string)>();
+        private readonly Dictionary<(string, string, string), Mod> customCommands = new Dictionary<(string, string, string), Mod>();
+        private readonly List<string> enteredCommands = new List<string>();
 
-        public bool LogEverythingFromDebug = false;
-        
         public bool Visible
         {
-            get { return uiManager.modConsole.activeSelf; }
+            get { return uiManager.JLConsole.activeSelf; }
             private set { }
         }
-        
+
         public void Init()
         {
-            inputField = uiManager.modConsole.transform.GetChild(2).GetComponent<InputField>();
-            consoleRectTransform = uiManager.modConsole.GetComponent<RectTransform>();
+            uiManager = UIManager.Instance;
 
-            SetPosition(settingsManager.ConsolePosition);
+            inputField = uiManager.JLConsole.GetComponentInChildren<InputField>();
 
             init = true;
 
             LogAllQueuedMessages();
-        }
-
-        public void SetPosition(ConsolePositions pos)
-        {
-            var modLoaderTextRT = uiManager.modLoaderText.GetComponent<RectTransform>();
-            var modLoaderTextT = uiManager.modLoaderText.GetComponent<Text>();
-
-            var modsFolderTextRT = uiManager.modFolderText.GetComponent<RectTransform>();
-            var modsFolderTextT = uiManager.modFolderText.GetComponent<Text>();
-
-            switch (pos)
-            {
-                case ConsolePositions.TopLeft:
-                    consoleRectTransform.anchorMin = new Vector2(0, 1);
-                    consoleRectTransform.anchorMax = new Vector2(0, 1);
-                    consoleRectTransform.pivot = new Vector2(0, 1);
-                    consoleRectTransform.position = new Vector2(5, Screen.height - 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(1, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(1, 1);
-                    modLoaderTextRT.pivot = new Vector2(1, 1);
-                    modLoaderTextRT.position = new Vector2(Screen.width - 10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleRight;
-
-                    modsFolderTextRT.anchorMin = new Vector2(1, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(1, 1);
-                    modsFolderTextRT.pivot = new Vector2(1, 1);
-                    modsFolderTextRT.position = new Vector2(Screen.width - 10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleRight;
-                    break;
-
-                case ConsolePositions.TopRight:
-                    consoleRectTransform.anchorMin = new Vector2(1, 1);
-                    consoleRectTransform.anchorMax = new Vector2(1, 1);
-                    consoleRectTransform.pivot = new Vector2(1, 1);
-                    consoleRectTransform.position = new Vector2(Screen.width -5, Screen.height - 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(0, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(0, 1);
-                    modLoaderTextRT.pivot = new Vector2(0, 1);
-                    modLoaderTextRT.position = new Vector2(10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleLeft;
-
-                    modsFolderTextRT.anchorMin = new Vector2(0, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(0, 1);
-                    modsFolderTextRT.pivot = new Vector2(0, 1);
-                    modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleLeft;
-                    break;
-
-                case ConsolePositions.BottomLeft:
-                    consoleRectTransform.anchorMin = new Vector2(0, 0);
-                    consoleRectTransform.anchorMax = new Vector2(0, 0);
-                    consoleRectTransform.pivot = new Vector2(0, 0);
-                    consoleRectTransform.position = new Vector2(5, 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(0, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(0, 1);
-                    modLoaderTextRT.pivot = new Vector2(0, 1);
-                    modLoaderTextRT.position = new Vector2(10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleLeft;
-
-                    modsFolderTextRT.anchorMin = new Vector2(0, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(0, 1);
-                    modsFolderTextRT.pivot = new Vector2(0, 1);
-                    modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleLeft;
-                    break;
-
-                case ConsolePositions.BottomRight:
-                    consoleRectTransform.anchorMin = new Vector2(1, 0);
-                    consoleRectTransform.anchorMax = new Vector2(1, 0);
-                    consoleRectTransform.pivot = new Vector2(1, 0);
-                    consoleRectTransform.position = new Vector2(Screen.width -5, 5);
-
-                    modLoaderTextRT.anchorMin = new Vector2(0, 1);
-                    modLoaderTextRT.anchorMax = new Vector2(0, 1);
-                    modLoaderTextRT.pivot = new Vector2(0, 1);
-                    modLoaderTextRT.position = new Vector2(10, Screen.height - 5);
-                    modLoaderTextT.alignment = TextAnchor.MiddleLeft;
-
-                    modsFolderTextRT.anchorMin = new Vector2(0, 1);
-                    modsFolderTextRT.anchorMax = new Vector2(0, 1);
-                    modsFolderTextRT.pivot = new Vector2(0, 1);
-                    modsFolderTextRT.position = new Vector2(10, Screen.height - 30);
-                    modsFolderTextT.alignment = TextAnchor.MiddleLeft;
-                    break;
-            }
         }
 
         public void AddCommand(string commandName, string description, string methodName, Mod mod)
@@ -214,7 +102,7 @@ namespace JaLoader
                 }
             }
 
-            customCommands.Add((commandName, description ,methodName), mod);
+            customCommands.Add((commandName, description, methodName), mod);
         }
 
         public void RemoveCommandsFromMod(Mod mod)
@@ -285,30 +173,27 @@ namespace JaLoader
             }
         }
 
-        public void UpdateConsole(float value)
+        public void Keep100MessagesLimit()
         {
-            if (uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0).childCount > 100)
-                Destroy(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0).GetChild(1).gameObject);
+            if (uiManager.ConsoleList.childCount > 100)
+                DestroyImmediate(uiManager.ConsoleList.GetChild(1).gameObject);
+        }
 
-            StartCoroutine(ApplyScrollPosition(uiManager.modConsole.transform.GetChild(1).GetComponent<ScrollRect>(), value));
+        public void UpdateConsole()
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)uiManager.ConsoleScrollRect.transform);
+            uiManager.ConsoleScrollRect.verticalNormalizedPosition = 0f;
         }
 
         public void ToggleVisibility(bool visible)
         {
-            if (settingsManager.ConsoleMode == ConsoleModes.Disabled)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled)
             {
-                uiManager.modConsole.SetActive(false);
+                uiManager.JLConsole.SetActive(false);
                 return;
             }
 
-            uiManager.modConsole.SetActive(visible);
-        }
-
-        IEnumerator ApplyScrollPosition(ScrollRect sr, float verticalPos)
-        {
-            yield return new WaitForEndOfFrame();
-            sr.verticalNormalizedPosition = verticalPos;
-            LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)sr.transform);
+            uiManager.JLConsole.SetActive(visible);
         }
 
         #region Logging
@@ -337,10 +222,26 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogMessage(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode != ConsoleModes.Default)
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
                 return;
 
-            Instance.LogMessage("/", message, "aqua");
+            Instance.InternalLogMessage("/", message, "aqua");
+        }
+
+        internal static void LogMessage(object message, bool debugLog)
+        {
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
+                return;
+
+            Instance.InternalLogMessage("/", message, "aqua", debugLog);
+        }
+
+        internal static void LogMessage(object sender, object message, bool debugLog)
+        {
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
+                return;
+
+            Instance.InternalLogMessage(sender, message, "aqua", debugLog);
         }
 
         /// <summary>
@@ -350,10 +251,10 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogMessage(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode != ConsoleModes.Default)
+            if (JaLoaderSettings.ConsoleMode != ConsoleModes.Default)
                 return;
 
-            Instance.LogMessage(sender, message, "aqua");
+            Instance.InternalLogMessage(sender, message, "aqua");
         }
 
         /// <summary>
@@ -362,7 +263,41 @@ namespace JaLoader
         /// <param name="message"></param>
         public static void LogOnlyToFile(object message)
         {
-            Instance.log.Add($"{DateTime.Now} - {message}");
+            Debug.Log($"'/': {message}");
+            log.Add($"{DateTime.Now} > '/': '{message}'");
+            Instance.WriteLog();
+        }
+
+        /// <summary>
+        /// Logs a warning to the JaLoader_log.log file, does not show in-game.
+        /// </summary>
+        /// <param name="message"></param>
+        public static void LogWarningOnlyToFile(object message)
+        {
+            Debug.LogWarning($"[WARNING] '/': {message}");
+            log.Add($"{DateTime.Now} >! '/': '{message}'");
+            Instance.WriteLog();
+        }
+
+        /// <summary>
+        /// Logs an error to the JaLoader_log.log file, does not show in-game.
+        /// </summary>
+        /// <param name="message"></param>"
+        public static void LogErrorOnlyToFile(object message)
+        {
+            Debug.LogError($"[ERROR] '/': {message}");
+            log.Add($"{DateTime.Now} >!! '/': '{message}'");
+            Instance.WriteLog();
+        }
+
+        /// <summary>
+        /// Logs a debug message to the JaLoader_log.log file, does not show in-game.
+        /// </summary>
+        /// <param name="message"></param>"
+        public static void LogDebugOnlyToFile(object message)
+        {
+            Debug.Log($"[DEBUG] '/': {message}");
+            log.Add($"{DateTime.Now} * '/': '{message}'");
             Instance.WriteLog();
         }
 
@@ -370,14 +305,23 @@ namespace JaLoader
         {
             foreach ((string, string, string) log in queuedLogs)
             {
-                LogMessage(log.Item1, log.Item2, log.Item3);
+                InternalLogMessage(log.Item1, log.Item2, log.Item3);
             }
 
             queuedLogs.Clear();
         }
 
-        private void LogMessage(object sender, object message, string color)
+        internal void InternalLogMessage(object sender, object message, string color, bool debugLog = true)
         {
+            if (sender == null && message == null)
+                return;
+
+            if (sender == null)
+                sender = "/";
+
+            if (message == null)
+                message = "null";
+            
             if (!init)
             {
                 queuedLogs.Add((sender.ToString(), message.ToString(), color));
@@ -385,18 +329,26 @@ namespace JaLoader
                 switch (color)
                 {
                     case "grey":
+                        if(debugLog)
+                            Debug.Log($"[DEBUG] [{sender}] {message}");
                         log.Add($"{DateTime.Now} * '{sender}': '{message}'");
                         break;
 
                     case "red":
+                        if(debugLog)
+                            Debug.LogError($"[ERROR] [{sender}] {message}");
                         log.Add($"{DateTime.Now} >!! '{sender}': '{message}'");
                         break;
 
                     case "yellow":
+                        if(debugLog)
+                            Debug.LogWarning($"[WARNING] [{sender}] {message}");
                         log.Add($"{DateTime.Now} >! '{sender}': '{message}'");
                         break;
 
                     case "aqua":
+                        if(debugLog)
+                            Debug.Log($"[INFO] [{sender}] {message}");
                         log.Add($"{DateTime.Now} > '/': '{message}'");
                         break;
                 }
@@ -405,28 +357,34 @@ namespace JaLoader
 
             ToggleVisibility(true);
 
-            float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
-
-            GameObject _msg = Instantiate(uiManager.messageTemplatePrefab);
-            _msg.transform.SetParent(uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
+            GameObject _msg = Instantiate(uiManager.ConsoleMessageTemplate);
+            _msg.transform.SetParent(uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0), false);
             switch (color)
             {
                 case "grey":
+                    if (debugLog)
+                        Debug.Log($"[DEBUG] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=grey>{sender}: {message}</color>";
                     log.Add($"{DateTime.Now} * '{sender}': '{message}'");
                     break;
 
                 case "red":
+                    if (debugLog)
+                        Debug.LogError($"[ERROR] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: <color=red>{message}</color>";
                     log.Add($"{DateTime.Now} >!! '{sender}': '{message}'");
                     break;
 
                 case "yellow":
+                    if (debugLog)
+                        Debug.LogWarning($"[WARNING] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: <color=yellow>{message}</color>";
                     log.Add($"{DateTime.Now} >! '{sender}': '{message}'");
                     break;
 
                 case "aqua":
+                    if (debugLog)
+                        Debug.Log($"[INFO] [{sender}] {message}");
                     _msg.GetComponent<InputField>().text = $"<color=aqua>{sender}</color>: {message}";
                     log.Add($"{DateTime.Now} > '/': '{message}'");
                     break;
@@ -434,7 +392,8 @@ namespace JaLoader
 
             _msg.SetActive(true);
 
-            UpdateConsole(_value);
+            Keep100MessagesLimit();
+            UpdateConsole();
             WriteLog();
         }
 
@@ -445,10 +404,13 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogWarning(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || SettingsManager.Instance.ConsoleMode == ConsoleModes.Errors)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || JaLoaderSettings.ConsoleMode == ConsoleModes.Errors)
+            {
+                LogWarningOnlyToFile(message);
                 return;
+            }
 
-            Instance.LogMessage(sender, message, "yellow");
+            Instance.InternalLogMessage(sender, message, "yellow");
         }
 
         /// <summary>
@@ -457,10 +419,13 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogWarning(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || SettingsManager.Instance.ConsoleMode == ConsoleModes.Errors)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || JaLoaderSettings.ConsoleMode == ConsoleModes.Errors)
+            {
+                LogWarningOnlyToFile(message);
                 return;
+            }
 
-            Instance.LogMessage("/", message, "yellow");
+            Instance.InternalLogMessage("/", message, "yellow");
         }
 
         /// <summary>
@@ -470,10 +435,13 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogError(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled)
+            {
+                LogErrorOnlyToFile(message);
                 return;
+            }
 
-            Instance.LogMessage(sender, message, "red");
+            Instance.InternalLogMessage(sender, message, "red");
         }
 
         /// <summary>
@@ -482,10 +450,13 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogError(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled)
+            {
+                LogErrorOnlyToFile(message);
                 return;
+            }
 
-            Instance.LogMessage("/", message, "red");
+            Instance.InternalLogMessage("/", message, "red");
         }
 
         /// <summary>
@@ -495,10 +466,13 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogDebug(object sender, object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.Instance.DebugMode)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || !JaLoaderSettings.DebugMode)
+            {
+                LogDebugOnlyToFile(message);
                 return;
+            }
 
-            Instance.LogMessage(sender, message, "grey");
+            Instance.InternalLogMessage(sender, message, "grey");
         }
 
         /// <summary>
@@ -507,10 +481,13 @@ namespace JaLoader
         /// <param name="message">The message to be sent</param>
         public static void LogDebug(object message)
         {
-            if (SettingsManager.Instance.ConsoleMode == ConsoleModes.Disabled || !SettingsManager.Instance.DebugMode)
+            if (JaLoaderSettings.ConsoleMode == ConsoleModes.Disabled || !JaLoaderSettings.DebugMode)
+            {
+                LogDebugOnlyToFile(message);
                 return;
+            }
 
-            Instance.LogMessage("/", message, "grey");
+            Instance.InternalLogMessage("/", message, "grey");
         }
 
         private void OnApplicationQuit()
@@ -678,7 +655,7 @@ namespace JaLoader
                         string time = inputWords[2].ToLower();
                         int hours = 0, minutes = 0;
 
-                        if(time != "day" && time != "night")
+                        if (time != "day" && time != "night")
                         {
                             if (!time.Contains(":"))
                             {
@@ -704,7 +681,7 @@ namespace JaLoader
                         if (time == "day")
                             hours = 12;
 
-                        if(time == "night")
+                        if (time == "night")
                             hours = 20;
 
                         switch (inputWords[1])
@@ -767,7 +744,7 @@ namespace JaLoader
             car.transform.position = player.transform.position + player.transform.forward * 8 + new Vector3(0, 2, 0);
             car.transform.rotation = player.transform.rotation;
             script.SendMessage("SavePause");
-            if(script.isPaused == 0)
+            if (script.isPaused == 0)
                 script.SendMessage("UpdateTime", 1f);
 
             Log("/", "Teleported laika to player!");
@@ -785,33 +762,30 @@ namespace JaLoader
 
         private void ShowHelp()
         {
-            LogMessage("'help' - Shows this");
-            LogMessage("'clear' - Clears the console");
-            LogMessage("'mods' - Toggles the mod list");
-            LogMessage("'path' - Prints the mods path");
-            LogMessage("'version' - Prints the modloader's version");
-            LogMessage("'debug' - Toggle debug messages");
-            LogMessage("Cheat commands (only work in-game)", "");
-            LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet");
-            LogMessage("/", "'time set {hr:min/day/night}' - Sets the time to the specified hour/day/night");
-            LogMessage("'repairkit' - Spawns a repair kit near you");
-            LogMessage("'gascan' - Spawns a filled gas can near you");
-            LogMessage("'repairall' - Restores every installed part to full condition");
-            LogMessage("/", "'laika' - Teleports the Laika in front of you");
-            LogMessage("/", "'tolaika' - Teleports you to the Laika");
-            LogMessage("Debug commands", "");
-            LogMessage("/", "`freecam` - Toggles freecam");
-            LogMessage("/", "`tofreecam` - Teleports the player to the freecam's position");
+            LogMessage("'help' - Shows this", false);
+            LogMessage("'clear' - Clears the console", false);
+            LogMessage("'mods' - Toggles the mod list", false);
+            LogMessage("'path' - Prints the mods path", false);
+            LogMessage("'version' - Prints the modloader's version", false);
+            LogMessage("'debug' - Toggle debug messages", false);
+            LogMessage("Cheat commands (only work in-game)", "", false);
+            LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet", false);
+            LogMessage("/", "'time set {hr:min/day/night}' - Sets the time to the specified hour/day/night", false);
+            LogMessage("'repairkit' - Spawns a repair kit near you", false);
+            LogMessage("'gascan' - Spawns a filled gas can near you", false);
+            LogMessage("'repairall' - Restores every installed part to full condition", false);
+            LogMessage("'laika' - Teleports the Laika in front of you", false);
+            LogMessage("'tolaika' - Teleports you to the Laika", false);
+            LogMessage("Debug commands", "", false);
+            LogMessage("`freecam` - Toggles freecam", false);
+            LogMessage("`tofreecam` - Teleports the player to the freecam's position", false);
 
-            LogMessage("Mods commands", "");
-            foreach ((string, string, string) pair in customCommands.Keys)
+            if (customCommands.Count > 0)
             {
-                LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
+                LogMessage("Mods commands", "");
+                foreach ((string, string, string) pair in customCommands.Keys)
+                    LogMessage($"'{pair.Item1.ToLower()}' - {pair.Item2}");
             }
-
-            float _value = UIManager.Instance.modConsole.transform.GetChild(1).GetComponent<ScrollRect>().verticalNormalizedPosition;
-
-            UpdateConsole(_value);
         }
 
         private void SpawnRepairKit()
@@ -864,11 +838,10 @@ namespace JaLoader
 
         private void ToggleDebug()
         {
-            settingsManager.DebugMode = !settingsManager.DebugMode;
-            settingsManager.SaveSettings();
-            uiManager.SetOptionsValues();
+            JaLoaderSettings.DebugMode = !JaLoaderSettings.DebugMode;
+            SettingsManager.SaveSettings();
 
-            switch (settingsManager.DebugMode)
+            switch (JaLoaderSettings.DebugMode)
             {
                 case true:
                     LogMessage("/", "Any future debug messages sent from now on will be <i>shown.</i>");
@@ -892,19 +865,69 @@ namespace JaLoader
 
         private void SendPath()
         {
-            LogMessage("/", settingsManager.ModFolderLocation);
+            LogMessage("/", JaLoaderSettings.ModFolderLocation);
         }
 
         private void SendVersion()
         {
-            LogMessage("/", $"a_{settingsManager.GetVersionString()}");
+            LogMessage("/", JaLoaderSettings.GetVersionString());
         }
 
         private void Clear()
         {
-            foreach (Transform message in uiManager.modConsole.transform.GetChild(1).GetChild(0).GetChild(0))
+            foreach (Transform message in uiManager.JLConsole.transform.GetChild(1).GetChild(0).GetChild(0))
                 if (message.name != "MessageTemplate")
                     Destroy(message.gameObject);
+        }
+
+        public void ILog(object author, object message)
+        {
+            Log(author, message);
+        }
+
+        public void ILogMessage(object author, object message)
+        {
+            LogMessage(author, message);
+        }
+
+        public void ILogWarning(object author, object message)
+        {
+            LogWarning(author, message);
+        }
+
+        public void ILogError(object author, object message)
+        {
+            LogError(author, message);
+        }
+
+        public void ILogDebug(object author, object message)
+        {
+            LogDebug(author, message);
+        }
+
+        public void ILog(object message)
+        {
+            LogMessage(message);
+        }
+
+        public void ILogMessage(object message)
+        {
+            LogMessage(message);
+        }
+
+        public void ILogWarning(object message)
+        {
+            LogWarning(message);
+        }
+
+        public void ILogError(object message)
+        {
+            LogError(message);
+        }
+
+        public void ILogDebug(object message)
+        {
+            LogDebug(message);
         }
     }
 }

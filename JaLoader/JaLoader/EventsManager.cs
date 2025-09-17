@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using JaLoader.Common;
+using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -79,24 +80,52 @@ namespace JaLoader
         public event ObjectEvents OnObjectDropped;
         #endregion
 
-        private void Update()
+        internal static void SafeInvoke<T>(T multicastDelegate, Action<T> invokeAction) where T : Delegate
         {
-             
+            if(multicastDelegate == null)
+                return;
+
+            Delegate[] invocationList = multicastDelegate.GetInvocationList();
+
+            foreach (T subscriber in invocationList.Cast<T>())
+            {
+                if (subscriber.Target is MonoBehaviour mb)
+                    if(mb == null || (mb != null && !mb.isActiveAndEnabled))
+                    {
+                        if (!(mb is DebugCamera))
+                        {
+                            Console.LogDebug("JaLoader", $"Skipping event `{multicastDelegate.Method.Name}`, by method `{subscriber.Method.Name}`, from script `{subscriber.Method.DeclaringType?.Name ?? "Unknown"}` because the MonoBehaviour is not active or has been destroyed.");
+                            continue;
+                        }
+                    }
+
+                try
+                {
+                    invokeAction(subscriber);
+                }
+                catch (Exception ex)
+                {
+                    Console.LogError("JaLoader", $"An error occured while invoking event `{multicastDelegate.Method.Name}`, by method `{subscriber.Method.Name}`, from script `{subscriber.Method.DeclaringType?.Name ?? "Unknown"}`");
+                    Console.LogError("JaLoader", ex);
+                }
+            }
         }
 
         public void OnUILoadFinish()
         {
-            OnUILoadFinished?.Invoke();
+            StartCoroutine(ReferencesLoader.LoadAssemblies());
+
+            SafeInvoke(OnUILoadFinished, (handler) => handler());
         }
 
         public void OnModsInit()
         {
-            OnModsInitialized?.Invoke();
+            SafeInvoke(OnModsInitialized, (handler) => handler());
         }
 
         public void OnObjectPickup(ObjectEventArgs args)
         {
-            OnObjectPickedUp?.Invoke(args);
+            SafeInvoke(OnObjectPickedUp, (handler) => handler(args));
         }
 
         //public void OnObjectPlace(ObjectEventArgs args)
@@ -106,72 +135,70 @@ namespace JaLoader
 
         public void OnObjectDrop(ObjectEventArgs args)
         {
-            OnObjectDropped?.Invoke(args);
-
-            Console.Log(args.gameObjectName);
+            SafeInvoke(OnObjectDropped, (handler) => handler(args));
         }
 
         public void OnHeldObjectPositionChange(ObjectEventArgs args)
         {
-            OnHeldObjectPositionChanged?.Invoke(args);
+            SafeInvoke(OnHeldObjectPositionChanged, (handler) => handler(args));
         }
 
         public void OnSleepTrigger()
         {
-            OnSleep?.Invoke();
+            SafeInvoke(OnSleep, (handler) => handler());
         }
 
         public void OnMenuFade()
         {
-            OnMenuFadeOut?.Invoke();
+            SafeInvoke(OnMenuFadeOut, (handler) => handler());
         }
 
         public void OnPauseGame()
         {
             Console.LogOnlyToFile("Paused game!");
-            OnPause?.Invoke();
+            SafeInvoke(OnPause, (handler) => handler());
         }
 
         public void OnUnPauseGame()
         {
             Console.LogOnlyToFile("Unpaused game!");
-            OnUnpause?.Invoke();
+            SafeInvoke(OnUnpause, (handler) => handler());
         }
 
         public void OnSettingsLoad()
         {
             //Console.LogOnlyToFile("Loaded JaLoader settings!");
-            OnSettingsLoaded?.Invoke();
+            SafeInvoke(OnSettingsLoaded, (handler) => handler());
         }
 
         public void OnSettingsSave()
         {
             Console.LogOnlyToFile("Saved JaLoader settings!");
-            OnSettingsSaved?.Invoke();
+            SafeInvoke(OnSettingsSaved, (handler) => handler());
         }
 
         public void OnNewGameStart()
         {
             Console.LogOnlyToFile("New game started!");
-            OnNewGame?.Invoke();
+            SafeInvoke(OnNewGame, (handler) => handler());
         }
 
         public void OnCustomObjectsRegisterFinish()
         {
             Console.LogOnlyToFile("Finished registering custom objects!");
-            OnCustomObjectsRegisterFinished?.Invoke();
+            SafeInvoke(OnCustomObjectsRegisterFinished, (handler) => handler());
         }
 
         public void OnCustomObjectsLoad()
         {
             Console.LogOnlyToFile("Loaded custom objects!");
-            OnCustomObjectsLoaded?.Invoke();
+            SafeInvoke(OnCustomObjectsLoaded, (handler) => handler());
         }
 
         public void OnCustomObjectsSave()
         {
             Console.LogOnlyToFile("Saved custom objects!");
-            OnCustomObjectsSaved?.Invoke();
+            SafeInvoke(OnCustomObjectsSaved, (handler) => handler());
         }
 
         public void OnSceneUnload(Scene unloadedScene)
@@ -182,22 +209,20 @@ namespace JaLoader
 
         public void OnGameUnloadFunc()
         {
-            OnGameUnload();
+            SafeInvoke(OnGameUnload, (handler) => handler());
         }
 
         public void OnSceneLoad(Scene current, LoadSceneMode mode)
         {
-            //Console.Instance?.Log(current.buildIndex);
-
             if (OnLoadStart != null && current.buildIndex == 2)
             {
-                OnLoadStart();
+                SafeInvoke(OnLoadStart, (handler) => handler());
                 return;
             }
 
             if (OnMenuLoad != null && current.buildIndex == 1)
             {
-                OnMenuLoad();
+                SafeInvoke(OnMenuLoad, (handler) => handler());
                 return;
             }
 
@@ -207,10 +232,8 @@ namespace JaLoader
                 return;
             }
 
-            if(current.buildIndex == 0 && SettingsManager.Instance.SkipLanguage && SettingsManager.Instance.selectedLanguage)
-            {
+            if(current.buildIndex == 0 && JaLoaderSettings.SkipLanguage && JaLoaderSettings.SelectedLanguage)
                 SceneManager.LoadScene("MainMenu");
-            }                
         }
 
         public void OnGameLoadFunc(bool addComps = true)
@@ -224,14 +247,11 @@ namespace JaLoader
                 //Camera.main.gameObject.AddComponent<HarmonyManager>();
             }
 
-            OnGameLoad();
+            SafeInvoke(OnGameLoad, (handler) => handler());
         }
 
         public void OnLog(string message, string stack, LogType type)
         {
-            /*if (OnSave != null && message == "Saved" && type == LogType.Log)
-                OnSave();*/ // Called with Harmony now
-
             if (OnException != null && type == LogType.Exception)
                 OnException(message, stack);
         }
@@ -239,20 +259,20 @@ namespace JaLoader
         public void OnLoad()
         {
             Console.LogOnlyToFile("Loaded save!");
-            OnLoadSave?.Invoke();
+            SafeInvoke(OnLoadSave, (handler) => handler());
         }
 
         public void OnSaved()
         {
             Console.LogOnlyToFile("Saved game!");
-            OnSave?.Invoke();
+            SafeInvoke(OnSave, (handler) => handler());
         }
 
         public void CallRoute(string start, string destination, int distance)
         {
             try
             {
-                OnRouteGenerated?.Invoke(start, destination, distance);
+                SafeInvoke(OnRouteGenerated, (handler) => handler(start, destination, distance));
             }
             catch (Exception ex)
             {
@@ -277,7 +297,7 @@ namespace JaLoader
 
         public void CallTransaction(string type)
         {
-            OnTransaction?.Invoke();
+            SafeInvoke(OnTransaction, (handler) => handler());
 
             switch (type)
             {

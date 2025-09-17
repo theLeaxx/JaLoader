@@ -1,4 +1,5 @@
-﻿using NLayer;
+﻿using JaLoader.Common;
+using NLayer;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -32,27 +33,23 @@ namespace JaLoader
             if (!Directory.Exists(folderPath))
                 Directory.CreateDirectory(folderPath);
 
-            if (SettingsManager.Instance.UseCustomSongs)
+            if (JaLoaderSettings.UseCustomSongs)
                 WarnAboutBadFormats();
 
             EventsManager.Instance.OnGameLoad += OnGameLoad;
             EventsManager.Instance.OnMenuLoad += OnMenuLoad;
-            SceneManager.sceneLoaded += OnSceneChanged;
         }
         #endregion
-
-        private void OnSceneChanged(Scene sceneToLoad, LoadSceneMode mode)
-        {
-            if (sceneToLoad.buildIndex == 1)
-                FindObjectOfType<MenuVolumeChanger>().muted = true;
-        }
 
         private readonly string folderPath = $@"{Application.dataPath}\..\Songs";
         public List<AudioClip> loadedSongs = new List<AudioClip>();
 
+        private GameObject RadioFreq;
+        private MenuVolumeChanger menuVolumeChanger;
+
         void Update()
         {
-            if(SettingsManager.Instance.DebugMode)
+            if(JaLoaderSettings.DebugMode)
                 if (Input.GetKeyDown(KeyCode.F6))
                     FindObjectOfType<RadioFreqLogicC>().NextSong();
         }
@@ -79,43 +76,54 @@ namespace JaLoader
 
             FileInfo[] MP3Songs = dir.GetFiles("*.mp3");
 
-            UnityEngine.Debug.Log($"Found {MP3Songs.Length} .mp3 files, loading audio clips!");
+            Console.LogDebug("JaLoader", $"Found {MP3Songs.Length} .mp3 files, loading audio clips!");
 
             foreach (FileInfo file in MP3Songs) 
             {
-                UnityEngine.Debug.Log($"Loading song {file.Name}!");
+                Console.LogDebug("JaLoader", $"Loading song {file.Name}!");
 
-                var mpegFile = new MpegFile(file.FullName);
-
-                AudioClip clip = AudioClip.Create(System.IO.Path.GetFileNameWithoutExtension(file.FullName),
-                                    (int)(mpegFile.Length / sizeof(float) / mpegFile.Channels),
-                                    mpegFile.Channels,
-                                    44100,
-                                    true,
-                                    data => { int actualReadCount = mpegFile.ReadSamples(data, 0, data.Length); },
-                                    position => { mpegFile = new MpegFile(file.FullName); });
-
-
-                if (clip.frequency != 44100)
+                try
                 {
-                    Console.LogError($"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
+                    var mpegFile = new MpegFile(file.FullName);
+
+                    AudioClip clip = AudioClip.Create(Path.GetFileNameWithoutExtension(file.FullName),
+                                        (int)(mpegFile.Length / sizeof(float) / mpegFile.Channels),
+                                        mpegFile.Channels,
+                                        44100,
+                                        true,
+                                        data => { int actualReadCount = mpegFile.ReadSamples(data, 0, data.Length); },
+                                        position => { mpegFile = new MpegFile(file.FullName); });
+
+                    if (clip.frequency != 44100)
+                    {
+                        Console.LogError("JaLoader", $"Song '{file.Name}' couldn't be loaded! Songs must have a sample rate of 44.1kHz!");
+
+                        continue;
+                    }
+
+                    clip.name = file.Name;
+
+                    loadedSongs.Add(clip);
+                }
+                catch (Exception ex)
+                {
+                    Console.LogError("JaLoader", $"Failed to load song '{file.Name}'! A common cause is the song being too long.");
+                    Console.LogError(ex);
 
                     continue;
                 }
 
-                clip.name = file.Name;
-
-                loadedSongs.Add(clip);
-
-                UnityEngine.Debug.Log($"Loaded song {file.Name}!");
+                Console.LogDebug("JaLoader", $"Loaded song {file.Name}!");
             }
 
-            UnityEngine.Debug.Log($"Song loading complete ({loadedSongs.Count} songs)!");
+            Console.LogDebug("JaLoader", $"Song loading complete ({loadedSongs.Count} songs)!");
 
             while (SceneManager.GetActiveScene().buildIndex != 1)
                 yield return null;
 
             AddSongsToRadio();
+
+            Console.Log("JaLoader", $"{loadedSongs.Count} custom songs loaded!");
         }
 
         private void OnGameLoad()
@@ -125,7 +133,22 @@ namespace JaLoader
 
         private void OnMenuLoad()
         {
+            RadioFreq = GameObject.Find("RadioFreq");
+            menuVolumeChanger = RadioFreq.AddComponent<MenuVolumeChanger>();
+            menuVolumeChanger.muted = true;
+
+            UpdateMenuMusic(!JaLoaderSettings.DisableMenuMusic, (float)JaLoaderSettings.MenuMusicVolume / 100);
+
             StartCoroutine(AddSongsToRadioWithDelay());
+        }
+
+        internal void UpdateMenuMusic(bool enable, float volume)
+        {
+            if (SceneManager.GetActiveScene().buildIndex != 1)
+                return;
+
+            RadioFreq.SetActive(enable);
+            menuVolumeChanger.volume = volume;
         }
 
         private void AddSongsToRadio()
@@ -137,7 +160,7 @@ namespace JaLoader
 
             radio.enabled = false;
 
-            if (SettingsManager.Instance.CustomSongsBehaviour == CustomSongsBehaviour.Add)
+            if (JaLoaderSettings.CustomSongsBehaviour == CustomSongsBehaviour.Add)
             {
                 var songListings = radio.songListings.ToList();
 
@@ -167,6 +190,8 @@ namespace JaLoader
 
         private IEnumerator AddSongsToRadioWithDelay()
         {
+            AddSongsToRadio();
+
             yield return new WaitForEndOfFrame();
 
             FindObjectOfType<MenuVolumeChanger>().muted = false;

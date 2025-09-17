@@ -10,6 +10,8 @@ using System;
 using static System.Net.Mime.MediaTypeNames;
 using System.ComponentModel;
 using System.Linq;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
 
 namespace JaLoader
 {
@@ -39,17 +41,23 @@ namespace JaLoader
             }
 
             EventsManager.Instance.OnRouteGenerated += AddPages;
+            EventsManager.Instance.OnGameLoad += AddPages;
         }
         #endregion
 
-        public void AddPages(string start, string destination, int distance)
+        private void AddPages(string startLocation, string endLocation, int distance)
+        {
+            AddPages();
+        }
+
+        public void AddPages()
         {
             StartCoroutine(DelayThenAddPages());
         }
 
         private IEnumerator DelayThenAddPages()
         {
-            yield return new WaitForSeconds(2f);
+            yield return new WaitForSeconds(5f);
 
             AddModsPages();
         }
@@ -97,7 +105,7 @@ namespace JaLoader
                         {
                             if (!setPriceImage)
                             {
-                                UIManager.Instance.catalogueEntryTemplate.transform.GetChild(3).GetComponent<Image>().sprite = price.GetChild(0).GetComponent<SpriteRenderer>().sprite;
+                                UIManager.Instance.CatalogueEntryTemplate.transform.GetChild(3).GetComponent<Image>().sprite = price.GetChild(0).GetComponent<SpriteRenderer>().sprite;
                                 setPriceImage = true;
                             }
                             Destroy(price.gameObject);
@@ -201,17 +209,17 @@ namespace JaLoader
 
         private IEnumerator CreateScrollViews()
         {
-            UIManager.Instance.catalogueEntryTemplate.transform.GetChild(2).gameObject.AddComponent<ModsPageItem>();
+            UIManager.Instance.CatalogueEntryTemplate.transform.GetChild(2).gameObject.AddComponent<ModsPageItem>();
 
-            scrollViews.Add(PartTypes.Engine, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.FuelTank, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.Carburettor, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.AirFilter, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.IgnitionCoil, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.Battery, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.WaterTank, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.Extra, Instantiate(UIManager.Instance.catalogueTemplate));
-            scrollViews.Add(PartTypes.Custom, Instantiate(UIManager.Instance.catalogueTemplate));
+            scrollViews.Add(PartTypes.Engine, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.FuelTank, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.Carburettor, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.AirFilter, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.IgnitionCoil, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.Battery, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.WaterTank, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.Extra, Instantiate(UIManager.Instance.CataloguePageTemplate));
+            scrollViews.Add(PartTypes.Custom, Instantiate(UIManager.Instance.CataloguePageTemplate));
 
             scrollViews[PartTypes.Engine].name = "EnginesScroll";
             scrollViews[PartTypes.FuelTank].name = "FuelTanksScroll";
@@ -225,8 +233,8 @@ namespace JaLoader
 
             foreach (var view in scrollViews.Values)
             {
-                view.transform.SetParent(UIManager.Instance.catalogueTemplate.transform.parent, false);
-                view.transform.position = UIManager.Instance.catalogueTemplate.transform.position;
+                view.transform.SetParent(UIManager.Instance.CataloguePageTemplate.transform.parent, false);
+                view.transform.position = UIManager.Instance.CataloguePageTemplate.transform.position;
             }
 
             StartCoroutine(AddAllEntries());
@@ -249,7 +257,7 @@ namespace JaLoader
 
         private void AddEntry(PartTypes partType, string title, string description, Texture2D image, string price, string registryName, bool useSquareImage = false)
         {
-            var entry = Instantiate(UIManager.Instance.catalogueEntryTemplate, scrollViews[partType].transform.Find("Viewport/Content")).gameObject;
+            var entry = Instantiate(UIManager.Instance.CatalogueEntryTemplate, scrollViews[partType].transform.Find("Viewport/Content")).gameObject;
             entry.transform.GetChild(0).GetComponent<Text>().text = title;
             entry.transform.GetChild(1).GetComponent<Text>().text = description;
             entry.transform.GetChild(2).GetComponent<RawImage>().texture = image;
@@ -312,23 +320,26 @@ namespace JaLoader
                     }
 
                     var identif = obj.GetComponent<ObjectIdentification>();
-                    var objInfo = obj.GetComponent<CustomObjectInfo>();
-                    var mod = ModLoader.Instance.FindMod(identif.Author, identif.ModID, identif.ModName);
-
-                    if(ModLoader.Instance.disabledMods.Contains(mod))
+                    if (!identif.CanBuyInDealership)
                         continue;
+
+                    var objInfo = obj.GetComponent<CustomObjectInfo>();
+                    if (!objInfo.isPaintJob)
+                    {
+                        var mod = ModManager.FindMod(identif.Author, identif.ModID, identif.ModName);
+
+                        if (!ModManager.Mods[mod].IsEnabled)
+                            continue;
+                    }
 
                     Texture2D tex = null;
                     bool useSquareImage = false;
-                    if (type == PartTypes.Extra)
+                    if (objInfo.isPaintJob)
                     {
                         var comp = obj.GetComponent<ExtraComponentC_ModExtension>();
-                        if(comp.ID == -2)
-                        {
-                            var pj = PaintJobManager.Instance.GetPaintJobByMaterial(comp.material);
-                            tex = pj.PreviewIcon;
-                            useSquareImage = true;
-                        }
+                        var pj = PaintJobManager.Instance.GetPaintJobByMaterial(comp.material);
+                        tex = pj.PreviewIcon;
+                        useSquareImage = true;
                     }
 
                     if(tex == null)
@@ -384,7 +395,7 @@ namespace JaLoader
                 modPage.SetActive(true);
                 modPageBG.SetActive(true);
                 GetComponent<TextMeshPro>().text = ".................GO BACK";
-                UIManager.Instance.catalogueTemplate.transform.parent.Find("EnginesScroll").gameObject.SetActive(true);
+                UIManager.Instance.CataloguePageTemplate.transform.parent.Find("EnginesScroll").gameObject.SetActive(true);
                 showingMods = true;
             }
             else
@@ -557,7 +568,7 @@ namespace JaLoader
                 return;
 
             MakeAllItemsSellingDisabled();
-            var pagesHolder = UIManager.Instance.catalogueTemplate.transform.parent.gameObject;
+            var pagesHolder = UIManager.Instance.CataloguePageTemplate.transform.parent.gameObject;
 
             for (int i = 1; i < pagesHolder.transform.childCount; i++)
                 pagesHolder.transform.GetChild(i).gameObject.SetActive(false);
@@ -584,7 +595,7 @@ namespace JaLoader
 
         private void Awake()
         {
-            pagesHolder = UIManager.Instance.catalogueTemplate.transform.parent.gameObject;
+            pagesHolder = UIManager.Instance.CataloguePageTemplate.transform.parent.gameObject;
         }
 
         private void HideAllPages()
