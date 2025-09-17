@@ -5,6 +5,7 @@ using JaLoader.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -138,7 +139,7 @@ namespace JaLoader
                 throw new ModException("Invalid parameters provided to IsModEnabled. ID and author cannot be null or empty.", "", 104);
             }
 
-            MonoBehaviour mod = FindMod(author, ID, name);
+            MonoBehaviour mod = FindMod(author, ID, name, ignoreNull: true);
             if (mod == null)
                 return false;
 
@@ -286,7 +287,7 @@ namespace JaLoader
             {
                 string[] modInfo = mod.Split('_');
 
-                var foundMod = FindMod(modInfo[0], modInfo[1], modInfo[2]);
+                var foundMod = FindMod(modInfo[0], modInfo[1], modInfo[2], true);
 
                 if (foundMod != null)
                     ToggleMod(Mods[foundMod].GenericModData, true, forceStatusDisabled: true);
@@ -348,7 +349,7 @@ namespace JaLoader
 
             foreach (var incompatibility in mod.Incompatibilities)
             {
-                var foundMod = FindMod(incompatibility.Item2, incompatibility.Item1);
+                var foundMod = FindMod(incompatibility.Item2, incompatibility.Item1, ignoreNull: true);
 
                 if (foundMod == null)
                     continue;
@@ -392,7 +393,7 @@ namespace JaLoader
                     continue;
                 }
 
-                var foundMod = FindMod(dependency.Item2, dependency.Item1);
+                var foundMod = FindMod(dependency.Item2, dependency.Item1, ignoreNull: true);
 
                 if (foundMod == null)
                 {
@@ -439,8 +440,9 @@ namespace JaLoader
         /// <param name="author">The mod's author</param>
         /// <param name="ID">The mod's ID</param>
         /// <param name="name">The mod's name</param>
+        /// <param name="ignoreNull">Do not throw an error if nothing is found</param>
         /// <returns>The searched Mod if found, otherwise null</returns>
-        public static MonoBehaviour FindMod(string author, string ID, string name = "")
+        public static MonoBehaviour FindMod(string author, string ID, string name = "", bool ignoreNull = false)
         {
             if (string.IsNullOrEmpty(author) || string.IsNullOrEmpty(ID))
             {
@@ -463,7 +465,7 @@ namespace JaLoader
                     data.GenericModData.ModAuthor.Equals(author, StringComparison.OrdinalIgnoreCase) &&
                     data.GenericModData.Mod != null);
 
-                if (foundEntryDataByIDAndAuthor == null)
+                if (foundEntryDataByIDAndAuthor == null && !ignoreNull)
                     Console.LogError("JaLoader", $"Mod with ID '{ID}' and author '{author}' not found.");
 
                 return foundEntryDataByIDAndAuthor?.GenericModData.Mod;
@@ -475,7 +477,7 @@ namespace JaLoader
                 data.GenericModData.ModName.Equals(name, StringComparison.OrdinalIgnoreCase) &&
                 data.GenericModData.Mod != null);
 
-            if(foundEntryData == null)
+            if(foundEntryData == null && !ignoreNull)
                 Console.LogError("JaLoader", $"Mod with ID '{ID}', author '{author}' and name '{name}' not found.");
 
             return foundEntryData?.GenericModData.Mod;
@@ -568,7 +570,7 @@ namespace JaLoader
                     if (string.IsNullOrEmpty(modName))
                         modName = modID;
 
-                    var mod = ModManager.FindMod(modAuthor, modID, modName);
+                    var mod = FindMod(modAuthor, modID, modName, ignoreNull: true);
 
                     if (mod != null && mod is Mod)
                     {
@@ -607,7 +609,7 @@ namespace JaLoader
                     if (string.IsNullOrEmpty(modName))
                         modName = modID;
 
-                    var mod = ModManager.FindMod(modAuthor, modID, modName);
+                    var mod = FindMod(modAuthor, modID, modName, ignoreNull: true);
 
                     if (mod != null && mod is Mod)
                     {
@@ -644,7 +646,7 @@ namespace JaLoader
                     string modName = modInfo[2];
                     int loadOrder = int.Parse(modInfo[3]);
 
-                    MonoBehaviour mod = FindMod(modAuthor, modID, modName);
+                    MonoBehaviour mod = FindMod(modAuthor, modID, modName, true);
 
                     if (mod != null)
                     {
