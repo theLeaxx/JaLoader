@@ -141,8 +141,6 @@ if (args.Length == 2)
                 }
             }
 
-            Console.WriteLine(extractLocation);
-
             foreach (var updateFile in mainFiles)
             {
                 File.Copy(updateFile.FullName, $@"{extractLocation}\Assets\Main\{updateFile.Name}", true);

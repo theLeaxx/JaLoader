@@ -191,6 +191,7 @@
     <Compile Include="BepInExWrapper\ConfigRelated.cs" />
     <Compile Include="BepInExWrapper\ManualLogSource.cs" />
     <Compile Include="BepInExWrapper\PluginInfo.cs" />
+    <Compile Include="CustomBoxContentsC.cs" />
     <Compile Include="CustomKeybind.cs" />
     <Compile Include="CustomObjectsManager.cs" />
     <Compile Include="CustomRadioController.cs" />

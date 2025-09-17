@@ -31,8 +31,27 @@ namespace JaLoader
             EventsManager.Instance.OnMenuLoad += UnloadGameMods;
         }
 
+        internal static void RemoveAllNullMods()
+        {
+            var nullMods = Mods.Where(kv => kv.Key == null).Select(kv => kv.Key).ToList();
+            foreach (var mod in nullMods)
+            {
+                Mods.Remove(mod);
+                loadOrderList.Remove(mod);
+            }
+
+            var nullGenericMods = Mods.Where(kv => kv.Value.GenericModData.Mod == null).Select(kv => kv.Key).ToList();
+            foreach (var mod in nullGenericMods)
+                if (mod != null)
+                    Mods[mod].GenericModData.Mod = mod;
+
+            Console.LogDebug("JaLoader", $"Removed {nullMods.Count + nullGenericMods.Count} null mods caused by reloading from ModManager.");
+        }
+
         internal static void UnloadGameMods()
         {
+            RemoveAllNullMods();
+
             if (!FinishedLoadingMenuMods)
                 return;
 
@@ -299,7 +318,7 @@ namespace JaLoader
 
             if (enabledStatus)
             {
-                data.IsEnabled = false;
+                data.IsEnabled = managerData.IsEnabled = false;
                 toggleBtn.text = "Enable";
                 modEntry.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = CommonColors.DisabledModColor.ToColor();
                 modEntry.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = CommonColors.DisabledModColor.ToColor();
@@ -309,7 +328,7 @@ namespace JaLoader
             }
             else if (!enabledStatus)
             {
-                data.IsEnabled = true;
+                data.IsEnabled = managerData.IsEnabled = true;
                 toggleBtn.text = "Disable";
                 modEntry.transform.Find("BasicInfo").Find("ModName").GetComponent<Text>().color = CommonColors.EnabledModColor.ToColor();
                 modEntry.transform.Find("BasicInfo").Find("ModAuthor").GetComponent<Text>().color = CommonColors.EnabledModColor.ToColor();
@@ -319,7 +338,7 @@ namespace JaLoader
             }
 
             if(!dontSave)
-                SettingsManager.SaveSettings();
+                SettingsManager.SaveSettings(true);
         }
 
         internal static void CheckForIncompatibilities(Mod mod)
@@ -437,10 +456,27 @@ namespace JaLoader
                 return bepinex_found?.GenericModData.Mod;
             }
             
+            if(name == "")
+            {
+                var foundEntryDataByIDAndAuthor = Mods.Values.FirstOrDefault(data =>
+                    data.GenericModData.ModID == ID &&
+                    data.GenericModData.ModAuthor.Equals(author, StringComparison.OrdinalIgnoreCase) &&
+                    data.GenericModData.Mod != null);
+
+                if (foundEntryDataByIDAndAuthor == null)
+                    Console.LogError("JaLoader", $"Mod with ID '{ID}' and author '{author}' not found.");
+
+                return foundEntryDataByIDAndAuthor?.GenericModData.Mod;
+            }
+
             var foundEntryData = Mods.Values.FirstOrDefault(data =>
                 data.GenericModData.ModID == ID &&
                 data.GenericModData.ModAuthor.Equals(author, StringComparison.OrdinalIgnoreCase) &&
-                data.GenericModData.ModName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                data.GenericModData.ModName.Equals(name, StringComparison.OrdinalIgnoreCase) &&
+                data.GenericModData.Mod != null);
+
+            if(foundEntryData == null)
+                Console.LogError("JaLoader", $"Mod with ID '{ID}', author '{author}' and name '{name}' not found.");
 
             return foundEntryData?.GenericModData.Mod;
         }

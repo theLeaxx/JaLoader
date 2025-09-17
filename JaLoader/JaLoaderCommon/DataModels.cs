@@ -16,6 +16,17 @@ namespace JaLoader.Common
         InGame
     }
 
+    public enum GoodType
+    {
+        Alcohol,
+        Meds,
+        Coffee,
+        Textiles,
+        Tobacco,
+        Meat,
+        None
+    }
+
     internal static class Constants
     {
         public const string JaLoaderGitHubLink = "https://github.com/theLeaxx/JaLoader";
@@ -57,6 +68,8 @@ namespace JaLoader.Common
         public static bool UpdateAvailable;
         public static bool LoadedFirstTime;
         public static bool SelectedLanguage;
+        public static bool MultipleTypesInBoxes;
+        public static bool RemoveSmugglingPunishments;
 
         public static List<string> DisabledMods = new List<string>();
         public static List<string> DontShowAgainNotices = new List<string>();
@@ -138,6 +151,8 @@ namespace JaLoader.Common
             AppliedPaintJobName = _settings.AppliedPaintJobName;
             FixBorderGuardsFlags = _settings.FixBorderGuardsFlags;
             DontShowAgainNotices = _settings.DontShowAgainNotices;
+            MultipleTypesInBoxes = _settings.MultipleTypesInBoxes;
+            RemoveSmugglingPunishments = _settings.RemoveSmugglingPunishments;
         }
 
         internal static void SaveSettings(SerializableJaLoaderSettings _settings)
@@ -169,6 +184,8 @@ namespace JaLoader.Common
             _settings.AppliedPaintJobName = AppliedPaintJobName;
             _settings.FixBorderGuardsFlags = FixBorderGuardsFlags;
             _settings.DontShowAgainNotices = DontShowAgainNotices;  
+            _settings.MultipleTypesInBoxes = MultipleTypesInBoxes;
+            _settings.RemoveSmugglingPunishments = RemoveSmugglingPunishments;
         }
 
         public static bool IsNewerThan(string version)
@@ -250,6 +267,8 @@ namespace JaLoader.Common
         public bool ShowDisabledMods = true;
         public bool FixBorderGuardsFlags = true;
         public string AppliedPaintJobName = "";
+        public bool MultipleTypesInBoxes = true;
+        public bool RemoveSmugglingPunishments = false;
 
         public List<string> DisabledMods = new List<string>();
         public List<string> DontShowAgainNotices = new List<string>();

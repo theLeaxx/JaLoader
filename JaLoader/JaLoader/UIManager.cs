@@ -185,6 +185,8 @@ namespace JaLoader
             
             if (JLCanvas == null)
                 StartCoroutine(LoadUIDelay());
+            else
+                AddButtonsToBookLogic();
 
             SetNewspaperText();
 
@@ -396,6 +398,8 @@ namespace JaLoader
             AllSettingsDropdowns.Add("CursorMode", TweaksSettings.FindDeepDropdown("CursorMode"));
             AllSettingsDropdowns.Add("FixItemsFallingBehindShop", TweaksSettings.FindDeepDropdown("FixItemsFallingBehindShop"));
             AllSettingsDropdowns.Add("FixGuardsFlags", TweaksSettings.FindDeepDropdown("FixGuardsFlags"));
+            AllSettingsDropdowns.Add("MultipleTypesInBoxes", TweaksSettings.FindDeepDropdown("MultipleTypesInBoxes"));
+            AllSettingsDropdowns.Add("RemoveSmugglingPunishments", TweaksSettings.FindDeepDropdown("RemoveSmugglingPunishments"));
 
             AllSettingsSliders.Add("MenuMusicVolume", TweaksSettings.FindDeepSlider("MenuMusicVolume"));
             AllSettingsInputFields.Add("LicensePlateText", TweaksSettings.FindDeepInputField("InputField"));
@@ -860,6 +864,8 @@ namespace JaLoader
             //AllSettingsDropdowns["FixItemsFallingBehindShop"].value = JaLoaderSettings.FixItemsFallingBehindShop ? 0 : 1;
             AllSettingsDropdowns["FixGuardsFlags"].value = JaLoaderSettings.FixBorderGuardsFlags ? 0 : 1;
             AllSettingsDropdowns["ShowDisabledMods"].value = JaLoaderSettings.ShowDisabledMods ? 0 : 1;
+            AllSettingsDropdowns["MultipleTypesInBoxes"].value = JaLoaderSettings.MultipleTypesInBoxes ? 0 : 1;
+            AllSettingsDropdowns["RemoveSmugglingPunishments"].value = JaLoaderSettings.RemoveSmugglingPunishments ? 0 : 1;
 
             JLFPSText.SetActive(JaLoaderSettings.ShowFPSCounter);
             JLDebugText.SetActive(JaLoaderSettings.DebugMode);
@@ -1227,6 +1233,8 @@ namespace JaLoader
             //JaLoaderSettings.FixItemsFallingBehindShop = !Convert.ToBoolean(AllSettingsDropdowns["FixItemsFallingBehindShop"].value);
             JaLoaderSettings.FixBorderGuardsFlags = !Convert.ToBoolean(AllSettingsDropdowns["FixGuardsFlags"].value);
             JaLoaderSettings.ShowDisabledMods = !Convert.ToBoolean(AllSettingsDropdowns["ShowDisabledMods"].value);
+            JaLoaderSettings.MultipleTypesInBoxes = !Convert.ToBoolean(AllSettingsDropdowns["MultipleTypesInBoxes"].value);
+            JaLoaderSettings.RemoveSmugglingPunishments = !Convert.ToBoolean(AllSettingsDropdowns["RemoveSmugglingPunishments"].value);
 
             JLFPSText.SetActive(JaLoaderSettings.ShowFPSCounter);
             JLDebugText.gameObject.SetActive(JaLoaderSettings.DebugMode);

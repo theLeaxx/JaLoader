@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using System.Reflection;    
-using System.IO;
-using System.Collections;
-using Application = UnityEngine.Application;
-using System.Text.RegularExpressions;
-using BepInEx;
+﻿using BepInEx;
 using JaLoader.BepInExWrapper;
 using JaLoader.Common;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;    
+using System.Text.RegularExpressions;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Application = UnityEngine.Application;
 
 namespace JaLoader
 {
@@ -430,6 +431,8 @@ namespace JaLoader
 
         internal IEnumerator ReloadAllMods()
         {
+            Console.LogDebug("JaLoader", "Reloading all mods...");
+
             Dictionary<GameObject, Type> modObjAndType = new Dictionary<GameObject, Type>();
             List<ModDataForManager> modsToRemove = new List<ModDataForManager>();
             List<Mod> reloadedMods = new List<Mod>();
@@ -444,7 +447,6 @@ namespace JaLoader
                 modsToRemove.Add(script.Value);
                 modObjAndType.Add(mod.gameObject, mod.GetType());
 
-                Destroy(mod);
                 if (UIManager.Instance.ModsSettingsContent.Find($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder"))
                     Destroy(UIManager.Instance.ModsSettingsContent.Find($"{mod.ModAuthor}_{mod.ModID}_{mod.ModName}-SettingsHolder").gameObject);
 
@@ -452,8 +454,10 @@ namespace JaLoader
                 UIManager.Instance.modEntries.Remove(script.Value.GenericModData);
 
                 Console.Instance.RemoveCommandsFromMod(mod);
-            }
-                
+
+                yield return new WaitForEndOfFrame();
+                Destroy(mod);
+            }   
 
             yield return new WaitForEndOfFrame();
             yield return new WaitForEndOfFrame();
@@ -462,46 +466,50 @@ namespace JaLoader
             {
                 foreach (var mod in ModManager.Mods)
                 {
-                    if (mod.Value.GenericModData != toRemove.GenericModData)
+                    if(mod.Key != null && mod.Value.GenericModData != toRemove.GenericModData)
                         continue;
 
                     ModManager.Mods.Remove(mod.Key);
                     ModManager.loadOrderList.Remove(mod.Key);
                     break;
                 }
+            }
 
-                foreach (KeyValuePair<GameObject, Type> modObj in modObjAndType)
+            yield return new WaitForEndOfFrame();
+
+            foreach (KeyValuePair<GameObject, Type> modObj in modObjAndType)
+            {
+                InitializeMod(out MonoBehaviour mod, certainType: modObj.Value, certainObject: modObj.Key);
+                reloadedMods.Add((Mod)mod);
+            }
+
+            yield return new WaitForEndOfFrame();
+
+            ModManager.LoadModOrder(false);
+            ModManager.reloadGameModsRequired = false;
+            ModManager.LoadDisabledStatus();
+
+            CustomObjectsManager.Instance.ignoreAlreadyExists = true;
+            foreach (var mod in reloadedMods)
+            {
+                if (!ModManager.Mods[mod].GenericModData.IsEnabled)
+                    continue;
+
+                try
                 {
-                    InitializeMod(out MonoBehaviour mod, certainType: modObj.Value, certainObject: modObj.Key);
-                    reloadedMods.Add((Mod)mod);
+                    mod.OnReload();
+
+                    ModManager.FinishLoadingMod(mod);
                 }
-
-                ModManager.LoadModOrder(false);
-                ModManager.reloadGameModsRequired = false;
-                ModManager.LoadDisabledStatus();
-
-                CustomObjectsManager.Instance.ignoreAlreadyExists = true;
-                foreach (var mod in reloadedMods)
+                catch (Exception ex)
                 {
-                    if (!ModManager.Mods[mod].GenericModData.IsEnabled)
-                        continue;
-
-                    try
-                    {
-                        mod.OnReload();
-
-                        ModManager.FinishLoadingMod(mod);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.LogError("JaLoader", $"An error occurred while reloading mod {mod.ModName}: {ex.Message}");
-                        UIManager.Instance.AddWarningToMod(UIManager.Instance.CreateModEntryReturnEntry(ModManager.Mods[mod].GenericModData), $"Failed to reload mod: {ex.Message}", true);
-                    }
+                    Console.LogError("JaLoader", $"An error occurred while reloading mod {mod.ModName}: {ex.Message}");
+                    UIManager.Instance.AddWarningToMod(UIManager.Instance.CreateModEntryReturnEntry(ModManager.Mods[mod].GenericModData), $"Failed to reload mod: {ex.Message}", true);
                 }
-                CustomObjectsManager.Instance.ignoreAlreadyExists = false;
+            }
+            CustomObjectsManager.Instance.ignoreAlreadyExists = false;
 
-                yield break;
-            }   
+            yield return null;
         }
     }
 }

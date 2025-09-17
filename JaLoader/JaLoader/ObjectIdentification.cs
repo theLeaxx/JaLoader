@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using JaLoader.Common;
 
 namespace JaLoader
 {
@@ -20,8 +21,11 @@ namespace JaLoader
         public int ExtraID;
         public int CustomID;
         public BoxSizes BoxSize;
+        public GoodType SupplyType = GoodType.None;
 
+        public bool CanFindInCrates;
         public bool CanBuyInDealership;
+        public bool CanBuyInShop;
         public bool CanFindInJunkCars;
 
         public Vector3 PartIconPositionAdjustment = Vector3.zero;

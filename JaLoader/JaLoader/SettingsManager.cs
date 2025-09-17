@@ -109,6 +109,12 @@ namespace JaLoader
                 case "FixBorderGuardsFlags":
                     return JaLoaderSettings.FixBorderGuardsFlags;
 
+                case "MultipleTypesInBoxes":
+                    return JaLoaderSettings.MultipleTypesInBoxes;
+
+                case "RemoveSmugglingPunishments":
+                    return JaLoaderSettings.RemoveSmugglingPunishments;
+
                 default:
                     Console.LogError("JaLoader", "Invalid setting ID provided to GetSettingValue.");
                     return null;
@@ -186,13 +192,14 @@ namespace JaLoader
                 case "AppliedPaintJobName":
                     JaLoaderSettings.AppliedPaintJobName = (string)value;
                     break;
-
                 case "FixItemsFallingBehindShop":
                     JaLoaderSettings.FixItemsFallingBehindShop = (bool)value;
                     break;
-
                 case "FixBorderGuardsFlags":
                     JaLoaderSettings.FixBorderGuardsFlags = (bool)value;
+                    break;
+                case "MultipleTypesInBoxes":
+                    JaLoaderSettings.MultipleTypesInBoxes = (bool)value;
                     break;
 
                 default:

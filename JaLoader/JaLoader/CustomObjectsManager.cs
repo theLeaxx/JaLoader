@@ -36,6 +36,7 @@ namespace JaLoader
 
         public readonly Dictionary<string, GameObject> database = new Dictionary<string, GameObject>();
         private Dictionary<(string, int), GameObject> spawnedDatabase = new Dictionary<(string, int), GameObject>();
+        internal Dictionary<GoodType, List<GameObject>> goodsObjects = new Dictionary<GoodType, List<GameObject>>();
 
         // TODO: Add custom wheels support
         private List<Transform> bootSlots = new List<Transform>();
@@ -70,6 +71,14 @@ namespace JaLoader
         {
             if (!allObjectsRegistered)
                 StartCoroutine(WaitUntilLoadFinished());
+
+            goodsObjects[GoodType.Alcohol] = new List<GameObject>();
+            goodsObjects[GoodType.Meds] = new List<GameObject>();
+            goodsObjects[GoodType.Coffee] = new List<GameObject>();
+            goodsObjects[GoodType.Textiles] = new List<GameObject>();
+            goodsObjects[GoodType.Tobacco] = new List<GameObject>();
+            goodsObjects[GoodType.Meat] = new List<GameObject>();
+            goodsObjects[GoodType.None] = new List<GameObject>();
         }
 
         private void OnSave()
@@ -144,14 +153,49 @@ namespace JaLoader
             }
 
             obj.SetActive(false);
-            obj.GetComponent<CustomObjectInfo>().objRegistryName = registryName;
+            var info = obj.GetComponent<CustomObjectInfo>();
+            info.objRegistryName = registryName;
 
             if (isPaintJob)
-                obj.GetComponent<CustomObjectInfo>().isPaintJob = true;
+                info.isPaintJob = true;
 
             database.Add($"{registryName}", obj);
             Console.LogDebug("CustomObjectsManager", $"Registered object with the registry key {registryName}!");
             DontDestroyOnLoad(obj);
+
+            if (info.CanFindInCrates)
+            {
+                switch (info.SupplyType)
+                {
+                    case GoodType.Alcohol:
+                        goodsObjects[GoodType.Alcohol].Add(obj);
+                        break;
+
+                    case GoodType.Meds:
+                        goodsObjects[GoodType.Meds].Add(obj);
+                        break;
+
+                    case GoodType.Coffee:
+                        goodsObjects[GoodType.Coffee].Add(obj);
+                        break;
+
+                    case GoodType.Textiles:
+                        goodsObjects[GoodType.Textiles].Add(obj);
+                        break;
+
+                    case GoodType.Tobacco:
+                        goodsObjects[GoodType.Tobacco].Add(obj);
+                        break;
+
+                    case GoodType.Meat:
+                        goodsObjects[GoodType.Meat].Add(obj);
+                        break;
+
+                    case GoodType.None:
+                        goodsObjects[GoodType.None].Add(obj);
+                        break;
+                }
+            }
 
             if (allObjectsRegistered)
                 foreach(var entry in database)

@@ -177,6 +177,37 @@ namespace JaLoader
         }
     }
 
+    [HarmonyPatch(typeof(BoxContentsC), "Start")]
+    public static class BoxContentsC_Start_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(BoxContentsC __instance)
+        {
+            var custom = __instance.gameObject.AddComponent<CustomBoxContentsC>();
+            custom.Init(__instance);
+
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(BorderLogicC), "GuardArrivedAtBoot")]
+    public static class BorderLogicC_GuardArrivedAtBoot_Patch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(BorderLogicC __instance)
+        {
+            if ((bool)SettingsManager.GetSettingValue("RemoveSmugglingPunishments") == true)
+            {
+                __instance.searchState = 0;
+                __instance.rotateGuard = true;
+                __instance.StartCoroutine("NoSearch");
+                return false;
+            }
+
+            return true;
+        }
+    }
+
     [HarmonyPatch(typeof(ObjectPickupC), "PickUp")]
     public static class ObjectPickupC_PickUp_Patch
     {

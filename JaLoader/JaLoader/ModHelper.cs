@@ -10,6 +10,7 @@ using System.Data.SqlTypes;
 using System.Linq;
 using System.Collections;
 using JaLoader.Common;
+using System.IO.IsolatedStorage;
 
 namespace JaLoader
 {
@@ -267,9 +268,25 @@ namespace JaLoader
         /// <param name="objDescription">The description that will pop up in the notebook</param>
         /// <param name="price">The price of the object in stores (only effective if it is buyable)</param>
         /// <param name="weight">The weight of the object</param>
-        /// <param name="canFindInCrates">(Not implemented yet) Should this object be findable in crates?</param>
+        /// <param name="canFindInCrates">Should this object be findable in crates?</param>
         /// <param name="canBuyInStore">(Not implemented yet) Is this object buyable?</param>
         public void AddBasicObjectLogic(GameObject obj, string objName, string objDescription, int price, int weight, bool canFindInCrates, bool canBuyInStore)
+        {
+            AddBasicObjectLogic(obj, objName, objDescription, price, weight, canFindInCrates, canBuyInStore, GoodType.None);
+        }
+
+        /// <summary>
+        /// Make the specified object able to be used in-game
+        /// </summary>
+        /// <param name="obj">The object you want to bring to life</param>
+        /// <param name="objName">The name that will pop up in the notebook</param>
+        /// <param name="objDescription">The description that will pop up in the notebook</param>
+        /// <param name="price">The price of the object in stores (only effective if it is buyable)</param>
+        /// <param name="weight">The weight of the object</param>
+        /// <param name="canFindInCrates">Should this object be findable in crates?</param>
+        /// <param name="canBuyInStore">(Not implemented yet) Is this object buyable?</param>
+        /// <param name="goodType">The type of good this is, used in border checks as in vanilla. Use None if you're making an engine part, or none of the types fit.</param>
+        public void AddBasicObjectLogic(GameObject obj, string objName, string objDescription, int price, int weight, bool canFindInCrates, bool canBuyInStore, GoodType goodType)
         {
             if (obj == null)
             {
@@ -278,8 +295,14 @@ namespace JaLoader
             }
 
             obj.SetActive(false);
+            ObjectIdentification identif = null;
 
-            if (obj.GetComponent<ObjectIdentification>() && obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic)
+            if(!obj.GetComponent<ObjectIdentification>())
+                identif = obj.AddComponent<ObjectIdentification>();
+            else
+                identif = obj.GetComponent<ObjectIdentification>();
+
+            if (identif.HasReceivedBasicLogic)
                 return;
 
             if (!obj.GetComponent<Collider>())
@@ -322,7 +345,10 @@ namespace JaLoader
             CustomObjectInfo fix = obj.AddComponent<CustomObjectInfo>();
             fix.objDescription = objDescription;
             fix.objName = objName;
-            obj.GetComponent<ObjectIdentification>().HasReceivedBasicLogic = true;
+            fix.CanBuyInShop = identif.CanBuyInShop = canBuyInStore;
+            fix.CanFindInCrates = identif.CanFindInCrates = canFindInCrates;
+            fix.SupplyType = identif.SupplyType = goodType;
+            identif.HasReceivedBasicLogic = true;
         }
 
         private void AddBoxLogic(GameObject obj, string objName, string objDescription, int price, int weight)
@@ -489,10 +515,13 @@ namespace JaLoader
             ec.componentHeader = ob.componentHeader;
 
             var identif = obj.GetComponent<ObjectIdentification>();
+            var info = obj.GetComponent<CustomObjectInfo>();
             identif.PartIconScaleAdjustment = obj.transform.localScale;
 
-            identif.CanBuyInDealership = canBuyInDealership;
-            identif.CanFindInJunkCars = canFindInJunkCars;
+            info.CanBuyInDealership = identif.CanBuyInDealership = canBuyInDealership;
+            info.CanFindInJunkCars = identif.CanFindInJunkCars = canFindInJunkCars;
+            info.CanFindInCrates = identif.CanFindInCrates = info.CanBuyInShop = identif.CanBuyInShop = false;
+            info.SupplyType = identif.SupplyType = GoodType.None;
 
             var template = GameObject.Find("EngineBlock");
             var template_ec = template.GetComponent<EngineComponentC>();

@@ -1,4 +1,5 @@
 ﻿using JaLoader.Common;
+using MonoMod.ModInterop;
 using Steamworks;
 using System;
 using System.CodeDom;
@@ -42,7 +43,7 @@ namespace JaLoader
         public Dictionary<AttachExtraTo, GameObject> ExtrasHolders = new Dictionary<AttachExtraTo, GameObject>();
         private readonly Dictionary<int, (GameObject, string, Dictionary<string, bool>)> SpawnedExtras = new Dictionary<int, (GameObject, string, Dictionary<string, bool>)>();
         private readonly Dictionary<(string, int), (GameObject, AttachExtraTo, Dictionary<string, bool>)> Extras = new Dictionary<(string, int), (GameObject, AttachExtraTo, Dictionary<string, bool>)>();
-        private readonly Dictionary<(string, int), Mod> ExtraMod = new Dictionary<(string, int), Mod>();
+        private readonly Dictionary<(string, int), (Mod, string, string)> ExtraMod = new Dictionary<(string, int), (Mod, string, string)>();
 
         [SerializeField] private ExtrasSave data = new ExtrasSave();
 
@@ -132,7 +133,7 @@ namespace JaLoader
 
         internal void AddModExtra(string registryName, int ID, Mod mod)
         {
-            ExtraMod.Add((registryName, ID), mod);
+            ExtraMod.Add((registryName, ID), (mod, mod.ModID, mod.ModAuthor));
         }
 
         /// <summary>
@@ -642,6 +643,8 @@ namespace JaLoader
             if (Extras.Count == 0 || Extras == null)
                 return;
 
+            FixNullReferences();
+
             if (File.Exists(Path.Combine(Application.persistentDataPath, @"ExtrasData.json")))
             {
                 string json = File.ReadAllText(Path.Combine(Application.persistentDataPath, @"ExtrasData.json"));
@@ -651,14 +654,28 @@ namespace JaLoader
                 {
                     int ID = GetExtraIDByRegistryName(entry);
 
-                    if(ExtraMod.ContainsKey((entry, ID)))
-                        if (!ModManager.Mods[ExtraMod[(entry, ID)]].IsEnabled)
+                    if (ExtraMod.ContainsKey((entry, ID)))
+                        if (!ModManager.Mods[ExtraMod[(entry, ID)].Item1].IsEnabled)
                             continue;
 
                     if (ID == -1)
                         continue;
 
                     Fitted(ID);
+                }
+            }
+        }
+
+        internal void FixNullReferences()
+        {
+            foreach (var key in ExtraMod.Keys.ToList())
+            {
+                var modTuple = ExtraMod[key];
+                if (modTuple.Item1 == null)
+                {
+                    modTuple.Item1 = (Mod)ModManager.FindMod(modTuple.Item3, modTuple.Item2);
+                    ExtraMod[key] = modTuple;
+                    Console.LogDebug("JaLoader", $"Fixed null reference for extra {key.Item1} from {modTuple.Item3} ({modTuple.Item2})");
                 }
             }
         }
