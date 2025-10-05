@@ -226,11 +226,12 @@ namespace JaLoader
                     ModManager.AddMod(bix_mod, Common.WhenToInit.InMenu, BIXtext, genericBIXModData);
 
                     Console.LogDebug("JaLoader", $"Part 1/2 of initialization for BepInEx mod {ModName} completed");
-
                     if (certainModFile != "")
                         ModManager.FinishLoadingMod(bix_mod);
 
                     outMod = bix_mod;
+
+                    return true;
                 }
                 #endregion
 
@@ -293,6 +294,8 @@ namespace JaLoader
 #pragma warning restore CS0618
 
                 outMod = mod;
+
+                return true;
                 #endregion
             }
             catch (Exception ex)
@@ -364,15 +367,15 @@ namespace JaLoader
 
                 return false;
             }
-
-            if (certainModFile != "")
+            finally
             {
-                UIManager.Instance.ShowNotice("MOD INSTALLED", "The mod has been successfully installed. You can now enable it in the mods list.", ignoreObstructRayChange: true, enableDontShowAgain: false);
-                UIManager.Instance.ModsCountText.text = $"{ModManager.Mods.Count} mods installed";
-                Console.Log("JaLoader", $"Mod {certainModFile} has been successfully installed and loaded!");
+                if (certainModFile != "")
+                {
+                    UIManager.Instance.ShowNotice("MOD INSTALLED", "The mod has been successfully installed. You can now enable it in the mods list.", ignoreObstructRayChange: true, enableDontShowAgain: false);
+                    UIManager.Instance.ModsCountText.text = $"{ModManager.Mods.Count} mods installed";
+                    Console.Log("JaLoader", $"Mod {certainModFile} has been successfully installed and loaded!");
+                }
             }
-
-            return true;
         }
 
         public void StartInitializeMods()

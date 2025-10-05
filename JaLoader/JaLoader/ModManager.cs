@@ -131,7 +131,7 @@ namespace JaLoader
             CheckAllModsForUpdates();
         }
 
-        public static bool IsModEnabled(string ID, string author, string name = "")
+        public static bool IsModEnabled(string author, string ID, string name = "")
         {
             if (string.IsNullOrEmpty(ID) || string.IsNullOrEmpty(author))
             {

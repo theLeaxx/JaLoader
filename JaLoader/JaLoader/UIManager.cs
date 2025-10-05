@@ -65,7 +65,7 @@ namespace JaLoader
         internal bool CanCloseMap = true;
         private bool showingNotice;
 
-        internal GameObject JLCanvas;
+        public GameObject JLCanvas { get; private set; }
         private Text JaLoaderText;
         private GameObject ModsLocationText;
         private GameObject JLBookUI;
@@ -103,6 +103,8 @@ namespace JaLoader
         internal Dictionary<GenericModData, GameObject> modEntries = new Dictionary<GenericModData, GameObject>();
         private readonly List<(string, string, bool)> noticesToShow = new List<(string, string, bool)>();
         private readonly List<string> allNotices = new List<string>();
+
+        public static Font DefaultJaLoaderFont { get; private set; }
 
         #region Panels
         internal GameObject JLPanel;
@@ -333,7 +335,9 @@ namespace JaLoader
             ModSettingsInputTemplate = ModsSettingsContent.Find("InputTemplate").gameObject;
 
             var clickers = GameObject.Find("UI Root").Find("Options/OptionsGameplay/Back").GetComponent<MainMenuClickersC>();
-            buttonClickSound = clickers.audioClip;  
+            buttonClickSound = clickers.audioClip;
+
+            DefaultJaLoaderFont = JLCanvas.FindObject("JLUpdateDialog").Find("Subtitle").GetComponent<Text>().font;
         }
 
         private void FixDropdowns()
@@ -525,8 +529,7 @@ namespace JaLoader
             {
                 SetObstructRay(true);
 
-                JaLoaderText.text = $"JaLoader <color={(JaLoaderSettings.IsPreReleaseVersion ? "red" : "yellow")}>{JaLoaderSettings.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
-
+                JaLoaderText.text = $"JaLoader <color={(JaLoaderSettings.IsPreReleaseVersion ? "red" : "yellow")}>{JaLoaderSettings.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";      
                 var dialog = JLCanvas.FindObject("JLUpdateDialog");
                 dialog.FindButton("YesButton").onClick.AddListener(() => UpdateUtils.StartJaLoaderUpdate());
                 dialog.Find("Subtitle").GetComponent<Text>().text = $"{JaLoaderSettings.GetVersionString()} ➔ {latestVersion}";
@@ -658,7 +661,7 @@ namespace JaLoader
 
                 if (ModManager.GetBepinExModsCount() > 0)
                 {
-                    if (ModManager.GetBepinExModsCount() > 0)
+                    if (ModManager.GetDisabledModsCount() > 0)
                         message += ", ";
                     
                     message += $"{ModManager.GetBepinExModsCount()} BepInEx mods";
@@ -1281,7 +1284,7 @@ namespace JaLoader
             dialog.SetActive(false);
             dialog.FindObject("Subtitle").SetActive(false);
             dialog.FindButton("OpenGitHubButton").gameObject.SetActive(false);
-            dialog.Find("Title").GetComponent<Text>().text = "Enable JaDownloader";
+            dialog.FindDeepChild("Title").GetComponent<Text>().text = "Enable JaDownloader";
             dialog.Find("Message").GetComponent<Text>().text = "JaDownloader is a tool that allows you to install most mods automatically. \r\n Would you like to enable it now? (you can find this setting in Modloader Settings/Preferences)";
             dialog.FindButton("YesButton").onClick.AddListener(delegate {
                 var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, "."), "JaDownloader.exe"));
