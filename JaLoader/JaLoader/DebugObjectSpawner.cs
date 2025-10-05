@@ -345,9 +345,7 @@ namespace JaLoader
         private void Update()
         {
             if (JaLoaderSettings.DebugMode && Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.S))
-            {
-                uiManager.ObjectsList.transform.parent.gameObject.SetActive(!uiManager.ObjectsList.transform.parent.gameObject.activeSelf);
-            }
+                uiManager.JLObjectsList.SetActive(!uiManager.JLObjectsList.activeSelf);
         }
 
         public void AddObjectToList(string id, string name)
