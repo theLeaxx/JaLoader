@@ -240,6 +240,23 @@ namespace JaLoader.Common
     }
 
     [Serializable]
+    public class SerializableModListEntry
+    {
+        public string Name;
+        public string ID;
+        public string Author;
+        public string Version;
+        public string GitHubLink;
+        public string NexusModsLink;
+    }
+
+    [Serializable]
+    public class SerializableModList
+    {
+        public List<SerializableModListEntry> Mods;
+    }
+
+    [Serializable]
     public class SerializableJaLoaderSettings
     {
         public bool SkipLanguageSelector = true;

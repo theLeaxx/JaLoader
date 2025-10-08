@@ -57,6 +57,7 @@ namespace JaLoader
                 GameObject.Find("First Person Controller").AddComponent<EnhancedMovement>();
 
             GameObject.Find("UI Root").transform.Find("UncleStuff").gameObject.AddComponent<EnableCursorOnEnable>();
+            Camera.main.gameObject.AddComponent<Raycast>();
         }
 
         internal void SkipLanguage()

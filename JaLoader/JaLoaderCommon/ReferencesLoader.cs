@@ -17,6 +17,12 @@ namespace JaLoader.Common
 
         public static IEnumerator LoadAssemblies()
         {
+            if (RuntimeVariables.NoModsFlag)
+            {
+                RuntimeVariables.ModLoader.StartInitializeMods();
+                yield break;
+            }
+
             CanLoadMods = false;
             
             DebugUtils.SignalStartRefLoading();

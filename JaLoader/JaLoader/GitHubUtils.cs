@@ -42,7 +42,7 @@ namespace JaLoader
             }
 
             if (request.isHttpError || request.error == "Generic/unknown HTTP error")
-                return "0";
+                return "-1";
 
             string tagName = null;
 

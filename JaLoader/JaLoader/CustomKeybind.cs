@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JaLoader.Common;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +11,8 @@ namespace JaLoader
 {
     public class CustomKeybind : MonoBehaviour
     {
-        public KeyCode SelectedKey;
-        public KeyCode AltSelectedKey;
+        public KeyCode SelectedKey = KeyCode.None;
+        public KeyCode AltSelectedKey = KeyCode.None;
         private bool enableAltKey;
         public bool EnableAltKey
         {
@@ -236,12 +237,12 @@ namespace JaLoader
                         key = KeyCode.Mouse2;
                 }
 
+                CheckConflictingKeybinds(key);
+
                 if (waitingFor == WaitingFor.Primary)
                     SetPrimaryKey(key);
                 else if (waitingFor == WaitingFor.Secondary)
                     SetSecondaryKey(key);
-
-                //Console.Log(key);
 
                 waitingFor = WaitingFor.Nothing;
             }
@@ -264,6 +265,34 @@ namespace JaLoader
             {
                 secondaryKey.SetActive(false);
             }
+        }
+
+        private bool CheckConflictingKeybinds(KeyCode keyToCheckFor)
+        {
+            if (SelectedKey == keyToCheckFor)
+                return false;
+
+            if (enableAltKey == true && AltSelectedKey == keyToCheckFor)
+                return false;
+
+            bool foundAnyConflicts = false;
+
+            foreach (MonoBehaviour mb in ModManager.Mods.Keys)
+            {
+                if (mb is Mod mod)
+                {
+                    var list = mod.GetAllUsedKeycodes(JaLoaderSettings.DebugMode);
+                    var allMatches = list.Where(tuple => tuple.Item2 == keyToCheckFor);
+
+                    foreach (var match in allMatches)
+                    {
+                        foundAnyConflicts = true;
+                        UIManager.Instance.ShowNotice("CONFLICTING KEYBIND", $"The key you are currently setting ({keyToCheckFor}) is already used in Mod '{(JaLoaderSettings.DebugMode ? mod.ModID : mod.ModName)}', for setting '{match.Item1}'.", false, true);
+                    }
+                }
+            }
+
+            return foundAnyConflicts;
         }
 
         public void WaitForPrimary()

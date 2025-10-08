@@ -61,7 +61,8 @@ namespace JaLoader
                     "SMDiagnostics",
                     "System.Runtime",
                     "System.Dynamic.Runtime",
-                    "MonoProfilerLoader"
+                    "MonoProfilerLoader",
+                    "UIAutomationWinforms"
                 };
 
                 if(assembliesToIgnore.Any(assembly => args.Name.StartsWith(assembly)))
@@ -221,7 +222,7 @@ namespace JaLoader
                     if (Regex.IsMatch(modInfo.GUID, pattern))
                         authorName = modInfo.GUID.Split('.')[1];
 
-                    var genericBIXModData = new GenericModData(ModID, ModName, ModVersion, ModDescription, authorName, null, bix_mod, isBIXMod: true);
+                    var genericBIXModData = new GenericModData(ModID, ModName, ModVersion, ModDescription, authorName, null, null, bix_mod, isBIXMod: true);
                     var BIXtext = UIManager.Instance.CreateModEntryReturnText(genericBIXModData);
                     ModManager.AddMod(bix_mod, Common.WhenToInit.InMenu, BIXtext, genericBIXModData);
 
@@ -275,7 +276,7 @@ namespace JaLoader
                 string modVersionText = mod.ModVersion;
                 string modName = JaLoaderSettings.DebugMode ? mod.ModID : mod.ModName;
 
-                var genericModData = new GenericModData(mod.ModID, mod.ModName, mod.ModVersion, mod.ModDescription, mod.ModAuthor, mod.GitHubLink, mod);
+                var genericModData = new GenericModData(mod.ModID, mod.ModName, mod.ModVersion, mod.ModDescription, mod.ModAuthor, mod.GitHubLink, mod.NexusModsLink, mod);
                 var text = UIManager.Instance.CreateModEntryReturnText(genericModData);
 #pragma warning disable CS0618
                 ModManager.AddMod(mod, mod.GetWhenToInit(), text, genericModData);
@@ -302,7 +303,7 @@ namespace JaLoader
             {
                 Console.LogError("JaLoader", $"An error occured while trying to initialize mod \"{modFile.Name}\": ");
 
-                var obj = UIManager.Instance.CreateModEntryReturnEntry(new GenericModData(modFile.Name, modFile.Name, "Failed to load", $"{modFile.Name} experienced an issue during loading and couldn't be initialized. You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.", "Unknown", "", null));
+                var obj = UIManager.Instance.CreateModEntryReturnEntry(new GenericModData(modFile.Name, modFile.Name, "Failed to load", $"{modFile.Name} experienced an issue during loading and couldn't be initialized. You can check the \"JaLoader_log.log\" file, located in the main game folder for more details.", "Unknown", "", "", null));
                 UIManager.Instance.AddWarningToMod(obj, "Failed to load mod!", true);
 
                 string errorMessage;
@@ -383,7 +384,7 @@ namespace JaLoader
             StartCoroutine(InitializeMods());
         }
 
-        internal IEnumerator CheckIfModInstalled(string author, string repo)
+        internal IEnumerator CheckIfModInstalled(string author, string repo, string modName = "")
         {
             var maximumTime = 60;
             var currentTime = 0;
@@ -395,7 +396,7 @@ namespace JaLoader
             {
                 if (maximumTime == currentTime)
                 {
-                    UIManager.Instance.ShowNotice("MOD INSTALLATION FAILED", "The mod installation failed. Please make sure you have the correct URL and that your internet connection is stable.", ignoreObstructRayChange: true);
+                    UIManager.Instance.ShowNotice("MOD INSTALLATION FAILED", $"The mod installation{(modName == "" ? "" : $" for mod '{modName}'")} failed. Please make sure you have the correct URL and that your internet connection is stable.", false, true);
                     yield break;
                 }
 
@@ -413,15 +414,18 @@ namespace JaLoader
 
         public IEnumerator InitializeMods()
         {
-            while (!ReferencesLoader.CanLoadMods)
+            while (!ReferencesLoader.CanLoadMods && !RuntimeVariables.NoModsFlag)
                 yield return null;
 
             DebugUtils.SignalStartInit();
 
-            DirectoryInfo d = new DirectoryInfo(JaLoaderSettings.ModFolderLocation);
-            FileInfo[] mods = d.GetFiles("*.dll");
-            foreach (FileInfo modFile in mods)
-                InitializeMod(out _, modFile: modFile);
+            if (!RuntimeVariables.NoModsFlag)
+            {
+                DirectoryInfo d = new DirectoryInfo(JaLoaderSettings.ModFolderLocation);
+                FileInfo[] mods = d.GetFiles("*.dll");
+                foreach (FileInfo modFile in mods)
+                    InitializeMod(out _, modFile: modFile);
+            }
 
             GetComponent<LoadingScreen>().DeleteLoadingScreen();
 

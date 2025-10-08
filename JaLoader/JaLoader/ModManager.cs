@@ -2,6 +2,7 @@
 using BepInEx.Configuration;
 using JaLoader.BepInExWrapper;
 using JaLoader.Common;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,8 +10,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 using UnityEngine;
 using UnityEngine.UI;
+using Button = UnityEngine.UI.Button;
+using Application = UnityEngine.Application;
 
 namespace JaLoader
 {
@@ -549,6 +553,9 @@ namespace JaLoader
 
         internal static void SaveModSettings()
         {
+            if (RuntimeVariables.NoModsFlag)
+                return;
+
             for (int i = 0; i < UIManager.Instance.ModsSettingsContent.transform.childCount; i++)
             {
                 if (UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
@@ -621,6 +628,75 @@ namespace JaLoader
                         var modClass = mod as BaseUnityPlugin;
                         modClass.SaveBIXPluginSettings();
                     }
+                }
+            }
+        }
+
+        internal static void ExportModList()
+        {
+            SerializableModList list = new SerializableModList();
+            list.Mods = new List<SerializableModListEntry>();
+
+            foreach (var mb in loadOrderList)
+            {
+                if (mb is Mod mod)
+                {
+                    list.Mods.Add(new SerializableModListEntry
+                    {
+                        Name = mod.ModName,
+                        ID = mod.ModID,
+                        Author = mod.ModAuthor,
+                        Version = mod.ModVersion,
+                        GitHubLink = mod.GitHubLink,
+                        NexusModsLink = mod.NexusModsLink
+                    });
+                }
+                else if (mb is BaseUnityPlugin plugin)
+                {
+                    var info = Mods[mb].GenericModData;
+                    list.Mods.Add(new SerializableModListEntry
+                    {
+                        Name = info.ModName,
+                        ID = info.ModID,
+                        Author = info.ModAuthor,
+                        Version = info.ModVersion,
+                        GitHubLink = info.GitHubLink,
+                        NexusModsLink = info.NexusModsLink
+                    });
+                }
+            }
+
+            string exportFolder = Path.Combine(JaLoaderSettings.ModFolderLocation, "ExportedModLists");
+            if (!Directory.Exists(exportFolder))
+                Directory.CreateDirectory(exportFolder);
+
+            string filePath = Path.Combine(exportFolder, $"ModList_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.json");
+            string jsonString = JsonConvert.SerializeObject(list, Formatting.Indented);
+
+            File.WriteAllText(filePath, jsonString);
+        }
+
+        internal static void LoadExportedModList()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                InitialDirectory = Path.Combine(JaLoaderSettings.ModFolderLocation, "ExportedModLists"),
+                Filter = "JSON files (*.json)|*.json",
+                Title = "Select a mod list to load",
+                RestoreDirectory = true
+            };
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string filePath = openFileDialog.FileName;
+                string jsonString = File.ReadAllText(filePath);
+                SerializableModList list = JsonConvert.DeserializeObject<SerializableModList>(jsonString);
+                foreach (var mod in list.Mods)
+                {
+                    if (!FindMod(mod.Author, mod.Name, ignoreNull: true))
+                        continue;
+
+                    UIManager.Instance.CreateModListEntry(mod);
                 }
             }
         }
