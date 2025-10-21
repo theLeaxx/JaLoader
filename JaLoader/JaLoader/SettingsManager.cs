@@ -11,7 +11,7 @@ namespace JaLoader
     {
         internal static void Initialize()
         {
-            JaLoaderSettings.JaLoaderVersion = "5.1.0";
+            JaLoaderSettings.JaLoaderVersion = "5.1.1";
             JaLoaderSettings.IsPreReleaseVersion = false;
 
             ReadSettings();

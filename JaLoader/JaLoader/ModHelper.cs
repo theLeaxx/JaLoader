@@ -231,6 +231,8 @@ namespace JaLoader
                     obj.name = "JaLoader Game Scripts";
                     obj.AddComponent<MarketManager>();
                 }
+
+                EventsManager.Instance.FinishedAddingExtensions();
             }
         }
 
