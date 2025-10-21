@@ -39,11 +39,12 @@ namespace JaLoader
         public string ModDescription { get; set; }
         public string ModAuthor { get; set; }
         public string GitHubLink { get; set; }
+        public string NexusModsLink { get; set; }
         public MonoBehaviour Mod { get; set; }
         public bool IsEnabled { get; set; }
         public bool IsBepInExMod { get; set; }
 
-        public GenericModData(string modID, string modName, string modVersion, string modDescription, string modAuthor, string gitHubLink, MonoBehaviour mod, bool isEnabled = true, bool isBIXMod = false)
+        public GenericModData(string modID, string modName, string modVersion, string modDescription, string modAuthor, string gitHubLink, string nexusModsLink, MonoBehaviour mod, bool isEnabled = true, bool isBIXMod = false)
         {
             ModID = modID;
             ModName = modName;
@@ -51,6 +52,7 @@ namespace JaLoader
             ModDescription = modDescription;
             ModAuthor = modAuthor;
             GitHubLink = gitHubLink;
+            NexusModsLink = nexusModsLink;
             Mod = mod;
             IsEnabled = isEnabled;
             IsBepInExMod = isBIXMod;

@@ -126,7 +126,7 @@ internal abstract class Program
         {
             asset = JObject.Parse(await Client.GetStringAsync(uri)).ToObject<GitRepo>().Assets[0];
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Console.WriteLine("Invalid URL!");
             return;

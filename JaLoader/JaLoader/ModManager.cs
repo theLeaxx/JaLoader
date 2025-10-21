@@ -2,6 +2,7 @@
 using BepInEx.Configuration;
 using JaLoader.BepInExWrapper;
 using JaLoader.Common;
+using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,8 +10,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 using UnityEngine;
 using UnityEngine.UI;
+using Button = UnityEngine.UI.Button;
+using Application = UnityEngine.Application;
 
 namespace JaLoader
 {
@@ -549,6 +553,9 @@ namespace JaLoader
 
         internal static void SaveModSettings()
         {
+            if (RuntimeVariables.NoModsFlag)
+                return;
+
             for (int i = 0; i < UIManager.Instance.ModsSettingsContent.transform.childCount; i++)
             {
                 if (UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.activeSelf && Regex.Match(UIManager.Instance.ModsSettingsContent.transform.GetChild(i).gameObject.name, @"(.{15})\s*$").ToString() == "-SettingsHolder")
@@ -622,6 +629,119 @@ namespace JaLoader
                         modClass.SaveBIXPluginSettings();
                     }
                 }
+            }
+        }
+
+        internal static void ExportModList()
+        {
+            SerializableModList list = new SerializableModList();
+            list.Mods = new List<SerializableModListEntry>();
+
+            foreach (var mb in loadOrderList)
+            {
+                if (mb is Mod mod)
+                {
+                    list.Mods.Add(new SerializableModListEntry
+                    {
+                        Name = mod.ModName,
+                        ID = mod.ModID,
+                        Author = mod.ModAuthor,
+                        Version = mod.ModVersion,
+                        GitHubLink = mod.GitHubLink,
+                        NexusModsLink = mod.NexusModsLink
+                    });
+                }
+                else if (mb is BaseUnityPlugin plugin)
+                {
+                    var info = Mods[mb].GenericModData;
+                    list.Mods.Add(new SerializableModListEntry
+                    {
+                        Name = info.ModName,
+                        ID = info.ModID,
+                        Author = info.ModAuthor,
+                        Version = info.ModVersion,
+                        GitHubLink = info.GitHubLink,
+                        NexusModsLink = info.NexusModsLink
+                    });
+                }
+            }
+
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                InitialDirectory = Path.Combine(JaLoaderSettings.ModFolderLocation, "ExportedModLists"),
+                Filter = "JSON files (*.json)|*.json",
+                Title = "Export mod list",
+                RestoreDirectory = true,
+                FileName = $"ModList_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.json"
+            };
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string jsonString = JsonConvert.SerializeObject(list, Formatting.Indented);
+
+                File.WriteAllText(saveFileDialog.FileName, jsonString);
+            }            
+        }
+
+        internal static void ImportModList()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                InitialDirectory = Path.Combine(JaLoaderSettings.ModFolderLocation, "ExportedModLists"),
+                Filter = "JSON files (*.json)|*.json",
+                Title = "Select a mod list to load",
+                RestoreDirectory = true
+            };
+
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string filePath = openFileDialog.FileName;
+                SerializableModList list;
+                try
+                {
+                    string jsonString = File.ReadAllText(filePath);
+                    list = JsonConvert.DeserializeObject<SerializableModList>(jsonString);
+                }
+                catch (Exception)
+                {
+                    UIManager.Instance.ShowNotice("Import mod list", "The selected file is not a valid mod list.", false, true);
+                    return;
+                }
+
+                if(list?.Mods?.Count == 0 || list == null || list.Mods == null)
+                {
+                    UIManager.Instance.ShowNotice("Import mod list", "The selected mod list is empty.", false, true);
+                    return;
+                }
+
+                List<MonoBehaviour> newLoadOrder = new List<MonoBehaviour>();
+                int missingMods = 0;
+                foreach (var mod in list.Mods)
+                {
+                    var _mod = FindMod(mod.Author, mod.ID, mod.Name, ignoreNull: true);
+                    if (_mod != null)
+                    {
+                        newLoadOrder.Add(_mod);
+                        continue;
+                    }
+
+                    missingMods++;
+                    UIManager.Instance.CreateModListEntry(mod, true);
+                }
+
+                for (int i = 0; i < newLoadOrder.Count; i++)
+                {
+                    var mod = newLoadOrder[i];
+                    UIManager.Instance.modEntries[Mods[mod].GenericModData].transform.SetSiblingIndex(i + 1);
+                }
+
+                loadOrderList = newLoadOrder.Concat(loadOrderList.Except(newLoadOrder)).ToList();
+
+                SaveModsOrder();
+
+                if (missingMods == 0)
+                    UIManager.Instance.ShowNotice("Import mod list", "No mods imported.", false, true);
+                else
+                    UIManager.Instance.ShowNotice("Import mod list", $"Imported {missingMods} missing mods.", false, true);
             }
         }
 

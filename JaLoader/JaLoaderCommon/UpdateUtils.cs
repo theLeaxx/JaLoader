@@ -1,5 +1,6 @@
 ﻿using JaLoader.Common;
 using System;
+using System.Data;
 using System.Diagnostics;
 
 namespace JaLoader.Common
@@ -20,28 +21,29 @@ namespace JaLoader.Common
             Process.GetCurrentProcess().Kill();
         }
 
-        internal static bool JaLoaderUpdateAvailable()
+        internal static bool JaLoaderUpdateAvailable(bool force = false)
         {
-            return JaLoaderUpdateAvailable(out _);
+            return JaLoaderUpdateAvailable(out _, out _, force);
         }
 
-        internal static bool JaLoaderUpdateAvailable(out string latestVersionString)
+        internal static bool JaLoaderUpdateAvailable(out string latestVersionString, out string changelog, bool force = false)
         {
-            latestVersionString = null;
-            if (!canCheckForUpdates)
+            latestVersionString = changelog = null;
+            if (!canCheckForUpdates && !force)
                 return false;
 
-            string URL = "https://api.github.com/repos/JaJalopy/Jalopy/releases/latest";
-            string latestVersion = GetLatestUpdateVersionAsString(URL, JaLoaderSettings.GetVersion());
-            latestVersionString = latestVersion;
+            string URL = "https://api.github.com/repos/theLeaxx/JaLoader/releases/latest";
+            Release latestRelease = GetLatestUpdateAsRelease(URL, JaLoaderSettings.GetVersion(), force);
+            latestVersionString = latestRelease.tag_name;
+            changelog = latestRelease.body;
 
-            if (latestVersion == "-1")
+            if (latestRelease.tag_name == "-1")
             {
                 RuntimeVariables.Logger.ILogError("Couldn't check for updates!");
                 return false;
             }
 
-            int latestVersionInt = ConvertVersionStringToInt(latestVersion);
+            int latestVersionInt = ConvertVersionStringToInt(latestRelease.tag_name);
 
             if (latestVersionInt <= JaLoaderSettings.GetVersion())
                 return false;
@@ -50,9 +52,9 @@ namespace JaLoader.Common
             return true;
         }
 
-        public static bool CheckForModUpdate(IMod mod, out string latestVersion)
+        public static bool CheckForModUpdate(IMod mod, out string latestVersion, bool force = false)
         {
-            if (!canCheckForUpdates || string.IsNullOrEmpty(mod.GitHubLink))
+            if ((!canCheckForUpdates && !force)|| string.IsNullOrEmpty(mod.GitHubLink))
             {
                 latestVersion = null;
                 return false;
@@ -64,9 +66,9 @@ namespace JaLoader.Common
 
             int currentVersion = int.Parse(mod.ModVersion.Replace(".", ""));
 
-            latestVersion = GetLatestUpdateVersionAsString(URL, currentVersion);
+            latestVersion = GetLatestUpdateVersionAsString(URL, currentVersion, force);
 
-            int intLatestVersion = GetLatestUpdateVersionAsInt(URL, currentVersion);
+            int intLatestVersion = GetLatestUpdateVersionAsInt(URL, currentVersion, force);
 
             if (intLatestVersion > currentVersion)
                 return true;
@@ -74,26 +76,40 @@ namespace JaLoader.Common
             return false;
         }
 
-        public static int GetLatestUpdateVersionAsInt(string URL, int version)
+        public static int GetLatestUpdateVersionAsInt(string URL, int version, bool force = false)
         {
-            return int.Parse(GetLatestUpdateVersionAsString(URL, version).Replace(".", ""));
+            return int.Parse(GetLatestUpdateVersionAsString(URL, version, force).Replace(".", ""));
         }
 
-        public static string GetLatestUpdateVersionAsString(string URL, int version)
+        public static string GetLatestUpdateVersionAsString(string URL, int version, bool force = false)
         {
-            if (!CanCheckForUpdatesInternal())
-                return "0";
+            return GetLatestUpdateAsRelease(URL, version, force).tag_name;
+        }
 
-            string latestVersion = RuntimeVariables.GitHubReleaseUtils.GetLatestTagFromAPIURL(URL);
-            int latestVersionInt = int.Parse(latestVersion.Replace(".", ""));
+        public static Release GetLatestUpdateAsRelease(string URL, int version, bool force = false)
+        {
+            if (!CanCheckForUpdatesInternal() && !force)
+                return new Release()
+                {
+                    tag_name = "0"
+                };
 
-            if (latestVersion == "-1")
-                return "-1";
+            Release latestRelease = RuntimeVariables.GitHubReleaseUtils.GetLatestTagFromAPIURL(URL);
+            int latestVersionInt = int.Parse(latestRelease.tag_name.Replace(".", ""));
+
+            if (latestRelease.tag_name == "-1")
+                return new Release()
+                {
+                    tag_name = "-1"
+                };
 
             if (latestVersionInt > version)
-                return latestVersion;
+                return latestRelease;
 
-            return "0";
+            return new Release()
+            {
+                tag_name = "0"
+            }; ;
         }
 
         public static int ConvertVersionStringToInt(string version)
@@ -146,5 +162,12 @@ namespace JaLoader.Common
             canCheckForUpdates = canCheck;
             return canCheck;
         }
+    }
+
+    [Serializable]
+    public class Release
+    {
+        public string tag_name = "";
+        public string body = "";
     }
 }

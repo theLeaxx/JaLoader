@@ -1,20 +1,22 @@
 ﻿using BepInEx;
+using JaLoader.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using Debug = UnityEngine.Debug;
-using JaLoader.Common;
 using CursorMode = JaLoader.Common.CursorMode;
+using Debug = UnityEngine.Debug;
 
 namespace JaLoader
 {
@@ -127,6 +129,11 @@ namespace JaLoader
 
         #endregion
 
+        #region Special UI Events
+        internal event Action OnAllNoticesShown;
+        internal event Action OnUpdateDialogClosed;
+        #endregion
+
         private bool IsBookClosed()
         {
             if (book == null || SceneManager.GetActiveScene().buildIndex != 1)
@@ -199,10 +206,10 @@ namespace JaLoader
             FixDropdowns();
         }
 
-        internal void NoMods()
+        internal void NoMods(bool disable = false)
         {
-            ModsCountText.text = "No mods installed";
-            JLModsPanel.FindDeepChildObject("NoMods").SetActive(true);
+            ModsCountText.text = disable == false ? "No mods installed" : ModsCountText.text;
+            JLModsPanel.FindDeepChildObject("NoMods").SetActive(!disable);
         }
 
         private void OnLoadStart()
@@ -353,6 +360,8 @@ namespace JaLoader
             JLModsPanel.FindButton("ExitButton").onClick.AddListener(ToggleModMenu);
             ModsSearchBar.onValueChanged.AddListener(delegate { OnInputValueChanged_ModsList(); });
             JLModsPanel.FindDeepButton("InstallButton").onClick.AddListener(InstallMod);
+            JLModsPanel.FindDeepButton("ExportButton").onClick.AddListener(ModManager.ExportModList);
+            JLModsPanel.FindDeepButton("ImportButton").onClick.AddListener(ModManager.ImportModList);
 
             MainSettings.FindButton("ExitButton").onClick.AddListener(ToggleModLoaderSettings_Main);
             MainSettings.FindButton("Buttons/PreferencesButton").onClick.AddListener(ToggleModLoaderSettings_Preferences);
@@ -525,24 +534,65 @@ namespace JaLoader
 
         private void SetVersionAndLocationText()
         {
-            if (UpdateUtils.JaLoaderUpdateAvailable(out string latestVersion))
-            {
-                SetObstructRay(true);
-
-                JaLoaderText.text = $"JaLoader <color={(JaLoaderSettings.IsPreReleaseVersion ? "red" : "yellow")}>{JaLoaderSettings.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";      
-                var dialog = JLCanvas.FindObject("JLUpdateDialog");
-                dialog.FindButton("YesButton").onClick.AddListener(() => UpdateUtils.StartJaLoaderUpdate());
-                dialog.Find("Subtitle").GetComponent<Text>().text = $"{JaLoaderSettings.GetVersionString()} ➔ {latestVersion}";
-                dialog.FindButton("NoButton").onClick.AddListener(delegate { dialog.SetActive(false); SetObstructRay(false); });
-                dialog.FindButton("OpenGitHubButton").onClick.AddListener(() => Application.OpenURL($"{JaLoaderSettings.JaLoaderGitHubLink}/releases/latest"));
-                dialog.SetActive(true);
-
-                MakeWrenchGreen();
-            }
+            if (CheckAndCreateUpdateDialogIfNeeded(out string latestVersion, out _) == true)
+                JaLoaderText.text = $"JaLoader <color={(JaLoaderSettings.IsPreReleaseVersion ? "red" : "yellow")}>{JaLoaderSettings.GetVersionString()}</color> loaded! (<color=lime>{latestVersion} available!</color>)";
             else
                 JaLoaderText.text = $"JaLoader <color={(JaLoaderSettings.IsPreReleaseVersion ? "red" : "yellow")}>{JaLoaderSettings.GetVersionString()}</color> loaded!";
 
             ModsLocationText.GetComponent<Text>().text = $"Mods folder: <color=yellow>{JaLoaderSettings.ModFolderLocation}</color>";
+        }
+
+        internal bool CheckAndCreateUpdateDialogIfNeeded(out string _latestVersion, out string _changelog, bool force = false)
+        {
+            if (UpdateUtils.JaLoaderUpdateAvailable(out string latestVersion, out string changelog, force))
+            {
+                _latestVersion = latestVersion;
+                _changelog = changelog;
+
+                CreateUpdateDialog(_latestVersion, _changelog);
+
+                return true;
+            }
+
+            _latestVersion = _changelog = null;
+
+            return false;
+        }
+
+        internal void CreateUpdateDialog(string latestVersion, string changelog)
+        {
+            if (JLNoticePanel.activeSelf)
+            {
+                OnAllNoticesShown += () => CreateUpdateDialog(latestVersion, changelog);
+                return;
+            }
+
+            if (OnAllNoticesShown != null)
+                OnAllNoticesShown = null;
+
+            SetObstructRay(true);
+
+            var dialog = JLCanvas.FindObject("JLUpdateDialog");
+            dialog.FindButton("YesButton").onClick.AddListener(() => UpdateUtils.StartJaLoaderUpdate());
+            dialog.Find("Subtitle").GetComponent<Text>().text = $"{JaLoaderSettings.GetVersionString()} ➔ {latestVersion}";
+            dialog.FindButton("NoButton").onClick.AddListener(delegate { dialog.SetActive(false); SetObstructRay(false); OnUpdateDialogClosed?.Invoke(); });
+            dialog.FindButton("OpenGitHubButton").onClick.AddListener(() => Application.OpenURL($"{JaLoaderSettings.JaLoaderGitHubLink}/releases/latest"));
+            dialog.FindDeepChild("ChangelogText").GetComponent<Text>().text = FormattedText(changelog);
+            dialog.SetActive(true);
+
+            MakeWrenchGreen();
+        }
+
+        internal string FormattedText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return "Failed to retrieve changelog.";
+
+            text.Replace("\r\n", "\n");
+            text.Replace("`", "'");
+            text = Regex.Replace(text, @"^# (.+)$", "<b>$1</b>", RegexOptions.Multiline);
+
+            return text;
         }
 
         private IEnumerator LoadUIDelay()
@@ -684,6 +734,48 @@ namespace JaLoader
                 MakeNutGreen();
         }
 
+        internal void CreateModListEntry(SerializableModListEntry entry, bool setFirst = false)
+        {
+            var newEntry = Instantiate(ModEntryTemplate);
+            newEntry.transform.SetParent(ModsListContent, false);
+            newEntry.SetActive(true);
+
+            newEntry.FindDeepChildObject("ModName").GetComponent<Text>().color = CommonColors.DisabledModColor.ToColor();
+            newEntry.FindDeepChildObject("ModAuthor").GetComponent<Text>().color = CommonColors.DisabledModColor.ToColor();
+
+            newEntry.FindDeepChildObject("ModName").GetComponent<Text>().text = $"Imported Mod List: {entry.Name}";
+            newEntry.FindDeepChildObject("ModAuthor").GetComponent<Text>().text = entry.Author;
+
+            newEntry.FindDeepButton("AboutButton").interactable = false;
+            newEntry.FindDeepButton("SettingsButton").interactable = false;
+            newEntry.FindDeepButton("ToggleButton").interactable = false;
+            newEntry.FindDeepButton("MoveUpButton").interactable = false;
+            newEntry.FindDeepButton("MoveDownButton").interactable = false;
+            newEntry.FindDeepButton("MoveTopButton").interactable = false;
+            newEntry.FindDeepButton("MoveBottomButton").interactable = false;
+
+            newEntry.FindDeepButton("GitHubButton").GetComponentInChildren<Text>().text = "Install";
+            if (JaLoaderSettings.EnableJaDownloader)
+            {
+                if (entry.GitHubLink != null && entry.GitHubLink != string.Empty)
+                {
+                    newEntry.FindDeepButton("GitHubButton").interactable = true;
+                    newEntry.FindDeepButton("GitHubButton").onClick.AddListener(delegate { InstallMod(entry.GitHubLink, entry.Name); Destroy(newEntry); });
+                }
+                else
+                {
+                    AddWarningToMod(newEntry, "This mod does not have a GitHub or NexusMods link! Mod cannot be installed in-game", true);
+                }
+            }
+            else
+                AddWarningToMod(newEntry, "You do not have JaDownloader enabled! Mod cannot be installed in-game", true);
+
+            if (setFirst)
+                newEntry.transform.SetSiblingIndex(1);
+
+            NoMods(true);
+        }
+
         internal Text CreateModEntryReturnText(GenericModData modData)
         {   
             var newEntry = Instantiate(ModEntryTemplate);
@@ -701,7 +793,9 @@ namespace JaLoader
             if(modData.GitHubLink != null && modData.GitHubLink != string.Empty)
             {
                 newEntry.FindDeepButton("GitHubButton").onClick.AddListener(() => Application.OpenURL(modData.GitHubLink));
-                newEntry.FindDeepButton("GitHubButton").gameObject.SetActive(true);
+                newEntry.FindDeepButton("GitHubButton").interactable = true;
+                var script = newEntry.FindDeepButton("GitHubButton").gameObject.AddComponent<OnRightClickUIElement>();
+                script.onRightClick.AddListener(() => GUIUtility.systemCopyBuffer = modData.GitHubLink);
             }
 
             newEntry.FindDeepChildObject("ModName").GetComponent<Text>().text = JaLoaderSettings.DebugMode == false ? modData.ModName : modData.ModID;
@@ -1097,16 +1191,29 @@ namespace JaLoader
 
         private void InstallMod()
         {
-            var modURL = ModsSearchBar.text;
+            InstallMod("");
+        }
 
+        private void InstallMod(string setModURL = "", string modName = "")
+        {
+            var modURL = ModsSearchBar.text;
             modURL = modURL.Replace("jaloader://install/", "jaloader://installingame/");
+
+            string author = "", repo = "";
+
+            if (setModURL != "")
+            {
+                author = setModURL.Split('/')[3];
+                repo = setModURL.Split('/')[4];
+                modURL = $"jaloader://installingame/{author}/{repo}";
+            }
+
+            author = author == "" ? modURL.Split('/')[3] : author;
+            repo = repo == "" ? modURL.Split('/')[4] : repo;
 
             Process.Start(modURL);
 
-            var author = modURL.Split('/')[3];
-            var repo = modURL.Split('/')[4];
-
-            StartCoroutine(ModLoader.Instance.CheckIfModInstalled(author, repo));
+            StartCoroutine(ModLoader.Instance.CheckIfModInstalled(author, repo, modName));
         }
 
         private void OnInputValueChanged_ModsList()
@@ -1120,7 +1227,17 @@ namespace JaLoader
             {
                 if (child.name == "ModTemplate") continue;
 
-                if (child.GetChild(2).GetChild(0).GetComponent<Text>().text.ToLower().Contains(ModsSearchBar.text.ToLower()))
+                string textToCompare, searchBarTextTrimmed = ModsSearchBar.text.TrimStart();
+
+                if (ModsSearchBar.text.StartsWith("a:"))
+                {
+                    textToCompare = child.GetChild(2).GetChild(1).GetComponent<Text>().text;
+                    searchBarTextTrimmed = searchBarTextTrimmed.Substring(2).TrimStart();
+                }
+                else
+                    textToCompare = child.GetChild(2).GetChild(0).GetComponent<Text>().text;
+
+                if (textToCompare.ToLower().Contains(searchBarTextTrimmed.ToLower()))
                 {
                     if (IsModEntryDisabled(child.gameObject) && AllSettingsDropdowns["ShowDisabledMods"].value == 1)
                         child.gameObject.SetActive(false);
@@ -1258,12 +1375,26 @@ namespace JaLoader
             {
                 if (JaLoaderSettings.EnableJaDownloader)
                 {
-                    var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, "."), "JaDownloader.exe"));
-                    Process.Start($@"{Application.dataPath}\.\JaDownloaderSetup.exe", $"\"{path}\"");
+                    var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, ".."), "JaDownloader.exe"));
+                    try
+                    {
+                        Process.Start($@"{Application.dataPath}\..\JaDownloaderSetup.exe", $"\"{path}\"");
+                    }
+                    catch (Exception)
+                    {
+                        // cancelled
+                    }
                 }
                 else
                 {
-                    Process.Start($@"{Application.dataPath}\.\JaDownloaderSetup.exe", "Uninstall");
+                    try
+                    {
+                        Process.Start($@"{Application.dataPath}\..\JaDownloaderSetup.exe", "Uninstall");
+                    }
+                    catch (Exception)
+                    {
+                        // cancelled
+                    }
                 }
             }
         }
@@ -1278,6 +1409,15 @@ namespace JaLoader
 
         private void ShowJaDownloaderNotice()
         {
+            if (JLNoticePanel.activeSelf)
+            {
+                OnAllNoticesShown += ShowJaDownloaderNotice;
+                return;
+            }
+
+            if(OnAllNoticesShown != null)
+                OnAllNoticesShown = null;
+
             SetObstructRay(true);
             var dialog = Instantiate(JLCanvas.transform.Find("JLUpdateDialog").gameObject, JLCanvas.transform.Find("JLUpdateDialog").parent);
             dialog.name = "JLDownloaderNotice";
@@ -1288,9 +1428,9 @@ namespace JaLoader
             dialog.Find("Message").GetComponent<Text>().text = "JaDownloader is a tool that allows you to install most mods automatically. \r\n Would you like to enable it now? (you can find this setting in Modloader Settings/Preferences)";
             dialog.FindButton("YesButton").onClick.AddListener(delegate {
                 var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, "."), "JaDownloader.exe"));
-                Process.Start($@"{Application.dataPath}\.\JaDownloaderSetup.exe", $"\"{path}\""); JaLoaderSettings.EnableJaDownloader = true; SetObstructRay(false); Destroy(dialog);
+                Process.Start($@"{Application.dataPath}\..\JaDownloaderSetup.exe", $"\"{path}\""); JaLoaderSettings.EnableJaDownloader = true; SetObstructRay(false); OnUpdateDialogClosed?.Invoke(); Destroy(dialog);
             });
-            dialog.FindButton("NoButton").onClick.AddListener(delegate {SetObstructRay(false); Destroy(dialog); });
+            dialog.FindButton("NoButton").onClick.AddListener(delegate {SetObstructRay(false); OnUpdateDialogClosed?.Invoke(); Destroy(dialog); });
             dialog.SetActive(true);
 
             JaLoaderSettings.AskedAboutJaDownloader = true;
@@ -1299,6 +1439,18 @@ namespace JaLoader
 
         public void ShowNotice(string subtitle, string message, bool enableDontShowAgain = true, bool ignoreObstructRayChange = false)
         {
+            if (JLCanvas.FindObject("JLUpdateDialog") != null || JLCanvas.FindObject("JLDownloaderNotice") != null)
+            {
+                if(JLCanvas.FindObject("JLUpdateDialog")?.activeSelf == true || JLCanvas.FindObject("JLDownloaderNotice")?.activeSelf == true)
+                {
+                    OnUpdateDialogClosed += () => ShowNotice(subtitle, message, enableDontShowAgain, ignoreObstructRayChange);
+                    return;
+                }
+            }
+
+            if(OnUpdateDialogClosed != null)
+                OnUpdateDialogClosed = null;
+
             allNotices.Add(message);
             noticesToShow.Add((subtitle, message, ignoreObstructRayChange));
 
@@ -1312,6 +1464,7 @@ namespace JaLoader
                 {
                     JLNoticePanel.Find("Subtitle").GetComponent<Text>().text = subtitle;
                     JLNoticePanel.Find("Message").GetComponent<Text>().text = message;
+                    JLNoticePanel.Find("Counter").GetComponent<Text>().text = $"{noticesToShow.Count - 1} notices remaining";
                 }
 
                 showingNotice = true;
@@ -1365,6 +1518,8 @@ namespace JaLoader
                 SettingsManager.SaveSettings(false);
             }
 
+            JLNoticePanel.Find("Counter").GetComponent<Text>().text = $"{noticesToShow.Count - 1} notices remaining";
+
             if (noticesToShow.Count == 0) 
             {
                 if(!ignoreIfLastOne)
@@ -1393,6 +1548,8 @@ namespace JaLoader
 
                 SettingsManager.SaveSettings(false);
             }
+
+            OnAllNoticesShown?.Invoke();
         }
     }
 
@@ -1476,6 +1633,22 @@ namespace JaLoader
             isGlowing = false;
             renderTarget.GetComponent<Renderer>().material = startMaterial;
         }
+    }
+
+    public class OnRightClickUIElement : MonoBehaviour, IPointerClickHandler
+    {
+        public UnityEvent onRightClick = new UnityEvent();
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData.button == PointerEventData.InputButton.Right)
+            {
+                onRightClick.Invoke();
+
+                eventData.Use();
+            }
+        }
+
     }
 
     public class MenuWrench : MonoBehaviour

@@ -33,19 +33,65 @@ namespace JaLoader
 
         private void HandleLog(string message, string stackTrace, LogType type)
         {
+            if (type == LogType.Error || type == LogType.Assert || type == LogType.Exception)
+            {
+                if (message.Contains("GlyphInfo") || stackTrace.Contains("GlyphInfo"))
+                    return;
+
+                if (JaLoaderSettings.DebugMode)
+                {
+                    LogError("Unity", "An error occurred! Check output_log for more details.");
+                    LogError("Unity", message);
+
+                    return;
+                }
+                else
+                {
+                    string[] stackLines = stackTrace.Split('\n');
+
+                    foreach (string line in stackLines)
+                    {
+                        if (string.IsNullOrEmpty(line))
+                            continue;
+
+                        int methodEndIndex = line.IndexOf('(');
+                        if (methodEndIndex == -1)
+                        {
+                            methodEndIndex = line.IndexOf(" at ");
+                            if (methodEndIndex == -1)
+                                methodEndIndex = line.Length;
+                        }
+
+                        string methodClassSegment = line.Substring(0, methodEndIndex).Trim();
+
+                        int methodNameStartIndex = methodClassSegment.LastIndexOf('.');
+                        string methodName = "UnknownMethod";
+
+                        if (methodNameStartIndex != -1)
+                            methodName = methodClassSegment.Substring(methodNameStartIndex + 1);
+                        else
+                            methodName = methodClassSegment;
+
+                        string className = "UnknownClass";
+                        if (methodNameStartIndex != -1)
+                        {
+                            className = methodClassSegment.Substring(0, methodNameStartIndex);
+                            className = className.Substring(className.LastIndexOf('.') + 1);
+                        }
+
+                        LogError("Unity", $"Mod or script '{className}' threw an exception, in method '{methodName}'!");
+                        LogError("Unity", "More information is available in the output_log.txt file.");
+
+                        return;
+                    }
+                }
+            }
+
             if (!LogEverythingFromDebug)
                 return;
 
             switch (type)
             {
-                case LogType.Error:
-                    LogError("Unity", message);
-                    break;
-
-                case LogType.Assert:
-                    LogError("Unity", message);
-                    break;
-
                 case LogType.Warning:
                     LogWarning("Unity", message);
                     break;
@@ -541,6 +587,21 @@ namespace JaLoader
                         ToggleDebug();
                         break;
 
+                    case "update":
+                        UpdateCommand();
+                        break;
+
+                    case "debugexportmodlist":
+                        ModManager.ExportModList();
+                        break;
+
+                    case "debugloadmodlist":
+                        ModManager.ImportModList();
+                        break;
+
+                    case "debugexception":
+                        throw new Exception("This is a test exception for debugging purposes.");
+
                     case "repairkit":
                         if (SceneManager.GetActiveScene().buildIndex != 3)
                         {
@@ -736,6 +797,12 @@ namespace JaLoader
             }
         }
 
+        private void UpdateCommand()
+        {
+            if(UIManager.Instance.CheckAndCreateUpdateDialogIfNeeded(out _, out _, true) == false)
+                LogMessage("/", "No updates found!");
+        }
+
         private void TeleportLaika()
         {
             var car = ModHelper.Instance.laika;
@@ -768,6 +835,7 @@ namespace JaLoader
             LogMessage("'path' - Prints the mods path", false);
             LogMessage("'version' - Prints the modloader's version", false);
             LogMessage("'debug' - Toggle debug messages", false);
+            LogMessage("`update` - Forcefully check for updates", false);
             LogMessage("Cheat commands (only work in-game)", "", false);
             LogMessage("'money add/set/remove {value}' - Add, set or remove money from your wallet", false);
             LogMessage("/", "'time set {hr:min/day/night}' - Sets the time to the specified hour/day/night", false);

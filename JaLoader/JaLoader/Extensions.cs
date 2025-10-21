@@ -165,7 +165,7 @@ public static class Extensions
 
     public static GameObject FindObject(this GameObject parent, string name)
     {
-        return parent.transform.Find(name).gameObject;
+        return parent.transform.Find(name)?.gameObject;
     }
 
     public static Transform Find(this GameObject parent, string name)

@@ -1329,12 +1329,6 @@ namespace JaLoader
 
     #endregion
 
-    [Serializable]
-    class Release
-    {
-        public string tag_name = "";
-    }
-
     public enum Country
     {
         Germany,

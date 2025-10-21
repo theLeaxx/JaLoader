@@ -6,6 +6,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using Debug = UnityEngine.Debug;
 using System.IO;
+using System.Linq;
 
 namespace Doorstop
 {
@@ -16,6 +17,9 @@ namespace Doorstop
 
         public static void Start()
         {
+            if (CheckCommandLineArguments() == true)
+                return;
+
             string unityExePath = Process.GetCurrentProcess().MainModule.FileName;
             FileVersionInfo fileVersionInfo = FileVersionInfo.GetVersionInfo(unityExePath);
             unityVersion = fileVersionInfo.ProductVersion;
@@ -29,6 +33,17 @@ namespace Doorstop
             {
                 AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoadUnity5;
             }
+        }
+
+        static bool CheckCommandLineArguments()
+        {
+            string[] args = Environment.GetCommandLineArgs();
+
+            if (args.Length > 1)
+                if (args.Any(arg => arg.Equals("-disable-jaloader", StringComparison.OrdinalIgnoreCase)))
+                    return true;
+
+            return false;
         }
 
         static void OnAssemblyLoadUnity4(object sender, AssemblyLoadEventArgs args)

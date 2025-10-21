@@ -107,6 +107,7 @@ namespace JaLoader
                 {
                     Console.LogError("JaLoader", $"An error occured while invoking event `{multicastDelegate.Method.Name}`, by method `{subscriber.Method.Name}`, from script `{subscriber.Method.DeclaringType?.Name ?? "Unknown"}`");
                     Console.LogError("JaLoader", ex);
+                    UnityEngine.Debug.LogError(ex);
                 }
             }
         }

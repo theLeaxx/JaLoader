@@ -815,6 +815,43 @@ namespace JaLoader
             }
         }
 
+        /// <summary>
+        /// Returns a list of all used keycodes in the mod's settings, alongside their setting name, or ID if useIds = true.
+        /// </summary>
+        /// <returns></returns>
+        public List<(string, KeyCode)> GetAllUsedKeycodes(bool useIds = false)
+        {
+            List<(string, KeyCode)> keys = new List<(string, KeyCode)>();
+
+            foreach (var ID in settingsIDS)
+            {
+                string type = Regex.Match(ID, @"(.{6})\s*$").ToString();
+
+                if (type == "eybind")
+                {
+                    string str = settingsValues[$"{ID}"];
+
+                    var parent = UIManager.Instance.ModsSettingsContent.Find($"{ModAuthor}_{ModID}_{ModName}-SettingsHolder/{ID}");
+                    var mainKey = parent.GetComponent<CustomKeybind>().SelectedKey;
+                    KeyCode altKey = KeyCode.None;
+                    bool useAltKey = false;
+                    if (parent.GetComponent<CustomKeybind>().EnableAltKey)
+                    {
+                        altKey = parent.GetComponent<CustomKeybind>().AltSelectedKey;
+                        useAltKey = true;
+                    }
+
+                    string name = useIds ? Regex.Replace(ID, "_Keybind$", "") : parent.Find("HeaderText").GetComponent<Text>().text;
+
+                    keys.Add((name, mainKey));
+                    if(useAltKey)
+                        keys.Add((name, altKey));
+                }
+            }
+
+            return keys;
+        }
+
         public void ResetModSettings()
         {
             foreach (var ID in settingsIDS)
