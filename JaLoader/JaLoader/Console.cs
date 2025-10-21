@@ -596,7 +596,7 @@ namespace JaLoader
                         break;
 
                     case "debugloadmodlist":
-                        ModManager.LoadExportedModList();
+                        ModManager.ImportModList();
                         break;
 
                     case "debugexception":
@@ -799,7 +799,7 @@ namespace JaLoader
 
         private void UpdateCommand()
         {
-            if(UIManager.Instance.CheckAndCreateUpdateDialogIfNeeded(out _, true) == false)
+            if(UIManager.Instance.CheckAndCreateUpdateDialogIfNeeded(out _, out _, true) == false)
                 LogMessage("/", "No updates found!");
         }
 

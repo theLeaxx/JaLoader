@@ -224,8 +224,9 @@ namespace JaLoader
         /// Get the ID of an extra by its registry name
         /// </summary>
         /// <param name="registryName">The registry name of the extra</param>
+        /// <param name="ignoreNull">Ignore if not found</param>
         /// <returns></returns>
-        public int GetExtraIDByRegistryName(string registryName)
+        public int GetExtraIDByRegistryName(string registryName, bool ignoreNull = false)
         {
             foreach(var pair in Extras)
             {
@@ -233,7 +234,8 @@ namespace JaLoader
                     return pair.Key.Item2;
             }
 
-            Console.LogError($"Extra with registry name {registryName} does not exist!");
+            if(!ignoreNull)
+                Console.LogError($"Extra with registry name {registryName} does not exist!");
             return -1;
         }
 
@@ -652,7 +654,7 @@ namespace JaLoader
 
                 foreach (string entry in data.Keys)
                 {
-                    int ID = GetExtraIDByRegistryName(entry);
+                    int ID = GetExtraIDByRegistryName(entry, true);
 
                     if (ExtraMod.ContainsKey((entry, ID)))
                         if (!ModManager.Mods[ExtraMod[(entry, ID)].Item1].IsEnabled)

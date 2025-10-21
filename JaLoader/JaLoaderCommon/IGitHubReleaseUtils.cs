@@ -7,6 +7,6 @@ namespace JaLoader.Common
 {
     public interface IGitHubReleaseUtils
     {
-        string GetLatestTagFromAPIURL(string URL, string modName = null);
+        Release GetLatestTagFromAPIURL(string URL, string modName = null);
     }
 }

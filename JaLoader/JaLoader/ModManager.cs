@@ -666,17 +666,23 @@ namespace JaLoader
                 }
             }
 
-            string exportFolder = Path.Combine(JaLoaderSettings.ModFolderLocation, "ExportedModLists");
-            if (!Directory.Exists(exportFolder))
-                Directory.CreateDirectory(exportFolder);
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                InitialDirectory = Path.Combine(JaLoaderSettings.ModFolderLocation, "ExportedModLists"),
+                Filter = "JSON files (*.json)|*.json",
+                Title = "Export mod list",
+                RestoreDirectory = true,
+                FileName = $"ModList_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.json"
+            };
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string jsonString = JsonConvert.SerializeObject(list, Formatting.Indented);
 
-            string filePath = Path.Combine(exportFolder, $"ModList_{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss")}.json");
-            string jsonString = JsonConvert.SerializeObject(list, Formatting.Indented);
-
-            File.WriteAllText(filePath, jsonString);
+                File.WriteAllText(saveFileDialog.FileName, jsonString);
+            }            
         }
 
-        internal static void LoadExportedModList()
+        internal static void ImportModList()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
@@ -689,15 +695,53 @@ namespace JaLoader
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 string filePath = openFileDialog.FileName;
-                string jsonString = File.ReadAllText(filePath);
-                SerializableModList list = JsonConvert.DeserializeObject<SerializableModList>(jsonString);
+                SerializableModList list;
+                try
+                {
+                    string jsonString = File.ReadAllText(filePath);
+                    list = JsonConvert.DeserializeObject<SerializableModList>(jsonString);
+                }
+                catch (Exception)
+                {
+                    UIManager.Instance.ShowNotice("Import mod list", "The selected file is not a valid mod list.", false, true);
+                    return;
+                }
+
+                if(list?.Mods?.Count == 0 || list == null || list.Mods == null)
+                {
+                    UIManager.Instance.ShowNotice("Import mod list", "The selected mod list is empty.", false, true);
+                    return;
+                }
+
+                List<MonoBehaviour> newLoadOrder = new List<MonoBehaviour>();
+                int missingMods = 0;
                 foreach (var mod in list.Mods)
                 {
-                    if (!FindMod(mod.Author, mod.Name, ignoreNull: true))
+                    var _mod = FindMod(mod.Author, mod.ID, mod.Name, ignoreNull: true);
+                    if (_mod != null)
+                    {
+                        newLoadOrder.Add(_mod);
                         continue;
+                    }
 
-                    UIManager.Instance.CreateModListEntry(mod);
+                    missingMods++;
+                    UIManager.Instance.CreateModListEntry(mod, true);
                 }
+
+                for (int i = 0; i < newLoadOrder.Count; i++)
+                {
+                    var mod = newLoadOrder[i];
+                    UIManager.Instance.modEntries[Mods[mod].GenericModData].transform.SetSiblingIndex(i + 1);
+                }
+
+                loadOrderList = newLoadOrder.Concat(loadOrderList.Except(newLoadOrder)).ToList();
+
+                SaveModsOrder();
+
+                if (missingMods == 0)
+                    UIManager.Instance.ShowNotice("Import mod list", "No mods imported.", false, true);
+                else
+                    UIManager.Instance.ShowNotice("Import mod list", $"Imported {missingMods} missing mods.", false, true);
             }
         }
 

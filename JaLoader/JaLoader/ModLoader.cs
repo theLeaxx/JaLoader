@@ -375,6 +375,7 @@ namespace JaLoader
                     UIManager.Instance.ShowNotice("MOD INSTALLED", "The mod has been successfully installed. You can now enable it in the mods list.", ignoreObstructRayChange: true, enableDontShowAgain: false);
                     UIManager.Instance.ModsCountText.text = $"{ModManager.Mods.Count} mods installed";
                     Console.Log("JaLoader", $"Mod {certainModFile} has been successfully installed and loaded!");
+                    UIManager.Instance.NoMods(true);
                 }
             }
         }

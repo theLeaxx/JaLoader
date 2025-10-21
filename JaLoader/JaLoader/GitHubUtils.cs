@@ -22,7 +22,7 @@ namespace JaLoader
 
         private GitHubUtils() { }
 
-        public string GetLatestTagFromAPIURL(string URL, string modName = null)
+        public Release GetLatestTagFromAPIURL(string URL, string modName = null)
         {
             string messageSender;
             if (modName == null)
@@ -42,25 +42,33 @@ namespace JaLoader
             }
 
             if (request.isHttpError || request.error == "Generic/unknown HTTP error")
-                return "-1";
+                return new Release()
+                {
+                    tag_name = "-1"
+                };
 
-            string tagName = null;
+            Release release;
 
             if (!request.isNetworkError)
             {
                 string json = request.downloadHandler.text;
-                Release release = JsonUtility.FromJson<Release>(json);
-                tagName = release.tag_name;
+                release = JsonUtility.FromJson<Release>(json);
             }
             else if (request.isNetworkError)
-                return "-1";
+                return new Release()
+                {
+                    tag_name = "-1"
+                };
             else
             {
                 Console.LogError(messageSender, $"Error getting response for URL \"{URL}\": {request.error}");
-                return "-1";
+                return new Release()
+                {
+                    tag_name = "-1"
+                };
             }
 
-            return tagName;
+            return release;
         }
     }
 }
