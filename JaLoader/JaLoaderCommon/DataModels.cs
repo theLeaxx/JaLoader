@@ -2,11 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace JaLoader.Common
 {
@@ -101,24 +103,67 @@ namespace JaLoader.Common
             return JaLoaderVersion;
         }
 
-        internal static void ReadSettings()
+        internal static EssentialSettings ReadEssentialSettings()
         {
-            RegistryKey parentKey = Registry.CurrentUser;
-
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            if (jalopyKey != null && jalopyKey.GetValue("ModsLocation") != null)
+            var path = Path.Combine(RuntimeVariables.ApplicationDataPath, @"../JaSettings.json");
+            if (!File.Exists(path))
             {
-                ModFolderLocation = jalopyKey.GetValue("ModsLocation").ToString();
+                RegistryKey parentKey = Registry.CurrentUser;
+
+                RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
+
+                RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
+
+                if (jalopyKey != null)
+                {
+                    var settings = new EssentialSettings();
+
+                    if(jalopyKey.GetValue("ModsLocation") != null)
+                    {
+                        ModFolderLocation = jalopyKey.GetValue("ModsLocation").ToString();
+                        settings.ModsLocation = ModFolderLocation;
+                    }
+
+                    if (jalopyKey.GetValue("JaLoaderVersion") != null)
+                        settings.JaLoaderVersion = jalopyKey.GetValue("JaLoaderVersion").ToString();
+
+                    if (jalopyKey.GetValue("LastUpdateCheck") != null)
+                        settings.LastUpdateCheck = jalopyKey.GetValue("LastUpdateCheck").ToString();
+
+                    SaveEssentialSettings(settings);
+                    return settings;
+                }
+                else
+                {
+                    MessageBox.Show("Could not find JaSettings.json! Please reinstall JaLoader using the latest JaPatcher.", "JaLoader", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    throw new ModException("Could not find ModsLocation!", "JaLoader", 105);
+                }
             }
+            
+            string json = File.ReadAllText(path);
+            var _settings = Newtonsoft.Json.JsonConvert.DeserializeObject<EssentialSettings>(json);
+            ModFolderLocation = _settings.ModsLocation;
+            return _settings;
+        }
+
+        internal static void SaveEssentialSettings(EssentialSettings fromRegistry = null, string newVersion = "", string newUpdateCheck = "")
+        {
+            var path = Path.Combine(RuntimeVariables.ApplicationDataPath, @"../JaSettings.json");
+            EssentialSettings settingsToSave;
+
+            if (fromRegistry != null)
+                settingsToSave = fromRegistry;
             else
             {
-                ModFolderLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"Jalopy\Mods");
-
-                jalopyKey?.SetValue("ModsLocation", ModFolderLocation, RegistryValueKind.String);
+                settingsToSave = ReadEssentialSettings();
+                if(newVersion != "")
+                    settingsToSave.JaLoaderVersion = newVersion;
+                if(newUpdateCheck != "")
+                    settingsToSave.LastUpdateCheck = newUpdateCheck;
             }
+
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(settingsToSave, Newtonsoft.Json.Formatting.Indented);
+            File.WriteAllText(path, json);
         }
 
         internal static void LoadSettings(SerializableJaLoaderSettings _settings)
@@ -197,43 +242,25 @@ namespace JaLoader.Common
             else return false;
         }
 
-        internal static void SetVersionRegistryKey()
+        internal static void SetJaLoaderVersionInJSON()
         {
-            RegistryKey parentKey = Registry.CurrentUser;
-
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            jalopyKey?.SetValue("JaLoaderVersion", GetVersion().ToString(), RegistryValueKind.String);
+            SaveEssentialSettings(newVersion: GetVersion().ToString());
         }
 
-        internal static void SetUpdateCheckRegistryKey()
+        internal static void SetUpdateCheckInJSON()
         {
-            RegistryKey parentKey = Registry.CurrentUser;
-
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            jalopyKey?.SetValue("LastUpdateCheck", DateTime.Now.ToString(), RegistryValueKind.String);
+            SaveEssentialSettings(newUpdateCheck: DateTime.Now.ToString());
         }
 
-        internal static void GetUpdateCheckRegistryKey()
+        internal static void GetUpdateCheckFromJSON()
         {
-            RegistryKey parentKey = Registry.CurrentUser;
+            var settings = ReadEssentialSettings();
 
-            RegistryKey softwareKey = parentKey.OpenSubKey("Software", true);
-
-            RegistryKey jalopyKey = softwareKey?.OpenSubKey("Jalopy", true);
-
-            if (jalopyKey != null && jalopyKey.GetValue("LastUpdateCheck") != null)
-            {
-                UpdateUtils.lastUpdateCheck = DateTime.Parse(jalopyKey.GetValue("LastUpdateCheck").ToString());
-            }
+            if (!string.IsNullOrEmpty(settings.LastUpdateCheck))
+                UpdateUtils.lastUpdateCheck = DateTime.Parse(settings.LastUpdateCheck);
             else
             {
-                SetUpdateCheckRegistryKey();
+                SetUpdateCheckInJSON();
                 UpdateUtils.lastUpdateCheck = DateTime.Now;
             }
         }
@@ -289,6 +316,14 @@ namespace JaLoader.Common
 
         public List<string> DisabledMods = new List<string>();
         public List<string> DontShowAgainNotices = new List<string>();
+    }
+
+    [Serializable]
+    public class EssentialSettings
+    {
+        public string ModsLocation = "";
+        public string JaLoaderVersion = "";
+        public string LastUpdateCheck = "";
     }
 
     public enum UpdateCheckModes

@@ -805,14 +805,7 @@ namespace JaLoader
 
         private void TeleportLaika()
         {
-            var car = ModHelper.Instance.laika;
-            var player = ModHelper.Instance.player;
-            var script = Camera.main.GetComponent<MainMenuC>();
-            car.transform.position = player.transform.position + player.transform.forward * 8 + new Vector3(0, 2, 0);
-            car.transform.rotation = player.transform.rotation;
-            script.SendMessage("SavePause");
-            if (script.isPaused == 0)
-                script.SendMessage("UpdateTime", 1f);
+            ModHelper.Instance.TeleportLaikaToPosition(ModHelper.Instance.player.transform.position + ModHelper.Instance.player.transform.forward * 8, ModHelper.Instance.player.transform.eulerAngles);
 
             Log("/", "Teleported laika to player!");
         }

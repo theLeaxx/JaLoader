@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using JaLoader.Common;
+using System.Collections.Generic;
 
 namespace JaLoader
 {
@@ -111,5 +112,34 @@ namespace JaLoader
             return !(left == right);
         }
 
+    }
+
+    [Obsolete("Use JLRouteGenerator.GetCountryFromCode(string countryCode) instead.")]
+    public enum CountryCode
+    {
+        Germany,
+        Czechoslovakia,
+        Hungary,
+        Yugoslavia,
+        Bulgaria,
+        Turkey
+    }
+
+    public class Country
+    {
+        public string GenericCountryCode;
+
+        public Dictionary<int, (string, GameObject[])> RoadSegmentsWithRouteLevel;
+
+        public Country(string countryCode)
+        {
+            GenericCountryCode = countryCode;
+            RoadSegmentsWithRouteLevel = new Dictionary<int, (string, GameObject[])>();
+        }
+
+        public void AddRoadSegment(int routeLevel, string segmentName, GameObject[] roadPrefabs)
+        {
+            RoadSegmentsWithRouteLevel[routeLevel] = (segmentName, roadPrefabs);
+        }
     }
 }

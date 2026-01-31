@@ -14,6 +14,8 @@ using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using Random = UnityEngine.Random;
 using Debug = UnityEngine.Debug;
+using Steamworks;
+using System.Timers;
 
 namespace JaLoader
 {
@@ -879,6 +881,29 @@ namespace JaLoader
             GameTweaks.Instance.isDialogueActive = false;
 
             GameObject.FindObjectOfType<DialogueReceiver>()?.TextFinished();
+        }
+    }
+
+    [HarmonyPatch(typeof(DoorLogicC), "Trigger")]
+    public static class DoorLogicC_Trigger_Patch
+    {
+        [HarmonyPrefix]
+        public static void Prefix(DoorLogicC __instance)
+        {
+            if (__instance.carLogic == null)
+                return;
+
+            CoroutineManager.StartStaticCoroutine(DisableCollisions(__instance));
+        }
+
+        public static IEnumerator DisableCollisions(DoorLogicC __instance)
+        {
+            var collider = __instance.transform.parent.GetComponentInChildren<Collider>();
+            var rb = __instance.carLogic.transform.root.GetComponent<Rigidbody>();
+
+            rb.constraints = RigidbodyConstraints.FreezePositionY;
+            yield return new WaitForSeconds(0.7f);
+            rb.constraints = RigidbodyConstraints.None;
         }
     }
 

@@ -30,6 +30,7 @@ namespace JaLoader
             EventsManager.Instance.OnGameLoad += OnGameLoad;
             EventsManager.Instance.OnRouteGenerated += OnRouteGenerated;
             EventsManager.Instance.OnSleep += OnSleep;
+            EventsManager.Instance.OnGameUnload += () => isInGame = false;
         }
 
         #endregion
@@ -42,6 +43,7 @@ namespace JaLoader
         private VfAnimCursor cursorToChange;
 
         private bool skippedIntro = false;
+        internal bool isInGame = false;
 
         public bool isDialogueActive = false;
         private void OnSleep()
@@ -107,6 +109,10 @@ namespace JaLoader
                 FixBorderGuardsFlags();
             }
 
+            ChangeMotelDoorsLocation();
+
+            isInGame = true;
+
             yield return null;
         }
 
@@ -138,6 +144,22 @@ namespace JaLoader
             }
         }
 
+        private void ChangeMotelDoorsLocation()
+        {
+            var motels = FindObjectsOfType<MotelLogicC>();
+
+            foreach (var motel in motels)
+            {
+                var doors = motel.transform.parent.GetComponentsInChildren<EnvironmentDoorsC>();
+
+                foreach (var door in doors)
+                {
+                    if (door.doorBell != null && door.doorBellAudio != null && door.lockTarget == null)
+                        door.xyzOpen = new Vector3(0, 90, 0);
+                }
+            }
+        }
+
         private void OnRouteGenerated(string startLocation, string endLocation, int distance)
         {
             FixBorderFlags();
@@ -147,6 +169,8 @@ namespace JaLoader
 
             if (JaLoaderSettings.FixBorderGuardsFlags)
                 Invoke("FixBorderGuardsFlags", 5);
+
+            Invoke("ChangeMotelDoorsLocation", 5);
 
             SceneManager.GetActiveScene().GetRootGameObjects().ToList().ForEach(go =>
             {
@@ -159,6 +183,22 @@ namespace JaLoader
                             go.SetActive(false);
                 }
             });
+        }
+
+        private void Update()
+        {
+            if (!isInGame)
+                return;
+                
+            if (ModHelper.Instance.player.transform.position.y < -400f)
+            {
+                var closest = GetClosestRoadToPlayer();
+
+                if (ModHelper.Instance.player.transform.parent == null)
+                    ModHelper.Instance.player.transform.position = GetPositionAboveObject(closest);
+                else
+                    ModHelper.Instance.TeleportLaikaToPosition(GetPositionAboveObject(closest));
+            }
         }
 
         private void FixLaikaDealershipSong()
@@ -272,6 +312,47 @@ namespace JaLoader
                 mirror.m_FarClipDistance = distance;
         }
 
+        public GameObject GetClosestRoadToPlayer()
+        {
+            GameObject closestRoad = null;
+            float closestDistance = float.MaxValue;
+            Vector3 playerPosition = ModHelper.Instance.player.transform.position;
+
+            var allObj = FindObjectsOfType<GameObject>();
+            foreach (var obj in allObj)
+            {
+                if (obj.name.ToLower().Contains("road"))
+                {
+                    if (obj.transform.root.name.Contains("Holder"))
+                        continue;
+
+                    float distance = Vector3.Distance(playerPosition, obj.transform.position);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closestRoad = obj;
+                    }
+                }
+            }
+
+            return closestRoad;
+        }
+
+        public Vector3 GetPositionAboveObject(GameObject obj)
+        {
+            Collider objCollider = obj.GetComponent<Collider>();
+
+            if (objCollider != null)
+            {
+                Vector3 highestPoint = objCollider.bounds.max;
+                return new Vector3(highestPoint.x, highestPoint.y + 2f, highestPoint.z);
+            }
+            else
+            {
+                return new Vector3(obj.transform.position.x, obj.transform.position.y + 2f, obj.transform.position.z);
+            }
+        }
+
         public void FixBorderGuardsFlags()
         {
             var hubs = FindObjectsOfType<Hub_CitySpawnC>();
@@ -292,7 +373,7 @@ namespace JaLoader
                         guardsList1.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
 
                         foreach (var guard in guardsList1)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Germany);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Germany);
 
                         break;
 
@@ -304,7 +385,7 @@ namespace JaLoader
                         guardsList1.Add(hub.transform.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
 
                         foreach (var guard in guardsList1)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Hungary);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Hungary);
 
                         break;
 
@@ -319,10 +400,10 @@ namespace JaLoader
                         guardsList2.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
 
                         foreach (var guard in guardsList1)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Yugoslavia);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Yugoslavia);
 
                         foreach (var guard in guardsList2)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Hungary);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Hungary);
 
                         break;
 
@@ -337,10 +418,10 @@ namespace JaLoader
                         guardsList2.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
 
                         foreach (var guard in guardsList1)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Bulgaria);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Bulgaria);
 
                         foreach (var guard in guardsList2)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Yugoslavia);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Yugoslavia);
 
                         break;
 
@@ -355,39 +436,39 @@ namespace JaLoader
                         guardsList2.Add(borderReturn.Find("CzechBorderNPC_01/Dantes_Body_007").GetComponent<SkinnedMeshRenderer>());
 
                         foreach (var guard in guardsList1)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Turkey);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Turkey);
 
                         foreach (var guard in guardsList2)
-                            guard.materials = NewMaterialsArray(guard.materials, Country.Bulgaria);
+                            guard.materials = NewMaterialsArray(guard.materials, CountryCode.Bulgaria);
 
                         break;
                 }
             }
         }
 
-        private Material OffsetFlagsMaterial(Material material, Country country)
+        private Material OffsetFlagsMaterial(Material material, CountryCode country)
         {
             var newMat = new Material(material);
 
             switch (country)
             {
-                case Country.Germany:
+                case CountryCode.Germany:
                     newMat.mainTextureOffset = new Vector2(0, -0.21f);
                     break;
 
-                case Country.Hungary:
+                case CountryCode.Hungary:
                     newMat.mainTextureOffset = new Vector2(0.34f, -0.45f);
                     break;
 
-                case Country.Yugoslavia:
+                case CountryCode.Yugoslavia:
                     newMat.mainTextureOffset = new Vector2(0.34f, -0.66f);
                     break;
 
-                case Country.Bulgaria:
+                case CountryCode.Bulgaria:
                     newMat.mainTextureOffset = new Vector2(0, -0.63f);
                     break;
 
-                case Country.Turkey:
+                case CountryCode.Turkey:
                     newMat.mainTextureOffset = new Vector2(0, -0.42f);
                     break;
             }
@@ -395,7 +476,7 @@ namespace JaLoader
             return newMat;
         }
 
-        private Material[] NewMaterialsArray(Material[] materials, Country country)
+        private Material[] NewMaterialsArray(Material[] materials, CountryCode country)
         {
             var mats = materials;
 
