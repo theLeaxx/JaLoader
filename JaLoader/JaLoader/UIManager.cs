@@ -1427,7 +1427,7 @@ namespace JaLoader
             dialog.FindDeepChild("Title").GetComponent<Text>().text = "Enable JaDownloader";
             dialog.Find("Message").GetComponent<Text>().text = "JaDownloader is a tool that allows you to install most mods automatically. \r\n Would you like to enable it now? (you can find this setting in Modloader Settings/Preferences)";
             dialog.FindButton("YesButton").onClick.AddListener(delegate {
-                var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, "."), "JaDownloader.exe"));
+                var path = Path.GetFullPath(Path.Combine(Path.Combine(Application.dataPath, ".."), "JaDownloader.exe"));
                 Process.Start($@"{Application.dataPath}\..\JaDownloaderSetup.exe", $"\"{path}\""); JaLoaderSettings.EnableJaDownloader = true; SetObstructRay(false); OnUpdateDialogClosed?.Invoke(); Destroy(dialog);
             });
             dialog.FindButton("NoButton").onClick.AddListener(delegate {SetObstructRay(false); OnUpdateDialogClosed?.Invoke(); Destroy(dialog); });

@@ -85,6 +85,7 @@ namespace JaLoader
             groundMask = (1 << 14) | (1 << 0) | (1 << 1) | (1 << 17) | (1 << 18) | (1 << 21) | (1 << 22);
 
             cc.height = 2.2f;
+            cc.minMoveDistance = 0;
             cc.radius = 0.5f;
         }
 

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36603.0 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JaPatcherNETFramework", "JaPatcherNETFramework\JaPatcherNETFramework.csproj", "{4CA1CB73-994A-496D-A20E-0234125781C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4CA1CB73-994A-496D-A20E-0234125781C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CA1CB73-994A-496D-A20E-0234125781C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CA1CB73-994A-496D-A20E-0234125781C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CA1CB73-994A-496D-A20E-0234125781C9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AD83083A-8E61-429F-804A-52EF057250CE}
+	EndGlobalSection
+EndGlobal

@@ -129,7 +129,7 @@ namespace JaLoader.Common
                 case UpdateCheckModes.Hourly:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalHours >= 1)
                     {
-                        JaLoaderSettings.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckInJSON();
                         canCheck = true;
                     }
                     break;
@@ -137,7 +137,7 @@ namespace JaLoader.Common
                 case UpdateCheckModes.Daily:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 1)
                     {
-                        JaLoaderSettings.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckInJSON();
                         canCheck = true;
                     }
                     break;
@@ -145,7 +145,7 @@ namespace JaLoader.Common
                 case UpdateCheckModes.Every3Days:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 3)
                     {
-                        JaLoaderSettings.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckInJSON();
                         canCheck = true;
                     }
                     break;
@@ -153,7 +153,7 @@ namespace JaLoader.Common
                 case UpdateCheckModes.Weekly:
                     if (DateTime.Now.Subtract(lastUpdateCheck).TotalDays >= 7)
                     {
-                        JaLoaderSettings.SetUpdateCheckRegistryKey();
+                        JaLoaderSettings.SetUpdateCheckInJSON();
                         canCheck = true;
                     }
                     break;

@@ -73,6 +73,7 @@ namespace JaLoader
         public event MiscEvents OnCustomObjectsSaved;
         public event MiscEvents OnMenuFadeOut;
         public event MiscEvents OnModsInitialized;
+        public event MiscEvents OnFinishedAddingGameExtensions;
 
         public event ObjectEvents OnObjectPickedUp;
         //public event ObjectEvents OnObjectPlaced; later update
@@ -110,6 +111,11 @@ namespace JaLoader
                     UnityEngine.Debug.LogError(ex);
                 }
             }
+        }
+
+        public void FinishedAddingExtensions()
+        {
+            SafeInvoke(OnFinishedAddingGameExtensions, (handler) => handler());
         }
 
         public void OnUILoadFinish()

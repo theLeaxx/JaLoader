@@ -16,8 +16,8 @@ namespace JaLoaderClassic
             JaLoaderSettings.IsPreReleaseVersion = false;
 
             ReadSettings();
-            JaLoaderSettings.SetVersionRegistryKey();
-            JaLoaderSettings.GetUpdateCheckRegistryKey();
+            JaLoaderSettings.SetJaLoaderVersionInJSON();
+            JaLoaderSettings.GetUpdateCheckFromJSON();
 
             //JaLoaderSettings.CompareAssemblyVersion();
         }
@@ -26,7 +26,7 @@ namespace JaLoaderClassic
 
         internal static void ReadSettings()
         {
-            JaLoaderSettings.ReadSettings();
+            JaLoaderSettings.ReadEssentialSettings();
 
             if (File.Exists(Path.Combine(Application.persistentDataPath, @"JaConfig.json")))
             {

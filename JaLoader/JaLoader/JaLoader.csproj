@@ -230,6 +230,7 @@
     <Compile Include="ExtrasManager.cs" />
     <Compile Include="FPSCounter.cs" />
     <Compile Include="JaLoaderCore.cs" />
+    <Compile Include="JLRouteGenerator.cs" />
     <Compile Include="LaikaCatalogueExtension.cs" />
     <Compile Include="LicensePlateCustomizer.cs" />
     <Compile Include="LoadingScreen.cs" />

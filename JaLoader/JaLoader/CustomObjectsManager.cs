@@ -241,7 +241,11 @@ namespace JaLoader
         {
             GameObject objToSpawn = GetObject(registryName);
 
-            if(objToSpawn == null) return null;
+            if (objToSpawn == null)
+            {
+                Console.LogError("CustomObjectsManager", $"No object with the registry key {registryName} exists in the database!");
+                return null;
+            }
 
             GameObject spawnedObj = Instantiate(objToSpawn);
             SceneManager.MoveGameObjectToScene(spawnedObj, SceneManager.GetActiveScene());

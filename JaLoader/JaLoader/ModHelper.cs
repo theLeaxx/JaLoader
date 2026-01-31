@@ -231,6 +231,8 @@ namespace JaLoader
                     obj.name = "JaLoader Game Scripts";
                     obj.AddComponent<MarketManager>();
                 }
+
+                EventsManager.Instance.FinishedAddingExtensions();
             }
         }
 
@@ -349,6 +351,25 @@ namespace JaLoader
             fix.CanFindInCrates = identif.CanFindInCrates = canFindInCrates;
             fix.SupplyType = identif.SupplyType = goodType;
             identif.HasReceivedBasicLogic = true;
+        }
+
+        public void TeleportLaikaToPosition(Vector3 position)
+        {
+            TeleportLaikaToPosition(position, laika.transform.eulerAngles);
+        }
+
+        public void TeleportLaikaToPosition(Vector3 position, Vector3 eulerAngles)
+        {
+            var script = Camera.main.GetComponent<MainMenuC>();
+            laika.GetComponent<Rigidbody>().velocity = laika.GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+            laika.GetComponent<Rigidbody>().isKinematic = true;
+            laika.transform.position = position + new Vector3(0, 2, 0);
+            laika.transform.eulerAngles = eulerAngles;
+            script.SendMessage("SavePause");
+            if (script.isPaused == 0)
+                script.SendMessage("UpdateTime", 1f);
+
+            laika.GetComponent<Rigidbody>().isKinematic = false;
         }
 
         private void AddBoxLogic(GameObject obj, string objName, string objDescription, int price, int weight)
@@ -1328,14 +1349,4 @@ namespace JaLoader
     }
 
     #endregion
-
-    public enum Country
-    {
-        Germany,
-        Czechoslovakia,
-        Hungary,
-        Yugoslavia,
-        Bulgaria,
-        Turkey
-    }
 }
