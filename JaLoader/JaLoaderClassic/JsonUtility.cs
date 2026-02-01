@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿//using Newtonsoft.Json;
 using System;
 using JaLoaderClassic;
 using Console = JaLoaderClassic.Console;
 
-namespace UnityEngine
+/*namespace UnityEngine
 {
     /// <summary>
     /// Unity JsonUtility wrapper that uses Newtonsoft.Json for serialization and deserialization.
@@ -129,3 +129,4 @@ namespace UnityEngine
         public override bool CanWrite => true;
     }
 }
+*/

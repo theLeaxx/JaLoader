@@ -28,7 +28,7 @@ namespace JaLoaderClassic
         {
             JaLoaderSettings.ReadEssentialSettings();
 
-            if (File.Exists(Path.Combine(Application.persistentDataPath, @"JaConfig.json")))
+            /*if (File.Exists(Path.Combine(Application.persistentDataPath, @"JaConfig.json")))
             {
                 string json = File.ReadAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"));
                 _settings = JsonUtility.FromJson<SerializableJaLoaderSettings>(json);
@@ -41,7 +41,7 @@ namespace JaLoaderClassic
 
                 File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
                 return;
-            }
+            }*/
         }
 
         private static void Load()
@@ -83,7 +83,7 @@ namespace JaLoaderClassic
 
             _settings.DisabledMods = JaLoaderSettings.DisabledMods;*/
 
-            File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
+            //File.WriteAllText(Path.Combine(Application.persistentDataPath, @"JaConfig.json"), JsonUtility.ToJson(_settings, true));
 
             //EventsManager.Instance.OnSettingsSave();
         }
