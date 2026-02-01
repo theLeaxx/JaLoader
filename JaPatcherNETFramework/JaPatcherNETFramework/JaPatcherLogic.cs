@@ -60,6 +60,7 @@ namespace JaPatcherNETFramework
                 "JaLoader.xml",
                 "JaLoaderClassic.xml",
                 "JaLoader.Common.xml",
+                "System.Web.Extensions.dll",
                 "NLayer.dll"
             }
             },
