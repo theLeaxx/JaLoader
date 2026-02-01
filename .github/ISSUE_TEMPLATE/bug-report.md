@@ -22,6 +22,7 @@ If applicable, add screenshots or videos to help explain your problem.
 **Environment:**
  - Jalopy version:
  - JaLoader version:
+ - OS:
  - Additional mods:
 
 **Additional context**
