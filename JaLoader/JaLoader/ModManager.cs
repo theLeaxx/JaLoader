@@ -2,7 +2,6 @@
 using BepInEx.Configuration;
 using JaLoader.BepInExWrapper;
 using JaLoader.Common;
-using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,6 +14,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Button = UnityEngine.UI.Button;
 using Application = UnityEngine.Application;
+using System.Web.Script.Serialization;
 
 namespace JaLoader
 {
@@ -676,7 +676,8 @@ namespace JaLoader
             };
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                string jsonString = JsonConvert.SerializeObject(list, Formatting.Indented);
+                JavaScriptSerializer serializer = new JavaScriptSerializer();
+                string jsonString = serializer.Serialize(list);
 
                 File.WriteAllText(saveFileDialog.FileName, jsonString);
             }            
@@ -699,7 +700,8 @@ namespace JaLoader
                 try
                 {
                     string jsonString = File.ReadAllText(filePath);
-                    list = JsonConvert.DeserializeObject<SerializableModList>(jsonString);
+                    JavaScriptSerializer serializer = new JavaScriptSerializer();
+                    list = serializer.Deserialize<SerializableModList>(jsonString);
                 }
                 catch (Exception)
                 {

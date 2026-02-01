@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace JaLoader.Common
@@ -141,7 +142,9 @@ namespace JaLoader.Common
             }
             
             string json = File.ReadAllText(path);
-            var _settings = Newtonsoft.Json.JsonConvert.DeserializeObject<EssentialSettings>(json);
+            JavaScriptSerializer serializer = new JavaScriptSerializer();
+
+            var _settings = serializer.Deserialize<EssentialSettings>(json);
             ModFolderLocation = _settings.ModsLocation;
             return _settings;
         }
@@ -162,7 +165,9 @@ namespace JaLoader.Common
                     settingsToSave.LastUpdateCheck = newUpdateCheck;
             }
 
-            string json = Newtonsoft.Json.JsonConvert.SerializeObject(settingsToSave, Newtonsoft.Json.Formatting.Indented);
+            JavaScriptSerializer serializer = new JavaScriptSerializer();
+
+            string json = serializer.Serialize(settingsToSave);
             File.WriteAllText(path, json);
         }
 
