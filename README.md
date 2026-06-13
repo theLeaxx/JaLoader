@@ -10,6 +10,9 @@ A mod loader & manager for Jalopy.
 
 You can report any issues and/or ideas in the [issues](https://github.com/theLeaxx/JaLoader/issues) tab.
 
+# Maintenance Mode
+### Jaloader has reached over 8,900 total downloads. Development is currently on hiatus as I prioritize my medical studies and upcoming exams. The project is stable and will remain available for the community. While there is no active roadmap for new features, I may occasionally push minor updates or fixes as time permits. Thank you to everyone who has used and supported this project.
+
 ## [How to install?](https://github.com/theLeaxx/JaLoader/wiki/Installing-JaLoader-via-JaPatcher)
 * **JaLoader is currently only compatible with Jalopy v1.1+, although support is being worked on!**
 
